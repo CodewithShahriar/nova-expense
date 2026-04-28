@@ -1,39 +1,62 @@
 import { type Account } from "@/lib/storage";
-import { FintechImageCard } from "@/components/FintechImageCard";
-
-function accountTypeLabel(type: Account["type"]) {
-  if (type === "wallet") return "Mobile Wallet";
-  return type.charAt(0).toUpperCase() + type.slice(1);
-}
+import { cn } from "@/lib/utils";
+import { formatMoney } from "@/lib/storage";
+import { Wifi } from "lucide-react";
 
 export function AccountCard({
   account,
+  currency,
   className,
   compact = false,
   onClick,
-  backgroundSrc,
 }: {
   account: Account;
   currency: string;
   className?: string;
   compact?: boolean;
   onClick?: () => void;
-  backgroundSrc?: string;
 }) {
   return (
-    <FintechImageCard
-      name={account.name}
-      balance={account.balance}
-      number={account.number}
-      backgroundSrc={backgroundSrc}
-      compact={compact}
-      className={className}
+    <button
+      type="button"
       onClick={onClick}
-      issuer={
-        <div className="rounded-full bg-black/20 px-3 py-1 text-[0.62rem] font-bold uppercase tracking-[0.14em] text-white/85 backdrop-blur-md">
-          {accountTypeLabel(account.type)}
+      className={cn(
+        "relative w-full text-left rounded-3xl overflow-hidden shadow-elegant text-white",
+        compact ? "aspect-[16/9]" : "aspect-[1.586/1]",
+        className,
+      )}
+      style={{ background: account.gradient }}
+    >
+      <div
+        className="absolute inset-0 opacity-40 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(120% 80% at 100% 0%, rgba(255,255,255,0.25), transparent 60%)",
+        }}
+      />
+      <div className="absolute -bottom-8 -left-8 size-40 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+
+      <div className="relative h-full p-5 flex flex-col justify-between">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-white/70">
+              {account.brand || account.type}
+            </p>
+            <p className="mt-1 font-display text-lg font-semibold">{account.name}</p>
+          </div>
+          <Wifi className="size-5 rotate-90 text-white/80" />
         </div>
-      }
-    />
+
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-white/60">Balance</p>
+          <p className="font-display text-2xl font-bold tabular">
+            {formatMoney(account.balance, currency)}
+          </p>
+          <p className="mt-2 text-xs tabular tracking-wider text-white/80">
+            {account.number || "- - -"}
+          </p>
+        </div>
+      </div>
+    </button>
   );
 }
