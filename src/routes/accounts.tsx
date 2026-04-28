@@ -94,7 +94,7 @@ function AddAccountForm({ onClose }: { onClose: () => void }) {
     store.addAccount({
       name: name.trim(),
       type, brand: brand.trim() || undefined,
-      number: number.trim() || "— — —",
+      number: number.trim() || "- - -",
       balance: parseFloat(balance) || 0,
       gradient,
     });
@@ -134,12 +134,21 @@ function AddAccountForm({ onClose }: { onClose: () => void }) {
 function EditAccountForm({ id, onClose }: { id: string; onClose: () => void }) {
   const account = useStore((s) => s.accounts.find((a) => a.id === id))!;
   const [name, setName] = useState(account.name);
+  const [type, setType] = useState<AccountType>(account.type);
   const [brand, setBrand] = useState(account.brand || "");
   const [number, setNumber] = useState(account.number || "");
+  const [balance, setBalance] = useState(String(account.balance));
   const [gradient, setGradient] = useState(account.gradient);
 
   function save() {
-    store.updateAccount(id, { name: name.trim(), brand, number, gradient });
+    store.updateAccount(id, {
+      name: name.trim(),
+      type,
+      brand: brand.trim() || undefined,
+      number: number.trim() || "- - -",
+      balance: parseFloat(balance) || 0,
+      gradient,
+    });
     onClose();
   }
 
@@ -150,8 +159,29 @@ function EditAccountForm({ id, onClose }: { id: string; onClose: () => void }) {
         <button onClick={onClose} className="size-8 rounded-full glass flex items-center justify-center"><X className="size-4" /></button>
       </div>
       <input value={name} onChange={(e) => setName(e.target.value)} className="glass rounded-2xl h-12 px-4 w-full text-sm outline-none" />
+      <div className="grid grid-cols-4 gap-2">
+        {types.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setType(t.id)}
+            className={cn(
+              "h-10 rounded-xl text-xs font-medium",
+              type === t.id ? "gradient-primary text-primary-foreground" : "glass text-muted-foreground",
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
       <input value={brand} onChange={(e) => setBrand(e.target.value)} placeholder="Brand" className="glass rounded-2xl h-12 px-4 w-full text-sm outline-none" />
       <input value={number} onChange={(e) => setNumber(e.target.value)} placeholder="Number" className="glass rounded-2xl h-12 px-4 w-full text-sm outline-none" />
+      <input
+        value={balance}
+        onChange={(e) => setBalance(e.target.value.replace(/[^0-9.]/g, ""))}
+        inputMode="decimal"
+        placeholder="Current balance"
+        className="glass rounded-2xl h-12 px-4 w-full text-sm outline-none tabular"
+      />
       <div className="flex gap-2 overflow-x-auto no-scrollbar">
         {gradients.map((g) => (
           <button key={g} onClick={() => setGradient(g)} className={cn("shrink-0 h-10 w-16 rounded-xl border-2", gradient === g ? "border-primary" : "border-transparent")} style={{ background: g }} />
