@@ -267,11 +267,13 @@ export const store = {
 
 export function useStore<T>(selector: (s: AppState) => T): T {
   ensureInit();
-  return useSyncExternalStore(
+  const snapshot = useSyncExternalStore(
     store.subscribe,
-    () => selector(store.get()),
-    () => selector(defaultState),
+    store.get,
+    () => defaultState,
   );
+
+  return selector(snapshot);
 }
 
 export const currencySymbols: Record<string, string> = {
