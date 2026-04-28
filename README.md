@@ -139,29 +139,6 @@ Global styling and Tailwind theme tokens live in:
 src/styles.css
 ```
 
-The app uses a dark premium finance style by default, with a light theme available from Settings.
-
-## Card Components
-
-The active account card UI is:
-
-```text
-src/components/AccountCard.tsx
-```
-
-There is also a reusable image-background fintech card component:
-
-```text
-src/components/FintechImageCard.tsx
-```
-
-Public card image assets are available at:
-
-```text
-/brac.png
-/asia.png
-```
-
 ## Deployment
 
 This is a client-side Vite app. Build it with:
@@ -190,8 +167,3 @@ with:
 
 That lets direct visits like `/accounts` or `/reports` load the app correctly.
 
-## Notes
-
-- The app is currently local-first and does not use a backend database.
-- Currency is locked to Bangladeshi Taka (BDT).
-- If you edit route files, regenerate or maintain `src/routeTree.gen.ts` according to the TanStack Router setup used in the project.
