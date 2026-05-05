@@ -1,5 +1,6 @@
 // Local storage layer for expense tracker
 import { useSyncExternalStore } from "react";
+import { billRuntimeStatus, nextDueDate } from "@/lib/bills";
 
 export type TxType = "expense" | "income" | "transfer";
 export type AccountType = "bank" | "cash" | "wallet" | "card";
@@ -44,6 +45,7 @@ export interface Bill {
   name: string;
   amount: number;
   dueDate: string;
+  nextDueDate?: string;
   repeat: "none" | "weekly" | "monthly" | "yearly";
   status: "upcoming" | "paid" | "overdue";
   category: string;
@@ -145,7 +147,7 @@ function read(): AppState {
       accounts: parsed.accounts?.length ? parsed.accounts : defaultAccounts,
       transactions: parsed.transactions || [],
       budgets: parsed.budgets || defaultState.budgets,
-      bills: parsed.bills || [],
+      bills: normalizeBills(parsed.bills || []),
       goals: parsed.goals || [],
       customCategories: parsed.customCategories || [],
       settings: { ...defaultState.settings, ...parsed.settings, currency: "BDT" },
@@ -207,7 +209,7 @@ function normalizeState(next: Partial<AppState>): AppState {
     transactions: next.transactions || [],
     accounts: next.accounts?.length ? next.accounts : defaultAccounts,
     budgets: next.budgets || defaultState.budgets,
-    bills: next.bills || [],
+    bills: normalizeBills(next.bills || []),
     goals: next.goals || [],
     customCategories: next.customCategories || [],
     settings: { ...defaultState.settings, ...next.settings, currency: "BDT" },
@@ -239,6 +241,23 @@ function applyTxBalance(accounts: Account[], tx: Transaction, sign: 1 | -1): Acc
       if (a.id === tx.toAccountId) return { ...a, balance: a.balance + sign * tx.amount };
     }
     return a;
+  });
+}
+
+function normalizeBills(bills: Bill[]): Bill[] {
+  return bills.map((bill) => {
+    const nextBill = {
+      ...bill,
+      nextDueDate: bill.nextDueDate || bill.dueDate,
+      repeat: bill.repeat || "none",
+      status: bill.status || "upcoming",
+      category: bill.category || "Bills",
+    };
+
+    return {
+      ...nextBill,
+      status: billRuntimeStatus(nextBill),
+    };
   });
 }
 
@@ -316,7 +335,12 @@ export const store = {
       ...state,
       bills: [
         ...state.bills,
-        { ...bill, id: crypto.randomUUID(), status: bill.status || "upcoming" },
+        {
+          ...bill,
+          id: crypto.randomUUID(),
+          nextDueDate: bill.nextDueDate || bill.dueDate,
+          status: bill.status || "upcoming",
+        },
       ],
     });
   },
@@ -331,7 +355,7 @@ export const store = {
   },
   markBillPaid: (id: string) => {
     const bill = state.bills.find((item) => item.id === id);
-    if (!bill || bill.status === "paid") return;
+    if (!bill || (bill.status === "paid" && bill.repeat === "none")) return;
 
     const tx: Transaction = {
       id: crypto.randomUUID(),
@@ -343,21 +367,25 @@ export const store = {
       accountId: bill.accountId,
     };
     const accounts = applyTxBalance(state.accounts, tx, 1);
+    const paidAt = tx.date;
 
     write({
       ...state,
       accounts,
       transactions: [tx, ...state.transactions],
       bills: state.bills.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              status: "paid",
-              paidAt: tx.date,
-              transactionId: tx.id,
-            }
-          : item,
+        item.id === id ? nextBillCycle(item, paidAt, tx.id) : item,
       ),
+    });
+  },
+  refreshBillStatuses: () => {
+    write({
+      ...state,
+      bills: state.bills.map((bill) => ({
+        ...bill,
+        nextDueDate: bill.nextDueDate || bill.dueDate,
+        status: billRuntimeStatus(bill),
+      })),
     });
   },
 
@@ -427,6 +455,30 @@ export const store = {
     write({ ...state, accounts, transactions: demo });
   },
 };
+
+function nextBillCycle(bill: Bill, paidAt: string, transactionId: string): Bill {
+  if (bill.repeat === "none") {
+    return {
+      ...bill,
+      status: "paid",
+      paidAt,
+      transactionId,
+      nextDueDate: bill.nextDueDate || bill.dueDate,
+    };
+  }
+
+  const currentDue = bill.nextDueDate || bill.dueDate;
+  const next = nextDueDate(currentDue, bill.repeat);
+
+  return {
+    ...bill,
+    dueDate: next,
+    nextDueDate: next,
+    status: "upcoming",
+    paidAt,
+    transactionId,
+  };
+}
 
 export function useStore<T>(selector: (s: AppState) => T): T {
   ensureInit();

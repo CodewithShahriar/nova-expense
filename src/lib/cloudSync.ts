@@ -242,9 +242,14 @@ async function syncCollection<T>(
   });
 
   items.forEach((item) => {
+    const payload = cleanForFirestore(item) as Record<string, unknown>;
+    if (name === COLLECTIONS.bills && "repeat" in payload) {
+      payload.repeatType = payload.repeat;
+    }
+
     batch.set(
       doc(db, "users", user.uid, name, idFor(item)),
-      { ...cleanForFirestore(item), updatedAt: serverTimestamp() },
+      { ...payload, updatedAt: serverTimestamp() },
       { merge: true },
     );
   });
@@ -399,7 +404,8 @@ function billFromDoc(data: DocumentData, id: string): Bill {
     name: data.name || "Bill",
     amount: Number(data.amount || 0),
     dueDate: data.dueDate || new Date().toISOString(),
-    repeat: data.repeat || "none",
+    nextDueDate: data.nextDueDate || data.dueDate || new Date().toISOString(),
+    repeat: data.repeat || data.repeatType || "none",
     status,
     category: data.category || "Bills",
     accountId: data.accountId,

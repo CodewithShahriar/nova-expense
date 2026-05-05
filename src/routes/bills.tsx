@@ -46,8 +46,12 @@ function BillsPage() {
       result[billRuntimeStatus(bill)].push(bill);
     });
 
-    result.upcoming.sort((a, b) => +new Date(a.dueDate) - +new Date(b.dueDate));
-    result.overdue.sort((a, b) => +new Date(a.dueDate) - +new Date(b.dueDate));
+    result.upcoming.sort(
+      (a, b) => +new Date(a.nextDueDate || a.dueDate) - +new Date(b.nextDueDate || b.dueDate),
+    );
+    result.overdue.sort(
+      (a, b) => +new Date(a.nextDueDate || a.dueDate) - +new Date(b.nextDueDate || b.dueDate),
+    );
     result.paid.sort((a, b) => +new Date(b.paidAt || b.dueDate) - +new Date(a.paidAt || a.dueDate));
     return result;
   }, [bills]);
@@ -194,6 +198,7 @@ function AddBillForm({
       name: name.trim(),
       amount: value,
       dueDate: new Date(dueDate).toISOString(),
+      nextDueDate: new Date(dueDate).toISOString(),
       repeat,
       accountId,
       category,
@@ -354,7 +359,7 @@ function BillCard({
             <BillBadge status={status} label={billTimingLabel(bill)} />
             <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-[11px] text-muted-foreground">
               <CalendarDays className="size-3" />
-              {formatDueDate(bill.dueDate)}
+              {formatDueDate(bill.nextDueDate || bill.dueDate)}
             </span>
           </div>
 

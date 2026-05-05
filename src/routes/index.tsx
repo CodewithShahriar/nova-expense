@@ -57,7 +57,9 @@ function Dashboard() {
     () =>
       bills
         .filter((bill) => billRuntimeStatus(bill) !== "paid")
-        .sort((a, b) => +new Date(a.dueDate) - +new Date(b.dueDate))
+        .sort(
+          (a, b) => +new Date(a.nextDueDate || a.dueDate) - +new Date(b.nextDueDate || b.dueDate),
+        )
         .slice(0, 2),
     [bills],
   );
@@ -215,7 +217,7 @@ function Dashboard() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{bill.name}</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                      {billTimingLabel(bill)} · {formatDueDate(bill.dueDate)}
+                      {billTimingLabel(bill)} · {formatDueDate(bill.nextDueDate || bill.dueDate)}
                     </p>
                   </div>
                   <p
