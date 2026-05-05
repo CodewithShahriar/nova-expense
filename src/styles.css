@@ -294,24 +294,6 @@
   }
 }
 
-@utility animate-account-balance {
-  animation: account-balance-rotate var(--account-balance-duration, 9s) ease-in-out infinite;
-  animation-delay: var(--account-balance-delay, 0ms);
-}
-
-@keyframes account-balance-rotate {
-  0%,
-  28% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  33%,
-  100% {
-    opacity: 0;
-    transform: translateY(-0.35rem);
-  }
-}
-
 @utility safe-bottom {
   padding-bottom: calc(env(safe-area-inset-bottom) + 1rem);
 }

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search, Trash2, ArrowLeftRight } from "lucide-react";
 import { store, useStore, formatMoney } from "@/lib/storage";
 import { getCategory, allCategories } from "@/lib/categories";
@@ -17,6 +17,15 @@ function TransactionsPage() {
   const custom = useStore((s) => s.customCategories);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<string>("All");
+  const [balanceTick, setBalanceTick] = useState(0);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setBalanceTick((tick) => tick + 1);
+    }, 3000);
+
+    return () => window.clearInterval(timer);
+  }, []);
 
   const filtered = useMemo(() => {
     return transactions.filter((t) => {
@@ -185,7 +194,11 @@ function TransactionsPage() {
                       </span>
                     )}
                   </div>
-                  <AccountBalanceTicker balances={summary.accountBalances} currency={currency} />
+                  <AccountBalanceTicker
+                    balances={summary.accountBalances}
+                    currency={currency}
+                    tick={balanceTick}
+                  />
                 </div>
               </div>
               <div className="space-y-2">
@@ -259,41 +272,28 @@ function TransactionsPage() {
 function AccountBalanceTicker({
   balances,
   currency,
+  tick,
 }: {
   balances: Array<{ id: string; name: string; balance: number }>;
   currency: string;
+  tick: number;
 }) {
   const visibleBalances = balances.length
     ? balances
     : [{ id: "empty", name: "Balance", balance: 0 }];
-  const stepMs = 3000;
-  const duration = visibleBalances.length * stepMs;
+  const account = visibleBalances[tick % visibleBalances.length];
 
   return (
-    <div className="relative mt-0.5 h-4 min-w-36 overflow-hidden text-right text-[11px] font-semibold tabular">
-      {visibleBalances.map((account, index) => {
-        const shouldRotate = visibleBalances.length > 1;
-        const style = shouldRotate
-          ? ({
-              "--account-balance-duration": `${duration}ms`,
-              "--account-balance-delay": `${index * stepMs}ms`,
-            } as CSSProperties)
-          : undefined;
-
-        return (
-          <span
-            key={account.id}
-            className={cn(
-              shouldRotate ? "animate-account-balance absolute inset-x-0 top-0 opacity-0" : "",
-              "block truncate",
-              account.balance <= 0 ? "text-destructive" : "text-primary",
-            )}
-            style={style}
-          >
-            {account.name} {formatMoney(account.balance, currency, true)}
-          </span>
-        );
-      })}
+    <div className="mt-0.5 h-4 min-w-36 overflow-hidden text-right text-[11px] font-semibold tabular">
+      <span
+        key={`${account.id}-${tick}`}
+        className={cn(
+          "block truncate animate-fade-in",
+          account.balance <= 0 ? "text-destructive" : "text-primary",
+        )}
+      >
+        {account.name} {formatMoney(account.balance, currency, true)}
+      </span>
     </div>
   );
 }
