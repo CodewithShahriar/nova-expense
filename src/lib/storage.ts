@@ -86,7 +86,7 @@ export interface AppState {
 
 const KEY = "pocketledger:v2";
 
-const defaultAccounts: Account[] = [
+const demoAccounts: Account[] = [
   {
     id: "acc-brac",
     order: 0,
@@ -128,6 +128,8 @@ const defaultAccounts: Account[] = [
     gradient: "linear-gradient(135deg, oklch(0.5 0.2 10), oklch(0.32 0.17 355))",
   },
 ];
+
+const defaultAccounts: Account[] = [];
 
 const defaultState: AppState = {
   transactions: [],
@@ -493,7 +495,7 @@ export const store = {
       mk(10, 3, "expense", 1500, "Health", "Pharmacy", "acc-bkash"),
     ];
     // Apply balances for seeded transactions
-    let accounts = state.accounts;
+    let accounts = state.accounts.length ? state.accounts : normalizeAccounts(demoAccounts);
     for (const t of demo) accounts = applyTxBalance(accounts, t, 1);
     write({ ...state, accounts, transactions: demo });
   },
