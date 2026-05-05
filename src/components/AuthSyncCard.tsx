@@ -11,7 +11,7 @@ import {
   LockKeyhole,
   LogIn,
   LogOut,
-  ShieldCheck,
+  Mail,
   UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -31,25 +31,28 @@ export function AuthSyncCard() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [activeAction, setActiveAction] = useState<AuthAction>(null);
-  const [notice, setNotice] = useState<{ title: string; description: string } | null>(null);
+  const [notice, setNotice] = useState<{
+    title: string;
+    description: string;
+    tone: "error" | "success";
+  } | null>(null);
 
   const busy = activeAction !== null;
+  const signedIn = Boolean(sync.user);
   const validation = useMemo(() => validateAuth(email, password), [email, password]);
+  const status = statusCopy(sync.mode);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const auth = getFirebaseAuth();
 
     if (!auth) {
-      showError(
-        "Firebase setup required",
-        "Add your Firebase env vars and restart the dev server.",
-      );
+      showNotice("Firebase setup required", "Add env vars and restart the dev server.", "error");
       return;
     }
 
     if (validation) {
-      showError(validation.title, validation.description);
+      showNotice(validation.title, validation.description, "error");
       return;
     }
 
@@ -59,19 +62,18 @@ export function AuthSyncCard() {
     try {
       if (mode === "login") {
         await signInWithEmailAndPassword(auth, email.trim(), password);
-        toast.success("Welcome back", {
-          description: "Your encrypted workspace is syncing across devices.",
-        });
+        showNotice("Signed in", "Your workspace is syncing across devices.", "success");
+        toast.success("Welcome back", { description: "Cloud sync is active." });
       } else {
         await createUserWithEmailAndPassword(auth, email.trim(), password);
-        toast.success("Account created", {
-          description: "Cloud sync is ready for this expense workspace.",
-        });
+        showNotice("Account created", "Nova is ready to sync your data.", "success");
+        toast.success("Account created", { description: "Cloud sync is ready." });
       }
       setPassword("");
     } catch (err) {
       const mapped = authErrorMessage(err);
-      showError(mapped.title, mapped.description);
+      showNotice(mapped.title, mapped.description, "error");
+      toast.error(mapped.title, { description: mapped.description });
     } finally {
       setActiveAction(null);
     }
@@ -86,198 +88,177 @@ export function AuthSyncCard() {
 
     try {
       await signOut(auth);
-      toast.success("Signed out", {
-        description: "This device will keep using local storage until you log in again.",
-      });
+      showNotice("Signed out", "This device is back to local-first mode.", "success");
+      toast.success("Signed out", { description: "Local storage remains available." });
     } catch (err) {
       const mapped = authErrorMessage(err);
-      showError(mapped.title, mapped.description);
+      showNotice(mapped.title, mapped.description, "error");
+      toast.error(mapped.title, { description: mapped.description });
     } finally {
       setActiveAction(null);
     }
   }
 
-  function showError(title: string, description: string) {
-    setNotice({ title, description });
-    toast.error(title, { description });
+  function showNotice(title: string, description: string, tone: "error" | "success") {
+    setNotice({ title, description, tone });
   }
 
-  const status = statusCopy(sync.mode);
-  const signedIn = Boolean(sync.user);
-
   return (
-    <GlassCard className="mt-3 overflow-hidden p-0">
-      <div className="relative p-4">
-        <div
-          className="pointer-events-none absolute inset-x-0 top-0 h-28 opacity-25"
-          style={{ background: "var(--gradient-primary)" }}
-          aria-hidden
-        />
-        <div className="relative">
-          <div className="mb-4 flex items-start gap-3">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl gradient-primary shadow-glow">
-              <ShieldCheck className="size-5 text-primary-foreground" />
+    <GlassCard className="mt-3 overflow-hidden rounded-[1.75rem] p-0">
+      <div className="p-4 min-[380px]:p-5">
+        <div className="flex items-start gap-3">
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl gradient-primary shadow-glow">
+            <Cloud className="size-5 text-primary-foreground" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-base font-semibold">Cloud Sync</p>
+              {(sync.mode === "loading" || sync.mode === "syncing") && (
+                <Loader2 className="size-3.5 animate-spin text-primary" />
+              )}
             </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-semibold">Cloud sync</p>
-                {sync.mode === "syncing" || sync.mode === "loading" ? (
-                  <Loader2 className="size-3.5 animate-spin text-primary" />
-                ) : null}
+            <p className="mt-1 truncate text-sm text-muted-foreground">
+              {signedIn ? sync.user?.email : "Sign in to sync across devices"}
+            </p>
+          </div>
+          <StatusBadge
+            mode={sync.mode}
+            label={signedIn && sync.mode !== "error" ? "Synced" : status.label}
+          />
+        </div>
+
+        {!configured && (
+          <Notice
+            tone="error"
+            title="Firebase setup required"
+            description="Add VITE_FIREBASE_* values and restart Vite."
+          />
+        )}
+
+        {notice && (
+          <Notice tone={notice.tone} title={notice.title} description={notice.description} />
+        )}
+        {sync.error && !notice && (
+          <Notice tone="error" title="Sync needs attention" description={sync.error} />
+        )}
+
+        {signedIn ? (
+          <div className="mt-5 space-y-3">
+            <div className="rounded-2xl bg-primary/10 p-4">
+              <div className="flex items-center gap-2 text-primary">
+                <CheckCircle2 className="size-4" />
+                <p className="text-sm font-semibold">Synced workspace</p>
               </div>
-              <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                {signedIn ? sync.user?.email : status.description}
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                Last status: {status.description}. Changes save locally first, then sync to
+                Firebase.
               </p>
             </div>
-            <StatusBadge
-              mode={sync.mode}
-              label={signedIn && sync.mode !== "error" ? "Synced" : status.label}
-            />
+            <button
+              type="button"
+              onClick={logout}
+              disabled={busy}
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl glass text-sm font-semibold transition active:scale-[0.98] disabled:opacity-50"
+            >
+              {activeAction === "logout" ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <LogOut className="size-4" />
+              )}
+              {activeAction === "logout" ? "Signing out" : "Sign out"}
+            </button>
           </div>
+        ) : (
+          <form onSubmit={submit} className="mt-5 space-y-4">
+            <div className="grid grid-cols-2 gap-1 rounded-2xl bg-muted/50 p-1">
+              <ModeButton
+                active={mode === "login"}
+                disabled={busy}
+                icon={LogIn}
+                label="Login"
+                onClick={() => setMode("login")}
+              />
+              <ModeButton
+                active={mode === "signup"}
+                disabled={busy}
+                icon={UserPlus}
+                label="Sign up"
+                onClick={() => setMode("signup")}
+              />
+            </div>
 
-          {!configured && (
-            <PremiumAlert
-              tone="warning"
-              title="Firebase setup required"
-              description="Add VITE_FIREBASE_* values to .env.local and restart the Vite dev server."
-            />
-          )}
+            <FieldShell icon={Mail}>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setNotice(null);
+                }}
+                placeholder="Email address"
+                autoComplete="email"
+                disabled={busy}
+                className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60 disabled:opacity-60"
+              />
+            </FieldShell>
 
-          {notice && (
-            <PremiumAlert tone="error" title={notice.title} description={notice.description} />
-          )}
-
-          {sync.error && !notice && (
-            <PremiumAlert
-              tone="error"
-              title="Cloud sync needs attention"
-              description={sync.error}
-            />
-          )}
-
-          {signedIn ? (
-            <div className="mt-4 space-y-3">
-              <div className="rounded-2xl bg-primary/10 p-3">
-                <div className="flex items-center gap-2 text-primary">
-                  <CheckCircle2 className="size-4" />
-                  <p className="text-sm font-semibold">Protected workspace</p>
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Your accounts, transactions, budgets, and bills are connected to this login.
-                </p>
-              </div>
+            <FieldShell icon={LockKeyhole}>
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setNotice(null);
+                }}
+                placeholder={mode === "login" ? "Password" : "Create password"}
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
+                disabled={busy}
+                className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60 disabled:opacity-60"
+              />
               <button
                 type="button"
-                onClick={logout}
+                onClick={() => setShowPassword((value) => !value)}
                 disabled={busy}
-                className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl glass text-sm font-semibold transition active:scale-[0.98] disabled:opacity-50"
+                className="flex size-9 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition hover:text-foreground disabled:opacity-50"
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
-                {activeAction === "logout" ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <LogOut className="size-4" />
-                )}
-                {activeAction === "logout" ? "Signing out" : "Sign out"}
+                {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
               </button>
-            </div>
-          ) : (
-            <form onSubmit={submit} className="mt-4 space-y-3">
-              <div className="grid grid-cols-2 gap-2 rounded-2xl bg-muted/40 p-1">
-                <ModeButton
-                  active={mode === "login"}
-                  disabled={busy}
-                  icon={LogIn}
-                  label="Login"
-                  onClick={() => {
-                    setMode("login");
-                    setNotice(null);
-                  }}
-                />
-                <ModeButton
-                  active={mode === "signup"}
-                  disabled={busy}
-                  icon={UserPlus}
-                  label="Sign up"
-                  onClick={() => {
-                    setMode("signup");
-                    setNotice(null);
-                  }}
-                />
-              </div>
+            </FieldShell>
 
-              <label className="block">
-                <span className="mb-2 block text-xs font-medium uppercase tracking-widest text-muted-foreground">
-                  Email
-                </span>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    setNotice(null);
-                  }}
-                  placeholder="you@example.com"
-                  autoComplete="email"
-                  disabled={busy}
-                  className="glass h-12 w-full rounded-2xl px-4 text-sm outline-none transition placeholder:text-muted-foreground/60 focus:ring-2 focus:ring-primary/50 disabled:opacity-60"
-                />
-              </label>
-
-              <label className="block">
-                <span className="mb-2 block text-xs font-medium uppercase tracking-widest text-muted-foreground">
-                  Password
-                </span>
-                <div className="glass flex h-12 items-center gap-2 rounded-2xl px-4 focus-within:ring-2 focus-within:ring-primary/50">
-                  <LockKeyhole className="size-4 text-muted-foreground" />
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      setNotice(null);
-                    }}
-                    placeholder={mode === "login" ? "Your password" : "At least 6 characters"}
-                    autoComplete={mode === "login" ? "current-password" : "new-password"}
-                    disabled={busy}
-                    className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60 disabled:opacity-60"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((value) => !value)}
-                    disabled={busy}
-                    className="flex size-8 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition hover:text-foreground disabled:opacity-50"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                  </button>
-                </div>
-              </label>
-
-              <button
-                type="submit"
-                disabled={!configured || busy}
-                className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl gradient-primary text-sm font-semibold text-primary-foreground shadow-glow transition active:scale-[0.98] disabled:opacity-40"
-              >
-                {activeAction === mode ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : mode === "login" ? (
-                  <LogIn className="size-4" />
-                ) : (
-                  <UserPlus className="size-4" />
-                )}
-                {activeAction === mode
-                  ? mode === "login"
-                    ? "Logging in"
-                    : "Creating account"
-                  : mode === "login"
-                    ? "Login and sync"
-                    : "Create secure account"}
-              </button>
-            </form>
-          )}
-        </div>
+            <button
+              type="submit"
+              disabled={!configured || busy}
+              className="flex h-13 min-h-13 w-full items-center justify-center gap-2 rounded-2xl gradient-primary text-sm font-semibold text-primary-foreground shadow-glow transition active:scale-[0.98] disabled:opacity-40"
+            >
+              {activeAction === mode ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : mode === "login" ? (
+                <LogIn className="size-4" />
+              ) : (
+                <UserPlus className="size-4" />
+              )}
+              {activeAction === mode
+                ? mode === "login"
+                  ? "Logging in"
+                  : "Creating account"
+                : mode === "login"
+                  ? "Login and sync"
+                  : "Create secure account"}
+            </button>
+          </form>
+        )}
       </div>
     </GlassCard>
+  );
+}
+
+function FieldShell({ icon: Icon, children }: { icon: typeof Mail; children: React.ReactNode }) {
+  return (
+    <div className="flex h-12 items-center gap-3 rounded-2xl bg-muted/55 px-4 ring-1 ring-border/50 focus-within:ring-2 focus-within:ring-primary/45">
+      <Icon className="size-4 shrink-0 text-muted-foreground" />
+      {children}
+    </div>
   );
 }
 
@@ -300,11 +281,11 @@ function ModeButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "flex h-10 items-center justify-center gap-2 rounded-xl text-xs font-semibold transition disabled:opacity-50",
+        "flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-semibold transition disabled:opacity-50",
         active ? "gradient-primary text-primary-foreground shadow-glow" : "text-muted-foreground",
       )}
     >
-      <Icon className="size-3.5" />
+      <Icon className="size-4" />
       {label}
     </button>
   );
@@ -314,7 +295,7 @@ function StatusBadge({ mode, label }: { mode: string; label: string }) {
   return (
     <span
       className={cn(
-        "rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider",
+        "shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider",
         mode === "error"
           ? "bg-destructive/15 text-destructive"
           : mode === "synced"
@@ -332,35 +313,38 @@ function StatusBadge({ mode, label }: { mode: string; label: string }) {
   );
 }
 
-function PremiumAlert({
+function Notice({
   tone,
   title,
   description,
 }: {
-  tone: "error" | "warning";
+  tone: "error" | "success";
   title: string;
   description: string;
 }) {
   return (
     <div
       className={cn(
-        "mt-3 rounded-2xl border p-3",
+        "mt-4 rounded-2xl border p-3",
         tone === "error"
           ? "border-destructive/25 bg-destructive/10"
-          : "border-warning/25 bg-warning/10",
+          : "border-primary/20 bg-primary/10",
       )}
     >
       <div
         className={cn(
           "flex items-start gap-2",
-          tone === "error" ? "text-destructive" : "text-warning",
+          tone === "error" ? "text-destructive" : "text-primary",
         )}
-        style={tone === "warning" ? { color: "var(--color-warning)" } : undefined}
       >
-        <AlertCircle className="mt-0.5 size-4 shrink-0" />
+        {tone === "error" ? (
+          <AlertCircle className="mt-0.5 size-4 shrink-0" />
+        ) : (
+          <CheckCircle2 className="mt-0.5 size-4 shrink-0" />
+        )}
         <div className="min-w-0">
           <p className="text-sm font-semibold">{title}</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
+          <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{description}</p>
         </div>
       </div>
     </div>
@@ -370,64 +354,37 @@ function PremiumAlert({
 function validateAuth(email: string, password: string) {
   const trimmedEmail = email.trim();
 
-  if (!trimmedEmail) {
-    return {
-      title: "Email required",
-      description: "Enter the email address connected to your cloud workspace.",
-    };
-  }
-
+  if (!trimmedEmail) return { title: "Email required", description: "Enter your email address." };
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-    return {
-      title: "Invalid email",
-      description: "Use a valid email address, like you@example.com.",
-    };
+    return { title: "Invalid email", description: "Use a valid email address." };
   }
-
-  if (!password) {
-    return {
-      title: "Password required",
-      description: "Enter your password to continue securely.",
-    };
-  }
-
+  if (!password) return { title: "Password required", description: "Enter your password." };
   if (password.length < 6) {
-    return {
-      title: "Password too short",
-      description: "Firebase requires at least 6 characters for passwords.",
-    };
+    return { title: "Password too short", description: "Use at least 6 characters." };
   }
-
   return null;
 }
 
 function authErrorMessage(error: unknown) {
   const code = error instanceof FirebaseError ? error.code : "";
-
   const messages: Record<string, { title: string; description: string }> = {
     "auth/email-already-in-use": {
       title: "Email already in use",
-      description: "This email already has an account. Switch to Login to sync your data.",
+      description: "Switch to Login to sync this account.",
     },
-    "auth/invalid-email": {
-      title: "Invalid email",
-      description: "Check the email address and try again.",
-    },
-    "auth/weak-password": {
-      title: "Weak password",
-      description: "Choose a password with at least 6 characters.",
-    },
+    "auth/invalid-email": { title: "Invalid email", description: "Check the email and try again." },
+    "auth/weak-password": { title: "Weak password", description: "Use at least 6 characters." },
     "auth/user-not-found": {
       title: "Account not found",
-      description: "No account exists for this email. Create one to enable cloud sync.",
+      description: "Create an account to enable sync.",
     },
     "auth/wrong-password": {
       title: "Wrong password",
-      description: "The password does not match this email. Try again carefully.",
+      description: "The password does not match this email.",
     },
     "auth/invalid-credential": {
       title: "Login failed",
-      description: "The email or password is incorrect. Check both and try again.",
+      description: "Email or password is incorrect.",
     },
     "auth/network-request-failed": {
       title: "Network error",
@@ -435,7 +392,7 @@ function authErrorMessage(error: unknown) {
     },
     "auth/too-many-requests": {
       title: "Too many attempts",
-      description: "Firebase temporarily paused this login. Wait a moment and try again.",
+      description: "Wait a moment and try again.",
     },
   };
 
@@ -445,15 +402,15 @@ function authErrorMessage(error: unknown) {
       description:
         error instanceof Error
           ? error.message.replace("Firebase: ", "").replace(/\s*\(auth\/.*\)\.?$/, ".")
-          : "Something went wrong. Please try again.",
+          : "Please try again.",
     }
   );
 }
 
 function statusCopy(mode: string) {
   if (mode === "loading") return { label: "Loading", description: "Preparing cloud sync" };
-  if (mode === "syncing") return { label: "Syncing", description: "Saving your latest changes" };
-  if (mode === "synced") return { label: "Synced", description: "Synced across devices" };
+  if (mode === "syncing") return { label: "Syncing", description: "Saving latest changes" };
+  if (mode === "synced") return { label: "Synced", description: "Synced just now" };
   if (mode === "error") return { label: "Review", description: "Cloud sync needs attention" };
-  return { label: "Local", description: "Login to sync across devices" };
+  return { label: "Local", description: "Local storage active" };
 }

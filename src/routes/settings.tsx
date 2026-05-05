@@ -89,7 +89,7 @@ function SettingsPage() {
     .toUpperCase();
 
   return (
-    <div className="px-4 min-[380px]:px-5 pt-[calc(env(safe-area-inset-top)+1rem)] animate-fade-in">
+    <div className="px-4 min-[380px]:px-5 pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+9.5rem)] animate-fade-in">
       <div className="mb-5 flex items-center gap-3">
         <Link
           to="/"
@@ -104,24 +104,29 @@ function SettingsPage() {
         </div>
       </div>
 
-      <GlassCard className="relative overflow-hidden p-5">
+      <GlassCard className="relative overflow-hidden rounded-[1.75rem] p-5 shadow-elegant">
         <div
           className="pointer-events-none absolute inset-x-0 top-0 h-24 opacity-25"
           style={{ background: "var(--gradient-primary)" }}
           aria-hidden
         />
         <div className="relative">
-          <p className="mb-3 text-xs uppercase tracking-widest text-muted-foreground">Profile</p>
-          <div className="flex items-center gap-3 min-[380px]:gap-4">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-widest text-muted-foreground">Profile</p>
+              <p className="mt-1 text-sm font-semibold">Personal workspace</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
             {settings.avatar ? (
               <img
                 src={settings.avatar}
                 alt=""
-                className="size-16 rounded-full object-cover ring-2 ring-primary/40"
+                className="size-18 rounded-full object-cover ring-2 ring-primary/40"
               />
             ) : (
-              <div className="flex size-16 items-center justify-center rounded-full gradient-primary ring-2 ring-primary/40">
-                <span className="font-bold text-primary-foreground">
+              <div className="flex size-18 items-center justify-center rounded-full gradient-primary ring-2 ring-primary/40">
+                <span className="text-lg font-bold text-primary-foreground">
                   {initials || <User className="size-6" />}
                 </span>
               </div>
@@ -131,11 +136,11 @@ function SettingsPage() {
                 type="text"
                 value={settings.name}
                 onChange={(e) => store.updateSettings({ name: e.target.value })}
-                className="w-full bg-transparent text-base font-semibold outline-none"
+                className="w-full bg-transparent text-lg font-semibold outline-none"
                 placeholder="Your name"
                 maxLength={40}
               />
-              <p className="mt-0.5 text-xs text-muted-foreground">
+              <p className="mt-1 text-xs text-muted-foreground">
                 {transactions.length} transactions · {bills.length} bill records
               </p>
             </div>
@@ -149,14 +154,14 @@ function SettingsPage() {
           <div className="mt-4 grid grid-cols-1 gap-2 min-[360px]:grid-cols-2">
             <button
               onClick={() => fileRef.current?.click()}
-              className="flex h-11 items-center justify-center gap-2 rounded-2xl gradient-primary text-sm font-semibold text-primary-foreground"
+              className="flex h-12 items-center justify-center gap-2 rounded-2xl gradient-primary text-sm font-semibold text-primary-foreground"
             >
               <Upload className="size-4" /> {settings.avatar ? "Change photo" : "Upload photo"}
             </button>
             <button
               onClick={() => store.updateSettings({ avatar: undefined })}
               disabled={!settings.avatar}
-              className="flex h-11 items-center justify-center gap-2 rounded-2xl glass text-sm font-semibold disabled:opacity-40"
+              className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-muted/55 text-sm font-semibold disabled:opacity-40"
             >
               <X className="size-4" /> Remove
             </button>
@@ -246,7 +251,7 @@ function SettingsPage() {
         </button>
       </GlassCard>
 
-      <p className="mt-8 pb-4 text-center text-xs text-muted-foreground">
+      <p className="mt-8 text-center text-xs text-muted-foreground">
         Nova Expense · v2.0 · Local-first with cloud sync
       </p>
     </div>
