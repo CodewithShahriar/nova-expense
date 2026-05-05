@@ -40,6 +40,49 @@ function TransactionsPage() {
     return Object.entries(groups).sort((a, b) => +new Date(b[0]) - +new Date(a[0]));
   }, [filtered]);
 
+  const dailySummaries = useMemo(() => {
+    const summaries = new Map<
+      string,
+      { income: number; expense: number; net: number; closingBalance: number }
+    >();
+
+    for (const t of transactions) {
+      const key = new Date(t.date).toDateString();
+      const current = summaries.get(key) || {
+        income: 0,
+        expense: 0,
+        net: 0,
+        closingBalance: 0,
+      };
+
+      if (t.type === "income") {
+        current.income += t.amount;
+        current.net += t.amount;
+      } else if (t.type === "expense") {
+        current.expense += t.amount;
+        current.net -= t.amount;
+      }
+
+      summaries.set(key, current);
+    }
+
+    const currentBalance = accounts.reduce((total, account) => total + account.balance, 0);
+    const totalTransactionNet = Array.from(summaries.values()).reduce(
+      (total, day) => total + day.net,
+      0,
+    );
+    let runningBalance = currentBalance - totalTransactionNet;
+
+    for (const [date, summary] of Array.from(summaries.entries()).sort(
+      (a, b) => +new Date(a[0]) - +new Date(b[0]),
+    )) {
+      runningBalance += summary.net;
+      summaries.set(date, { ...summary, closingBalance: runningBalance });
+    }
+
+    return summaries;
+  }, [transactions, accounts]);
+
   const filterOptions = ["All", ...Array.from(new Set(allCategories(custom).map((c) => c.name)))];
 
   const accountName = (id?: string) => accounts.find((a) => a.id === id)?.name || "";
@@ -83,19 +126,40 @@ function TransactionsPage() {
           </GlassCard>
         )}
         {grouped.map(([date, items]) => {
-          // day total = expenses only (as label says "total expense for that date")
-          const dayExpense = items
-            .filter((i) => i.type === "expense")
-            .reduce((a, b) => a + b.amount, 0);
+          const summary = dailySummaries.get(date) || {
+            income: 0,
+            expense: 0,
+            closingBalance: accounts.reduce((total, account) => total + account.balance, 0),
+          };
+          const isLowBalance = summary.closingBalance <= 0;
           return (
             <div key={date}>
-              <div className="flex items-center justify-between px-1 mb-2">
+              <div className="flex items-center justify-between gap-3 px-1 mb-2">
                 <p className="text-xs uppercase tracking-widest text-muted-foreground">
                   {formatDayLabel(date)}
                 </p>
-                <p className="text-[11px] font-semibold tabular text-destructive">
-                  −{formatMoney(dayExpense, currency, true)}
-                </p>
+                <div className="text-right">
+                  <div className="flex items-center justify-end gap-2 text-[11px] font-semibold tabular">
+                    {summary.income > 0 && (
+                      <span className="text-primary">
+                        +{formatMoney(summary.income, currency, true)}
+                      </span>
+                    )}
+                    {summary.expense > 0 && (
+                      <span className="text-destructive">
+                        -{formatMoney(summary.expense, currency, true)}
+                      </span>
+                    )}
+                  </div>
+                  <p
+                    className={cn(
+                      "mt-0.5 text-[11px] font-semibold tabular",
+                      isLowBalance ? "text-destructive" : "text-primary",
+                    )}
+                  >
+                    Balance {formatMoney(summary.closingBalance, currency, true)}
+                  </p>
+                </div>
               </div>
               <div className="space-y-2">
                 {items.map((t) => {
