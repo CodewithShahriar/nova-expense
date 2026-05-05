@@ -40,15 +40,15 @@ export function DatePicker({ value, onChange }: { value: string; onChange: (iso:
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 glass-strong rounded-2xl p-4 shadow-elegant animate-scale-in">
+          <div className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+1rem)] z-50 mx-auto max-w-sm glass-strong rounded-2xl p-4 shadow-elegant animate-scale-in sm:absolute sm:left-0 sm:right-0 sm:top-[calc(100%+8px)] sm:bottom-auto sm:max-w-none">
             <div className="flex items-center justify-between mb-3">
-              <button type="button" onClick={() => setView(new Date(view.getFullYear(), view.getMonth() - 1, 1))} className="size-8 rounded-full glass flex items-center justify-center">
+              <button type="button" onClick={() => setView(new Date(view.getFullYear(), view.getMonth() - 1, 1))} className="size-9 rounded-full glass flex items-center justify-center">
                 <ChevronLeft className="size-4" />
               </button>
               <p className="text-sm font-semibold">
                 {view.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
               </p>
-              <button type="button" onClick={() => setView(new Date(view.getFullYear(), view.getMonth() + 1, 1))} className="size-8 rounded-full glass flex items-center justify-center">
+              <button type="button" onClick={() => setView(new Date(view.getFullYear(), view.getMonth() + 1, 1))} className="size-9 rounded-full glass flex items-center justify-center">
                 <ChevronRight className="size-4" />
               </button>
             </div>
@@ -66,7 +66,7 @@ export function DatePicker({ value, onChange }: { value: string; onChange: (iso:
                     type="button"
                     onClick={() => select(d)}
                     className={cn(
-                      "aspect-square m-0.5 rounded-full text-xs font-medium transition",
+                      "aspect-square m-0.5 min-h-9 rounded-full text-sm font-medium transition",
                       isSel ? "gradient-primary text-primary-foreground" : isToday ? "text-primary" : "hover:bg-muted/60"
                     )}
                   >

@@ -60,7 +60,7 @@ function AddTransaction() {
 
   return (
     <div className="min-h-[100dvh] flex flex-col animate-slide-up">
-      <div className="flex items-center justify-between px-5 pt-[calc(env(safe-area-inset-top)+1rem)] pb-4">
+      <div className="flex items-center justify-between px-4 min-[380px]:px-5 pt-[calc(env(safe-area-inset-top)+1rem)] pb-4">
         <button onClick={() => navigate({ to: "/" })} aria-label="Back" className="size-10 rounded-full glass flex items-center justify-center active:scale-95">
           <ArrowLeft className="size-5" />
         </button>
@@ -69,7 +69,7 @@ function AddTransaction() {
       </div>
 
       {/* 3-way toggle */}
-      <div className="px-5">
+      <div className="px-4 min-[380px]:px-5">
         <div className="glass rounded-full p-1 grid grid-cols-3 relative h-12">
           <div
             className={cn(
@@ -101,11 +101,11 @@ function AddTransaction() {
         </div>
       </div>
 
-      <form onSubmit={submit} className="flex-1 flex flex-col px-5 mt-6 pb-10">
+      <form onSubmit={submit} className="flex-1 flex flex-col px-4 min-[380px]:px-5 mt-5 min-[380px]:mt-6 pb-[calc(env(safe-area-inset-bottom)+2.5rem)]">
         {/* Amount */}
         <div className="text-center py-4">
           <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Amount</p>
-          <div className="mt-3 flex items-baseline justify-center gap-2">
+          <div className="mt-3 flex min-w-0 items-baseline justify-center gap-2">
             <span className={cn("font-display text-3xl", typeColor)}>৳</span>
             <input
               type="text"
@@ -114,7 +114,7 @@ function AddTransaction() {
               onChange={(e) => { setAmount(e.target.value.replace(/[^0-9.]/g, "")); setError(null); }}
               placeholder="0"
               autoFocus
-              className={cn("bg-transparent outline-none font-display text-6xl font-bold tabular text-center w-[70%] placeholder:text-muted-foreground/40", typeColor)}
+              className={cn("min-w-0 bg-transparent outline-none font-display text-[clamp(3rem,17vw,4.5rem)] font-bold tabular text-center w-full max-w-[14rem] placeholder:text-muted-foreground/40", typeColor)}
             />
           </div>
           {error && <p className="mt-3 text-xs text-destructive">{error}</p>}

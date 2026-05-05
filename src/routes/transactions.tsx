@@ -44,7 +44,7 @@ function TransactionsPage() {
   const accountName = (id?: string) => accounts.find((a) => a.id === id)?.name || "";
 
   return (
-    <div className="px-5 pt-[calc(env(safe-area-inset-top)+1rem)] animate-fade-in">
+    <div className="px-4 min-[380px]:px-5 pt-[calc(env(safe-area-inset-top)+1rem)] animate-fade-in">
       <h1 className="font-display text-3xl font-bold">Activity</h1>
       <p className="text-sm text-muted-foreground mt-1">{transactions.length} transactions</p>
 
@@ -58,7 +58,7 @@ function TransactionsPage() {
         />
       </div>
 
-      <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-5 px-5 mt-4">
+      <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 min-[380px]:-mx-5 min-[380px]:px-5 mt-4">
         {filterOptions.map((f) => (
           <button
             key={f}
@@ -118,8 +118,8 @@ function TransactionsPage() {
                           <p className="text-sm font-medium truncate">{t.note || (isTransfer ? "Transfer" : t.category)}</p>
                           <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
                         </div>
-                        <div className="text-right">
-                          <p className={cn("font-display font-semibold tabular", amountColor)}>
+                        <div className="shrink-0 text-right">
+                          <p className={cn("font-display text-sm min-[380px]:text-base font-semibold tabular", amountColor)}>
                             {sign}{formatMoney(t.amount, currency, true).replace("-", "")}
                           </p>
                         </div>

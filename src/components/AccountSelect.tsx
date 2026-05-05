@@ -12,7 +12,7 @@ export function AccountSelect({ accounts, value, onChange, exclude }: {
 }) {
   const filtered = accounts.filter((a) => a.id !== exclude);
   return (
-    <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-5 px-5">
+    <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 min-[380px]:-mx-5 min-[380px]:px-5">
       {filtered.map((a) => {
         const Icon = iconFor(a.type);
         const active = value === a.id;
@@ -22,7 +22,7 @@ export function AccountSelect({ accounts, value, onChange, exclude }: {
             type="button"
             onClick={() => onChange(a.id)}
             className={cn(
-              "shrink-0 rounded-2xl p-3 pr-4 flex items-center gap-3 transition min-w-[148px]",
+              "shrink-0 rounded-2xl p-3 pr-4 flex items-center gap-3 transition min-w-[142px] max-w-[78vw]",
               active ? "glass-strong ring-1 ring-primary/70" : "glass"
             )}
           >

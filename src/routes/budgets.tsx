@@ -40,7 +40,7 @@ function BudgetsPage() {
   const available = allCategories(custom).filter((c) => c.type !== "income" && c.name !== "Transfer" && !budgets.find((b) => b.category === c.name));
 
   return (
-    <div className="px-5 pt-[calc(env(safe-area-inset-top)+1rem)] animate-fade-in">
+    <div className="px-4 min-[380px]:px-5 pt-[calc(env(safe-area-inset-top)+1rem)] animate-fade-in">
       <h1 className="font-display text-3xl font-bold">Budgets</h1>
       <p className="text-sm text-muted-foreground mt-1">Keep each category in check</p>
 
@@ -48,8 +48,8 @@ function BudgetsPage() {
       <GlassCard className="mt-5 p-5 relative overflow-hidden">
         <div className="absolute -top-16 -right-10 size-40 rounded-full opacity-30 blur-3xl" style={{ background: "var(--gradient-primary)" }} />
         <p className="text-xs uppercase tracking-widest text-muted-foreground">This month</p>
-        <div className="mt-1 flex items-baseline gap-2">
-          <span className="font-display text-3xl font-bold tabular">{formatMoney(totalSpent, currency, true)}</span>
+        <div className="mt-1 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
+          <span className="truncate font-display text-2xl min-[380px]:text-3xl font-bold tabular">{formatMoney(totalSpent, currency, true)}</span>
           <span className="text-sm text-muted-foreground">of {formatMoney(totalLimit, currency, true)}</span>
         </div>
         <div className="mt-4 h-2.5 rounded-full bg-muted overflow-hidden">
@@ -72,7 +72,7 @@ function BudgetsPage() {
           const isEditing = editing === b.category;
           return (
             <GlassCard key={b.category} className="p-4">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <div className="size-10 rounded-2xl flex items-center justify-center shrink-0" style={{ background: `color-mix(in oklch, ${cat.color} 18%, transparent)` }}>
                   <Icon className="size-4" style={{ color: cat.color }} />
                 </div>
@@ -89,7 +89,7 @@ function BudgetsPage() {
                       inputMode="decimal"
                       value={value}
                       onChange={(e) => setValue(e.target.value)}
-                      className="w-20 h-9 rounded-xl bg-muted px-2 text-sm outline-none text-right tabular"
+                      className="w-20 min-w-0 h-9 rounded-xl bg-muted px-2 text-sm outline-none text-right tabular"
                       autoFocus
                     />
                     <button
@@ -143,14 +143,14 @@ function BudgetsPage() {
               </button>
             ))}
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col min-[380px]:flex-row gap-2">
             <input
               type="number"
               inputMode="decimal"
               value={newLimit}
               onChange={(e) => setNewLimit(e.target.value)}
               placeholder="Monthly limit"
-              className="flex-1 h-11 rounded-xl bg-muted px-3 text-sm outline-none tabular"
+              className="min-w-0 flex-1 h-11 rounded-xl bg-muted px-3 text-sm outline-none tabular"
             />
             <button
               onClick={() => { const v = parseFloat(newLimit); if (v > 0 && newCat) { store.upsertBudget({ category: newCat, limit: v }); setAdding(false); setNewLimit(""); } }}

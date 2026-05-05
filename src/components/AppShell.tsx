@@ -16,14 +16,14 @@ export function AppShell() {
   const hideNav = location.pathname === "/add";
 
   return (
-    <div className="min-h-[100dvh] bg-background text-foreground">
+    <div className="min-h-[100dvh] overflow-x-hidden bg-background text-foreground">
       {/* Ambient glow */}
       <div
         className="pointer-events-none fixed inset-x-0 top-0 h-[60vh] z-0"
         style={{ background: "var(--gradient-hero)" }}
         aria-hidden
       />
-      <div className="relative z-10 max-w-md mx-auto pb-36">
+      <div className="relative z-10 mx-auto w-full max-w-lg pb-[calc(env(safe-area-inset-bottom)+8rem)]">
         <Outlet />
       </div>
       {!hideNav && <BottomNav />}

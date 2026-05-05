@@ -48,7 +48,7 @@ export function CategoryPicker({
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center animate-fade-in" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div
-        className="relative w-full max-w-md glass-strong rounded-t-[2rem] sm:rounded-[2rem] border-t border-border p-5 pb-8 animate-slide-up max-h-[85dvh] overflow-y-auto"
+        className="relative w-full max-w-lg glass-strong rounded-t-[2rem] sm:rounded-[2rem] border-t border-border p-4 min-[380px]:p-5 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] animate-slide-up max-h-[88dvh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
@@ -69,7 +69,7 @@ export function CategoryPicker({
               />
             </div>
 
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-3 min-[380px]:grid-cols-4 gap-2 min-[380px]:gap-3">
               {filtered.map((c) => {
                 const Icon = c.icon;
                 const active = value === c.name;
@@ -78,20 +78,20 @@ export function CategoryPicker({
                     key={c.name}
                     onClick={() => { onChange(c.name); onClose(); }}
                     className={cn(
-                      "flex flex-col items-center gap-2 rounded-2xl p-3 transition",
+                      "flex min-w-0 flex-col items-center gap-2 rounded-2xl p-2 min-[380px]:p-3 transition",
                       active ? "glass-strong ring-2 ring-primary/70" : "glass"
                     )}
                   >
                     <div className="size-10 rounded-xl flex items-center justify-center" style={{ background: `color-mix(in oklch, ${c.color} 22%, transparent)` }}>
                       <Icon className="size-5" style={{ color: c.color }} />
                     </div>
-                    <span className="text-[11px] font-medium text-center leading-tight">{c.name}</span>
+                    <span className="max-w-full truncate text-[11px] font-medium text-center leading-tight">{c.name}</span>
                   </button>
                 );
               })}
               <button
                 onClick={() => setCreating(true)}
-                className="flex flex-col items-center gap-2 rounded-2xl p-3 glass border-dashed border border-primary/40"
+                className="flex flex-col items-center gap-2 rounded-2xl p-2 min-[380px]:p-3 glass border-dashed border border-primary/40"
               >
                 <div className="size-10 rounded-xl gradient-primary flex items-center justify-center">
                   <Plus className="size-5 text-primary-foreground" />
@@ -113,7 +113,7 @@ export function CategoryPicker({
 
             <div>
               <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Icon</p>
-              <div className="grid grid-cols-7 gap-2">
+              <div className="grid grid-cols-5 min-[380px]:grid-cols-7 gap-2">
                 {pickerIcons.map((n) => {
                   const Icon = iconRegistry[n];
                   const a = newIcon === n;

@@ -21,13 +21,13 @@ export function BottomNav() {
       <Link
         to="/add"
         aria-label="Add transaction"
-        className="fixed left-1/2 -translate-x-1/2 bottom-[calc(env(safe-area-inset-bottom)+68px)] z-50 size-14 rounded-full gradient-primary shadow-glow flex items-center justify-center active:scale-95 transition-transform"
+        className="fixed left-1/2 -translate-x-1/2 bottom-[calc(env(safe-area-inset-bottom)+4.25rem)] z-50 size-[3.25rem] min-[380px]:size-14 rounded-full gradient-primary shadow-glow flex items-center justify-center active:scale-95 transition-transform"
       >
-        <Plus className="size-6 text-primary-foreground" strokeWidth={2.75} />
+        <Plus className="size-5 min-[380px]:size-6 text-primary-foreground" strokeWidth={2.75} />
       </Link>
 
-      <nav className="fixed bottom-0 inset-x-0 z-40 safe-bottom pt-2 px-3">
-        <div className="glass-strong rounded-3xl shadow-elegant mx-auto max-w-md grid grid-cols-5 items-center h-16 px-1">
+      <nav className="fixed bottom-0 inset-x-0 z-40 safe-bottom pt-2 px-2 min-[380px]:px-3">
+        <div className="glass-strong rounded-[1.5rem] min-[380px]:rounded-3xl shadow-elegant mx-auto w-full max-w-lg grid grid-cols-5 items-center h-[3.75rem] min-[380px]:h-16 px-1">
           {items.map((it) => (
             <NavItem key={it.to} to={it.to} label={it.label} icon={it.icon} active={isActive(path, it)} />
           ))}
@@ -47,12 +47,12 @@ function NavItem({ to, label, icon: Icon, active }: { to: NavTo; label: string; 
     <Link
       to={to}
       className={cn(
-        "flex flex-col items-center justify-center gap-1 rounded-2xl py-1.5 transition-colors",
+        "flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl py-1.5 transition-colors",
         active ? "text-primary" : "text-muted-foreground"
       )}
     >
-      <Icon className={cn("size-5 transition-transform", active && "scale-110")} strokeWidth={active ? 2.5 : 2} />
-      <span className="text-[10px] font-medium tracking-wide">{label}</span>
+      <Icon className={cn("size-[1.125rem] min-[380px]:size-5 transition-transform", active && "scale-110")} strokeWidth={active ? 2.5 : 2} />
+      <span className="max-w-full truncate text-[9px] min-[380px]:text-[10px] font-medium tracking-wide">{label}</span>
     </Link>
   );
 }

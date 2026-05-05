@@ -35,7 +35,7 @@ function AccountsPage() {
   const total = accounts.reduce((a, b) => a + b.balance, 0);
 
   return (
-    <div className="px-5 pt-[calc(env(safe-area-inset-top)+1rem)] animate-fade-in">
+    <div className="px-4 min-[380px]:px-5 pt-[calc(env(safe-area-inset-top)+1rem)] animate-fade-in">
       <h1 className="font-display text-3xl font-bold">Accounts</h1>
       <p className="text-sm text-muted-foreground mt-1">{accounts.length} accounts · Net worth</p>
       <p className="mt-1 font-display text-3xl font-bold tabular">{formatMoney(total, currency)}</p>
@@ -108,9 +108,9 @@ function AddAccountForm({ onClose }: { onClose: () => void }) {
         <button onClick={onClose} className="size-8 rounded-full glass flex items-center justify-center"><X className="size-4" /></button>
       </div>
       <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Account name (e.g. BRAC Bank)" className="glass rounded-2xl h-12 px-4 w-full text-sm outline-none" />
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 min-[380px]:grid-cols-4 gap-2">
         {types.map((t) => (
-          <button key={t.id} onClick={() => setType(t.id)} className={cn("h-10 rounded-xl text-xs font-medium", type === t.id ? "gradient-primary text-primary-foreground" : "glass text-muted-foreground")}>{t.label}</button>
+          <button key={t.id} onClick={() => setType(t.id)} className={cn("h-10 rounded-xl px-2 text-xs font-medium", type === t.id ? "gradient-primary text-primary-foreground" : "glass text-muted-foreground")}>{t.label}</button>
         ))}
       </div>
       <input value={brand} onChange={(e) => setBrand(e.target.value)} placeholder="Brand / label (e.g. Visa, Mastercard, bKash)" className="glass rounded-2xl h-12 px-4 w-full text-sm outline-none" />
@@ -159,13 +159,13 @@ function EditAccountForm({ id, onClose }: { id: string; onClose: () => void }) {
         <button onClick={onClose} className="size-8 rounded-full glass flex items-center justify-center"><X className="size-4" /></button>
       </div>
       <input value={name} onChange={(e) => setName(e.target.value)} className="glass rounded-2xl h-12 px-4 w-full text-sm outline-none" />
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 min-[380px]:grid-cols-4 gap-2">
         {types.map((t) => (
           <button
             key={t.id}
             onClick={() => setType(t.id)}
             className={cn(
-              "h-10 rounded-xl text-xs font-medium",
+              "h-10 rounded-xl px-2 text-xs font-medium",
               type === t.id ? "gradient-primary text-primary-foreground" : "glass text-muted-foreground",
             )}
           >

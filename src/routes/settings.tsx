@@ -63,7 +63,7 @@ function SettingsPage() {
   const initials = (settings.name || "You").split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase();
 
   return (
-    <div className="px-5 pt-[calc(env(safe-area-inset-top)+1rem)] animate-fade-in">
+    <div className="px-4 min-[380px]:px-5 pt-[calc(env(safe-area-inset-top)+1rem)] animate-fade-in">
       <div className="flex items-center gap-3 mb-6">
         <Link to="/" aria-label="Back" className="size-10 rounded-full glass flex items-center justify-center active:scale-95">
           <ArrowLeft className="size-5" />
@@ -74,7 +74,7 @@ function SettingsPage() {
       {/* Profile */}
       <GlassCard className="p-5">
         <p className="text-xs uppercase tracking-widest text-muted-foreground mb-3">Profile</p>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 min-[380px]:gap-4">
           <div className="relative">
             {settings.avatar ? (
               <img src={settings.avatar} alt="" className="size-16 rounded-full object-cover ring-2 ring-primary/40" />
@@ -84,7 +84,7 @@ function SettingsPage() {
               </div>
             )}
           </div>
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             <input
               type="text"
               value={settings.name}
@@ -96,7 +96,7 @@ function SettingsPage() {
             <p className="text-xs text-muted-foreground mt-0.5">{transactions.length} transactions saved</p>
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-2">
+        <div className="mt-4 grid grid-cols-1 min-[360px]:grid-cols-2 gap-2">
           <button
             onClick={() => fileRef.current?.click()}
             className="h-11 rounded-2xl gradient-primary text-primary-foreground text-sm font-semibold flex items-center justify-center gap-2"
@@ -154,7 +154,7 @@ function SettingsPage() {
           className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-muted/40 transition disabled:opacity-40"
         >
           <div className="size-10 rounded-xl bg-muted flex items-center justify-center"><Download className="size-4" /></div>
-          <div className="flex-1 text-left">
+          <div className="min-w-0 flex-1 text-left">
             <p className="text-sm font-medium">Export as CSV</p>
             <p className="text-xs text-muted-foreground">Download all your transactions</p>
           </div>
@@ -165,7 +165,7 @@ function SettingsPage() {
           className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-destructive/10 transition disabled:opacity-40"
         >
           <div className="size-10 rounded-xl bg-destructive/15 flex items-center justify-center"><Trash2 className="size-4 text-destructive" /></div>
-          <div className="flex-1 text-left">
+          <div className="min-w-0 flex-1 text-left">
             <p className="text-sm font-medium text-destructive">Delete all transactions</p>
             <p className="text-xs text-muted-foreground">This cannot be undone</p>
           </div>

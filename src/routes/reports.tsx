@@ -59,25 +59,25 @@ function ReportsPage() {
   }, [transactions]);
 
   return (
-    <div className="px-5 pt-[calc(env(safe-area-inset-top)+1rem)] animate-fade-in">
+    <div className="px-4 min-[380px]:px-5 pt-[calc(env(safe-area-inset-top)+1rem)] animate-fade-in">
       <h1 className="font-display text-3xl font-bold">Reports</h1>
       <p className="text-sm text-muted-foreground mt-1">Your month at a glance</p>
 
       {/* Income vs Expense */}
-      <div className="grid grid-cols-2 gap-3 mt-5">
+      <div className="grid grid-cols-1 min-[360px]:grid-cols-2 gap-3 mt-5">
         <GlassCard className="p-4">
           <div className="flex items-center gap-2 text-primary">
             <TrendingUp className="size-4" />
             <span className="text-[11px] uppercase tracking-wider font-medium">Income</span>
           </div>
-          <p className="mt-2 font-display text-2xl font-bold tabular">{formatMoney(totalIncome, currency, true)}</p>
+          <p className="mt-2 truncate font-display text-xl min-[380px]:text-2xl font-bold tabular">{formatMoney(totalIncome, currency, true)}</p>
         </GlassCard>
         <GlassCard className="p-4">
           <div className="flex items-center gap-2 text-destructive">
             <TrendingDown className="size-4" />
             <span className="text-[11px] uppercase tracking-wider font-medium">Expense</span>
           </div>
-          <p className="mt-2 font-display text-2xl font-bold tabular">{formatMoney(totalExpense, currency, true)}</p>
+          <p className="mt-2 truncate font-display text-xl min-[380px]:text-2xl font-bold tabular">{formatMoney(totalExpense, currency, true)}</p>
         </GlassCard>
       </div>
 
@@ -87,7 +87,7 @@ function ReportsPage() {
           <div className="size-10 rounded-2xl gradient-primary flex items-center justify-center">
             <Flame className="size-4 text-primary-foreground" />
           </div>
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             <p className="text-xs text-muted-foreground">Top spending category</p>
             <p className="font-semibold">{topCategory} · <span className="tabular">{formatMoney(byCategory[0].value, currency, true)}</span></p>
           </div>
@@ -118,11 +118,11 @@ function ReportsPage() {
               {byCategory.slice(0, 6).map((c) => {
                 const pct = totalExpense > 0 ? (c.value / totalExpense) * 100 : 0;
                 return (
-                  <div key={c.name} className="flex items-center gap-3">
+                  <div key={c.name} className="flex items-center gap-2 min-[380px]:gap-3">
                     <span className="size-2.5 rounded-full" style={{ background: c.color }} />
-                    <span className="text-sm flex-1">{c.name}</span>
+                    <span className="min-w-0 flex-1 truncate text-sm">{c.name}</span>
                     <span className="text-xs text-muted-foreground tabular">{pct.toFixed(0)}%</span>
-                    <span className="text-sm font-semibold tabular w-20 text-right">{formatMoney(c.value, currency, true)}</span>
+                    <span className="w-18 min-[380px]:w-20 truncate text-right text-xs min-[380px]:text-sm font-semibold tabular">{formatMoney(c.value, currency, true)}</span>
                   </div>
                 );
               })}
@@ -149,7 +149,7 @@ function ReportsPage() {
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <div className="flex items-center justify-center gap-5 text-xs mt-2">
+        <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs mt-2">
           <div className="flex items-center gap-2"><span className="size-2.5 rounded-full" style={{ background: "var(--color-chart-1)" }} />Income</div>
           <div className="flex items-center gap-2"><span className="size-2.5 rounded-full" style={{ background: "var(--color-chart-4)" }} />Expense</div>
         </div>

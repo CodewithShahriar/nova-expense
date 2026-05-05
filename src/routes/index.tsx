@@ -53,7 +53,7 @@ function Dashboard() {
   return (
     <div className="pt-[calc(env(safe-area-inset-top)+1rem)] animate-fade-in">
       {/* Top bar with avatar */}
-      <div className="flex items-center justify-between mb-5 px-5">
+      <div className="flex items-center justify-between mb-5 px-4 min-[380px]:px-5">
         <Link to="/settings" className="flex items-center gap-3 active:scale-[0.98] transition">
           {settings.avatar ? (
             <img src={settings.avatar} alt="" className="size-11 rounded-full object-cover ring-2 ring-primary/40" />
@@ -76,10 +76,10 @@ function Dashboard() {
       <div className="relative">
         <div
           ref={scroller}
-          className="flex gap-3 overflow-x-auto snap-x snap-mandatory no-scrollbar px-5 pb-1"
+          className="flex gap-3 overflow-x-auto snap-x snap-mandatory no-scrollbar px-4 min-[380px]:px-5 pb-1"
         >
           {accounts.map((a) => (
-            <div key={a.id} className="snap-center shrink-0 w-[88%]">
+            <div key={a.id} className="snap-center shrink-0 w-[92%] min-[380px]:w-[88%]">
               <Link to="/accounts/$id" params={{ id: a.id }}>
                 <AccountCard account={a} currency={currency} />
               </Link>
@@ -96,15 +96,15 @@ function Dashboard() {
         </div>
       </div>
 
-      <div className="px-5">
+      <div className="px-4 min-[380px]:px-5">
         {/* Week + Savings */}
-        <div className="grid grid-cols-2 gap-3 mt-4">
+        <div className="grid grid-cols-1 min-[360px]:grid-cols-2 gap-3 mt-4">
           <GlassCard className="p-4">
             <div className="flex items-center gap-2 text-destructive">
               <TrendingDown className="size-4" />
               <span className="text-[11px] uppercase tracking-widest font-medium">Spent this week</span>
             </div>
-            <p className="mt-2 font-display text-2xl font-bold tabular">{formatMoney(stats.weekSpent, currency, true)}</p>
+            <p className="mt-2 truncate font-display text-xl min-[380px]:text-2xl font-bold tabular">{formatMoney(stats.weekSpent, currency, true)}</p>
           </GlassCard>
 
           <GlassCard className="p-4">
@@ -165,7 +165,7 @@ function Dashboard() {
                   <p className="text-sm font-medium truncate">{t.note || t.category}</p>
                   <p className="text-xs text-muted-foreground">{t.category} · {new Date(t.date).toLocaleDateString(undefined, { day: "numeric", month: "short" })}</p>
                 </div>
-                <p className={cn("font-display font-semibold tabular", color)}>
+                <p className={cn("shrink-0 font-display text-sm min-[380px]:text-base font-semibold tabular", color)}>
                   {sign}{formatMoney(t.amount, currency, true).replace("-", "")}
                 </p>
               </GlassCard>

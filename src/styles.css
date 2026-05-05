@@ -188,9 +188,24 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -webkit-tap-highlight-color: transparent;
+    width: 100%;
+    overflow-x: hidden;
   }
   body {
+    min-width: 320px;
     overscroll-behavior-y: none;
+  }
+  #root {
+    min-height: 100dvh;
+  }
+  button,
+  a {
+    touch-action: manipulation;
+  }
+  input,
+  textarea,
+  select {
+    font-size: 16px;
   }
 }
 
