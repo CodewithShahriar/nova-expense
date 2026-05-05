@@ -1,6 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo } from "react";
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, Tooltip, CartesianGrid } from "recharts";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  Tooltip,
+  CartesianGrid,
+} from "recharts";
 import { useStore, formatMoney } from "@/lib/storage";
 import { getCategory } from "@/lib/categories";
 import { GlassCard } from "@/components/GlassCard";
@@ -19,7 +29,8 @@ function ReportsPage() {
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const catMap: Record<string, number> = {};
-    let income = 0, expense = 0;
+    let income = 0,
+      expense = 0;
 
     for (const t of transactions) {
       if (new Date(t.date) < monthStart) continue;
@@ -40,7 +51,8 @@ function ReportsPage() {
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const nd = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
-      let mi = 0, me = 0;
+      let mi = 0,
+        me = 0;
       for (const t of transactions) {
         const td = new Date(t.date);
         if (td >= d && td < nd) {
@@ -48,12 +60,18 @@ function ReportsPage() {
           else me += t.amount;
         }
       }
-      months.push({ label: d.toLocaleDateString(undefined, { month: "short" }), income: mi, expense: me });
+      months.push({
+        label: d.toLocaleDateString(undefined, { month: "short" }),
+        income: mi,
+        expense: me,
+      });
     }
 
     return {
-      byCategory, byMonth: months,
-      totalIncome: income, totalExpense: expense,
+      byCategory,
+      byMonth: months,
+      totalIncome: income,
+      totalExpense: expense,
       topCategory: byCategory[0]?.name,
     };
   }, [transactions]);
@@ -70,14 +88,18 @@ function ReportsPage() {
             <TrendingUp className="size-4" />
             <span className="text-[11px] uppercase tracking-wider font-medium">Income</span>
           </div>
-          <p className="mt-2 truncate font-display text-xl min-[380px]:text-2xl font-bold tabular">{formatMoney(totalIncome, currency, true)}</p>
+          <p className="mt-2 truncate font-display text-xl min-[380px]:text-2xl font-bold tabular">
+            {formatMoney(totalIncome, currency, true)}
+          </p>
         </GlassCard>
         <GlassCard className="p-4">
           <div className="flex items-center gap-2 text-destructive">
             <TrendingDown className="size-4" />
             <span className="text-[11px] uppercase tracking-wider font-medium">Expense</span>
           </div>
-          <p className="mt-2 truncate font-display text-xl min-[380px]:text-2xl font-bold tabular">{formatMoney(totalExpense, currency, true)}</p>
+          <p className="mt-2 truncate font-display text-xl min-[380px]:text-2xl font-bold tabular">
+            {formatMoney(totalExpense, currency, true)}
+          </p>
         </GlassCard>
       </div>
 
@@ -89,7 +111,10 @@ function ReportsPage() {
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-xs text-muted-foreground">Top spending category</p>
-            <p className="font-semibold">{topCategory} · <span className="tabular">{formatMoney(byCategory[0].value, currency, true)}</span></p>
+            <p className="font-semibold">
+              {topCategory} ·{" "}
+              <span className="tabular">{formatMoney(byCategory[0].value, currency, true)}</span>
+            </p>
           </div>
         </GlassCard>
       )}
@@ -98,20 +123,35 @@ function ReportsPage() {
       <GlassCard className="mt-3 p-5">
         <p className="text-sm font-semibold">Spending by category</p>
         {byCategory.length === 0 ? (
-          <p className="mt-6 text-center text-sm text-muted-foreground py-10">No expense data this month.</p>
+          <p className="mt-6 text-center text-sm text-muted-foreground py-10">
+            No expense data this month.
+          </p>
         ) : (
           <>
             <div className="h-56 mt-2 relative">
               <ResponsiveContainer>
                 <PieChart>
-                  <Pie data={byCategory} dataKey="value" innerRadius={60} outerRadius={88} paddingAngle={3} stroke="none">
-                    {byCategory.map((e, i) => <Cell key={i} fill={e.color} />)}
+                  <Pie
+                    data={byCategory}
+                    dataKey="value"
+                    innerRadius={60}
+                    outerRadius={88}
+                    paddingAngle={3}
+                    stroke="none"
+                  >
+                    {byCategory.map((e, i) => (
+                      <Cell key={i} fill={e.color} />
+                    ))}
                   </Pie>
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-[11px] uppercase tracking-widest text-muted-foreground">Total</span>
-                <span className="font-display text-xl font-bold tabular">{formatMoney(totalExpense, currency, true)}</span>
+                <span className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                  Total
+                </span>
+                <span className="font-display text-xl font-bold tabular">
+                  {formatMoney(totalExpense, currency, true)}
+                </span>
               </div>
             </div>
             <div className="mt-4 space-y-2">
@@ -122,7 +162,9 @@ function ReportsPage() {
                     <span className="size-2.5 rounded-full" style={{ background: c.color }} />
                     <span className="min-w-0 flex-1 truncate text-sm">{c.name}</span>
                     <span className="text-xs text-muted-foreground tabular">{pct.toFixed(0)}%</span>
-                    <span className="w-18 min-[380px]:w-20 truncate text-right text-xs min-[380px]:text-sm font-semibold tabular">{formatMoney(c.value, currency, true)}</span>
+                    <span className="w-18 min-[380px]:w-20 truncate text-right text-xs min-[380px]:text-sm font-semibold tabular">
+                      {formatMoney(c.value, currency, true)}
+                    </span>
                   </div>
                 );
               })}
@@ -138,10 +180,20 @@ function ReportsPage() {
           <ResponsiveContainer>
             <BarChart data={byMonth} barGap={4}>
               <CartesianGrid vertical={false} stroke="var(--color-border)" strokeDasharray="3 3" />
-              <XAxis dataKey="label" tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }} axisLine={false} tickLine={false} />
+              <XAxis
+                dataKey="label"
+                tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }}
+                axisLine={false}
+                tickLine={false}
+              />
               <Tooltip
                 cursor={{ fill: "var(--color-muted)", opacity: 0.4 }}
-                contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 12, fontSize: 12 }}
+                contentStyle={{
+                  background: "var(--color-popover)",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: 12,
+                  fontSize: 12,
+                }}
                 formatter={(v: number) => formatMoney(v, currency, true)}
               />
               <Bar dataKey="income" fill="var(--color-chart-1)" radius={[6, 6, 0, 0]} />
@@ -150,8 +202,20 @@ function ReportsPage() {
           </ResponsiveContainer>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs mt-2">
-          <div className="flex items-center gap-2"><span className="size-2.5 rounded-full" style={{ background: "var(--color-chart-1)" }} />Income</div>
-          <div className="flex items-center gap-2"><span className="size-2.5 rounded-full" style={{ background: "var(--color-chart-4)" }} />Expense</div>
+          <div className="flex items-center gap-2">
+            <span
+              className="size-2.5 rounded-full"
+              style={{ background: "var(--color-chart-1)" }}
+            />
+            Income
+          </div>
+          <div className="flex items-center gap-2">
+            <span
+              className="size-2.5 rounded-full"
+              style={{ background: "var(--color-chart-4)" }}
+            />
+            Expense
+          </div>
         </div>
       </GlassCard>
     </div>

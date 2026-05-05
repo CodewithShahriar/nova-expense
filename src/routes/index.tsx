@@ -1,6 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useRef } from "react";
-import { ArrowLeftRight, Settings as SettingsIcon, Sparkles, Target, TrendingDown, User } from "lucide-react";
+import {
+  ArrowLeftRight,
+  Settings as SettingsIcon,
+  Sparkles,
+  Target,
+  TrendingDown,
+  User,
+} from "lucide-react";
 import { useStore, store, formatMoney } from "@/lib/storage";
 import { GlassCard } from "@/components/GlassCard";
 import { AccountCard } from "@/components/AccountCard";
@@ -21,10 +28,14 @@ function Dashboard() {
 
   const stats = useMemo(() => {
     const now = new Date();
-    const weekStart = new Date(now); weekStart.setDate(now.getDate() - 6); weekStart.setHours(0, 0, 0, 0);
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - 6);
+    weekStart.setHours(0, 0, 0, 0);
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    let weekSpent = 0, monthIncome = 0, monthExpense = 0;
+    let weekSpent = 0,
+      monthIncome = 0,
+      monthExpense = 0;
     for (const t of transactions) {
       const d = new Date(t.date);
       if (t.type === "expense" && d >= weekStart) weekSpent += t.amount;
@@ -33,7 +44,8 @@ function Dashboard() {
         else if (t.type === "expense") monthExpense += t.amount;
       }
     }
-    const savingsRate = monthIncome > 0 ? Math.max(0, Math.min(1, (monthIncome - monthExpense) / monthIncome)) : 0;
+    const savingsRate =
+      monthIncome > 0 ? Math.max(0, Math.min(1, (monthIncome - monthExpense) / monthIncome)) : 0;
     return { weekSpent, monthIncome, monthExpense, savingsRate };
   }, [transactions]);
 
@@ -48,7 +60,12 @@ function Dashboard() {
     return "Spending is outpacing income this month. Review your top category.";
   }, [stats, transactions.length]);
 
-  const initials = (settings.name || "You").split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase();
+  const initials = (settings.name || "You")
+    .split(" ")
+    .map((s) => s[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   return (
     <div className="pt-[calc(env(safe-area-inset-top)+1rem)] animate-fade-in">
@@ -56,18 +73,32 @@ function Dashboard() {
       <div className="flex items-center justify-between mb-5 px-4 min-[380px]:px-5">
         <Link to="/settings" className="flex items-center gap-3 active:scale-[0.98] transition">
           {settings.avatar ? (
-            <img src={settings.avatar} alt="" className="size-11 rounded-full object-cover ring-2 ring-primary/40" />
+            <img
+              src={settings.avatar}
+              alt=""
+              className="size-11 rounded-full object-cover ring-2 ring-primary/40"
+            />
           ) : (
             <div className="size-11 rounded-full gradient-primary flex items-center justify-center ring-2 ring-primary/40">
-              <span className="text-primary-foreground text-sm font-bold">{initials || <User className="size-5" />}</span>
+              <span className="text-primary-foreground text-sm font-bold">
+                {initials || <User className="size-5" />}
+              </span>
             </div>
           )}
           <div>
-            <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Welcome back</p>
-            <p className="text-sm font-semibold mt-0.5 truncate max-w-[180px]">{settings.name || "You"}</p>
+            <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+              Welcome back
+            </p>
+            <p className="text-sm font-semibold mt-0.5 truncate max-w-[180px]">
+              {settings.name || "You"}
+            </p>
           </div>
         </Link>
-        <Link to="/settings" aria-label="Settings" className="size-10 rounded-full glass flex items-center justify-center active:scale-95">
+        <Link
+          to="/settings"
+          aria-label="Settings"
+          className="size-10 rounded-full glass flex items-center justify-center active:scale-95"
+        >
           <SettingsIcon className="size-4" />
         </Link>
       </div>
@@ -89,7 +120,12 @@ function Dashboard() {
             <div className="w-full">
               <GlassCard className="text-center py-8">
                 <p className="text-sm text-muted-foreground">No accounts yet</p>
-                <Link to="/accounts" className="mt-3 inline-flex rounded-full gradient-primary px-4 py-2 text-xs font-semibold text-primary-foreground">Add account</Link>
+                <Link
+                  to="/accounts"
+                  className="mt-3 inline-flex rounded-full gradient-primary px-4 py-2 text-xs font-semibold text-primary-foreground"
+                >
+                  Add account
+                </Link>
               </GlassCard>
             </div>
           )}
@@ -102,19 +138,30 @@ function Dashboard() {
           <GlassCard className="p-4">
             <div className="flex items-center gap-2 text-destructive">
               <TrendingDown className="size-4" />
-              <span className="text-[11px] uppercase tracking-widest font-medium">Spent this week</span>
+              <span className="text-[11px] uppercase tracking-widest font-medium">
+                Spent this week
+              </span>
             </div>
-            <p className="mt-2 truncate font-display text-xl min-[380px]:text-2xl font-bold tabular">{formatMoney(stats.weekSpent, currency, true)}</p>
+            <p className="mt-2 truncate font-display text-xl min-[380px]:text-2xl font-bold tabular">
+              {formatMoney(stats.weekSpent, currency, true)}
+            </p>
           </GlassCard>
 
           <GlassCard className="p-4">
             <div className="flex items-center gap-2 text-primary">
               <Target className="size-4" />
-              <span className="text-[11px] uppercase tracking-widest font-medium">Savings rate</span>
+              <span className="text-[11px] uppercase tracking-widest font-medium">
+                Savings rate
+              </span>
             </div>
-            <p className="mt-2 font-display text-2xl font-bold tabular">{Math.round(stats.savingsRate * 100)}%</p>
+            <p className="mt-2 font-display text-2xl font-bold tabular">
+              {Math.round(stats.savingsRate * 100)}%
+            </p>
             <div className="mt-2 h-1.5 rounded-full bg-muted overflow-hidden">
-              <div className="h-full rounded-full gradient-primary transition-all duration-700" style={{ width: `${stats.savingsRate * 100}%` }} />
+              <div
+                className="h-full rounded-full gradient-primary transition-all duration-700"
+                style={{ width: `${stats.savingsRate * 100}%` }}
+              />
             </div>
           </GlassCard>
         </div>
@@ -141,32 +188,58 @@ function Dashboard() {
         {/* Recent */}
         <div className="flex items-center justify-between mt-6 mb-3">
           <h2 className="text-sm font-semibold">Recent activity</h2>
-          <Link to="/transactions" className="text-xs text-primary font-medium">See all</Link>
+          <Link to="/transactions" className="text-xs text-primary font-medium">
+            See all
+          </Link>
         </div>
         <div className="space-y-2">
           {recent.length === 0 && (
             <GlassCard className="text-center py-8">
               <p className="text-sm text-muted-foreground">No transactions yet</p>
-              <Link to="/add" className="mt-3 inline-flex rounded-full gradient-primary px-4 py-2 text-xs font-semibold text-primary-foreground">Add your first</Link>
+              <Link
+                to="/add"
+                className="mt-3 inline-flex rounded-full gradient-primary px-4 py-2 text-xs font-semibold text-primary-foreground"
+              >
+                Add your first
+              </Link>
             </GlassCard>
           )}
           {recent.map((t) => {
             const cat = getCategory(t.category, custom);
             const isTransfer = t.type === "transfer";
             const Icon = isTransfer ? ArrowLeftRight : cat.icon;
-            const color = isTransfer ? "text-muted-foreground" : t.type === "income" ? "text-primary" : "text-destructive";
+            const color = isTransfer
+              ? "text-muted-foreground"
+              : t.type === "income"
+                ? "text-primary"
+                : "text-destructive";
             const sign = isTransfer ? "" : t.type === "income" ? "+" : "−";
             return (
               <GlassCard key={t.id} className="flex items-center gap-3 p-3">
-                <div className="size-11 rounded-2xl flex items-center justify-center shrink-0" style={{ background: `color-mix(in oklch, ${cat.color} 18%, transparent)` }}>
+                <div
+                  className="size-11 rounded-2xl flex items-center justify-center shrink-0"
+                  style={{ background: `color-mix(in oklch, ${cat.color} 18%, transparent)` }}
+                >
                   <Icon className="size-5" style={{ color: cat.color }} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{t.note || t.category}</p>
-                  <p className="text-xs text-muted-foreground">{t.category} · {new Date(t.date).toLocaleDateString(undefined, { day: "numeric", month: "short" })}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t.category} ·{" "}
+                    {new Date(t.date).toLocaleDateString(undefined, {
+                      day: "numeric",
+                      month: "short",
+                    })}
+                  </p>
                 </div>
-                <p className={cn("shrink-0 font-display text-sm min-[380px]:text-base font-semibold tabular", color)}>
-                  {sign}{formatMoney(t.amount, currency, true).replace("-", "")}
+                <p
+                  className={cn(
+                    "shrink-0 font-display text-sm min-[380px]:text-base font-semibold tabular",
+                    color,
+                  )}
+                >
+                  {sign}
+                  {formatMoney(t.amount, currency, true).replace("-", "")}
                 </p>
               </GlassCard>
             );

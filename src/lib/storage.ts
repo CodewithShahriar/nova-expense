@@ -6,24 +6,24 @@ export type AccountType = "bank" | "cash" | "wallet" | "card";
 
 export interface Account {
   id: string;
-  name: string;           // e.g. "BRAC Bank"
+  name: string; // e.g. "BRAC Bank"
   type: AccountType;
-  brand?: string;         // e.g. "VISA", "Mastercard", "bKash"
-  number?: string;        // demo account number (last 4-6 or full demo)
-  balance: number;        // current balance
-  gradient: string;       // css linear-gradient value for the card face
+  brand?: string; // e.g. "VISA", "Mastercard", "bKash"
+  number?: string; // demo account number (last 4-6 or full demo)
+  balance: number; // current balance
+  gradient: string; // css linear-gradient value for the card face
 }
 
 export interface Transaction {
   id: string;
   type: TxType;
   amount: number;
-  category: string;       // "Transfer" for transfer type
+  category: string; // "Transfer" for transfer type
   note?: string;
-  date: string;           // ISO
-  accountId?: string;     // for expense/income
+  date: string; // ISO
+  accountId?: string; // for expense/income
   fromAccountId?: string; // for transfer
-  toAccountId?: string;   // for transfer
+  toAccountId?: string; // for transfer
 }
 
 export interface Budget {
@@ -41,8 +41,8 @@ export interface Goal {
 
 export interface CustomCategory {
   name: string;
-  icon: string;           // lucide icon name
-  color: string;          // oklch
+  icon: string; // lucide icon name
+  color: string; // oklch
   type: "expense" | "income" | "both";
 }
 
@@ -50,7 +50,7 @@ export interface Settings {
   currency: string;
   theme: "dark" | "light";
   name: string;
-  avatar?: string;        // data URL
+  avatar?: string; // data URL
 }
 
 export interface AppState {
@@ -156,8 +156,10 @@ function write(next: AppState) {
 // Apply a transaction's effect on account balances
 function applyTxBalance(accounts: Account[], tx: Transaction, sign: 1 | -1): Account[] {
   return accounts.map((a) => {
-    if (tx.type === "expense" && a.id === tx.accountId) return { ...a, balance: a.balance - sign * tx.amount };
-    if (tx.type === "income" && a.id === tx.accountId) return { ...a, balance: a.balance + sign * tx.amount };
+    if (tx.type === "expense" && a.id === tx.accountId)
+      return { ...a, balance: a.balance - sign * tx.amount };
+    if (tx.type === "income" && a.id === tx.accountId)
+      return { ...a, balance: a.balance + sign * tx.amount };
     if (tx.type === "transfer") {
       if (a.id === tx.fromAccountId) return { ...a, balance: a.balance - sign * tx.amount };
       if (a.id === tx.toAccountId) return { ...a, balance: a.balance + sign * tx.amount };
@@ -167,8 +169,14 @@ function applyTxBalance(accounts: Account[], tx: Transaction, sign: 1 | -1): Acc
 }
 
 export const store = {
-  get: () => { ensureInit(); return state; },
-  subscribe: (l: () => void) => { listeners.add(l); return () => listeners.delete(l); },
+  get: () => {
+    ensureInit();
+    return state;
+  },
+  subscribe: (l: () => void) => {
+    listeners.add(l);
+    return () => listeners.delete(l);
+  },
 
   addTransaction: (tx: Omit<Transaction, "id">) => {
     const t: Transaction = { ...tx, id: crypto.randomUUID() };
@@ -181,7 +189,11 @@ export const store = {
     let accounts = applyTxBalance(state.accounts, existing, -1); // revert
     const updated = { ...existing, ...patch };
     accounts = applyTxBalance(accounts, updated, 1);
-    write({ ...state, accounts, transactions: state.transactions.map((t) => t.id === id ? updated : t) });
+    write({
+      ...state,
+      accounts,
+      transactions: state.transactions.map((t) => (t.id === id ? updated : t)),
+    });
   },
   deleteTransaction: (id: string) => {
     const existing = state.transactions.find((t) => t.id === id);
@@ -194,14 +206,21 @@ export const store = {
     write({ ...state, accounts: [...state.accounts, { ...a, id: crypto.randomUUID() }] });
   },
   updateAccount: (id: string, patch: Partial<Account>) => {
-    write({ ...state, accounts: state.accounts.map((a) => a.id === id ? { ...a, ...patch } : a) });
+    write({
+      ...state,
+      accounts: state.accounts.map((a) => (a.id === id ? { ...a, ...patch } : a)),
+    });
   },
   deleteAccount: (id: string) => {
     // Remove transactions tied to this account, keep others
-    const remaining = state.transactions.filter((t) =>
-      t.accountId !== id && t.fromAccountId !== id && t.toAccountId !== id
+    const remaining = state.transactions.filter(
+      (t) => t.accountId !== id && t.fromAccountId !== id && t.toAccountId !== id,
     );
-    write({ ...state, accounts: state.accounts.filter((a) => a.id !== id), transactions: remaining });
+    write({
+      ...state,
+      accounts: state.accounts.filter((a) => a.id !== id),
+      transactions: remaining,
+    });
   },
 
   setBudgets: (budgets: Budget[]) => write({ ...state, budgets }),
@@ -225,7 +244,7 @@ export const store = {
     write({ ...state, goals: [...state.goals, { ...g, id: crypto.randomUUID() }] });
   },
   updateGoal: (id: string, patch: Partial<Goal>) => {
-    write({ ...state, goals: state.goals.map((g) => g.id === id ? { ...g, ...patch } : g) });
+    write({ ...state, goals: state.goals.map((g) => (g.id === id ? { ...g, ...patch } : g)) });
   },
   deleteGoal: (id: string) => {
     write({ ...state, goals: state.goals.filter((g) => g.id !== id) });
@@ -238,11 +257,26 @@ export const store = {
   seedDemo: () => {
     if (state.transactions.length > 0) return;
     const now = new Date();
-    const mk = (days: number, hours: number, type: TxType, amount: number, category: string, note: string, accountId?: string, fromId?: string, toId?: string): Transaction => ({
+    const mk = (
+      days: number,
+      hours: number,
+      type: TxType,
+      amount: number,
+      category: string,
+      note: string,
+      accountId?: string,
+      fromId?: string,
+      toId?: string,
+    ): Transaction => ({
       id: crypto.randomUUID(),
-      type, amount, category, note,
+      type,
+      amount,
+      category,
+      note,
       date: new Date(now.getTime() - days * 86400000 - hours * 3600000).toISOString(),
-      accountId, fromAccountId: fromId, toAccountId: toId,
+      accountId,
+      fromAccountId: fromId,
+      toAccountId: toId,
     });
     const demo: Transaction[] = [
       mk(0, 2, "expense", 320, "Food", "Coffee & snacks", "acc-bkash"),
@@ -267,24 +301,29 @@ export const store = {
 
 export function useStore<T>(selector: (s: AppState) => T): T {
   ensureInit();
-  const snapshot = useSyncExternalStore(
-    store.subscribe,
-    store.get,
-    () => defaultState,
-  );
+  const snapshot = useSyncExternalStore(store.subscribe, store.get, () => defaultState);
 
   return selector(snapshot);
 }
 
 export const currencySymbols: Record<string, string> = {
-  USD: "$", EUR: "€", GBP: "£", JPY: "¥", INR: "₹", CAD: "$", AUD: "$", BDT: "৳", PKR: "₨",
+  USD: "$",
+  EUR: "€",
+  GBP: "£",
+  JPY: "¥",
+  INR: "₹",
+  CAD: "$",
+  AUD: "$",
+  BDT: "৳",
+  PKR: "₨",
 };
 
 export function formatMoney(amount: number, currency = "BDT", compact = false) {
   const sym = currencySymbols[currency] || currency + " ";
   const abs = Math.abs(amount);
   if (compact && abs >= 1000) {
-    if (abs >= 100000) return `${amount < 0 ? "-" : ""}${sym}${(abs / 100000).toFixed(abs >= 1000000 ? 0 : 1)}L`;
+    if (abs >= 100000)
+      return `${amount < 0 ? "-" : ""}${sym}${(abs / 100000).toFixed(abs >= 1000000 ? 0 : 1)}L`;
     return `${amount < 0 ? "-" : ""}${sym}${(abs / 1000).toFixed(abs >= 10000 ? 0 : 1)}k`;
   }
   return `${amount < 0 ? "-" : ""}${sym}${abs.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;

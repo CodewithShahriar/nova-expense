@@ -16,17 +16,25 @@ function SettingsPage() {
 
   function exportCSV() {
     const headers = ["date", "type", "amount", "category", "account", "note"];
-    const rows = transactions.map((t) => [
-      new Date(t.date).toISOString(),
-      t.type, t.amount, t.category,
-      t.accountId || `${t.fromAccountId || ""}→${t.toAccountId || ""}`,
-      (t.note || "").replace(/"/g, '""'),
-    ].map((v) => `"${v}"`).join(","));
+    const rows = transactions.map((t) =>
+      [
+        new Date(t.date).toISOString(),
+        t.type,
+        t.amount,
+        t.category,
+        t.accountId || `${t.fromAccountId || ""}→${t.toAccountId || ""}`,
+        (t.note || "").replace(/"/g, '""'),
+      ]
+        .map((v) => `"${v}"`)
+        .join(","),
+    );
     const csv = [headers.join(","), ...rows].join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = `pocketledger-${Date.now()}.csv`; a.click();
+    a.href = url;
+    a.download = `pocketledger-${Date.now()}.csv`;
+    a.click();
     URL.revokeObjectURL(url);
   }
 
@@ -60,12 +68,21 @@ function SettingsPage() {
     e.target.value = "";
   }
 
-  const initials = (settings.name || "You").split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase();
+  const initials = (settings.name || "You")
+    .split(" ")
+    .map((s) => s[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   return (
     <div className="px-4 min-[380px]:px-5 pt-[calc(env(safe-area-inset-top)+1rem)] animate-fade-in">
       <div className="flex items-center gap-3 mb-6">
-        <Link to="/" aria-label="Back" className="size-10 rounded-full glass flex items-center justify-center active:scale-95">
+        <Link
+          to="/"
+          aria-label="Back"
+          className="size-10 rounded-full glass flex items-center justify-center active:scale-95"
+        >
           <ArrowLeft className="size-5" />
         </Link>
         <h1 className="font-display text-2xl font-bold">Settings</h1>
@@ -77,10 +94,16 @@ function SettingsPage() {
         <div className="flex items-center gap-3 min-[380px]:gap-4">
           <div className="relative">
             {settings.avatar ? (
-              <img src={settings.avatar} alt="" className="size-16 rounded-full object-cover ring-2 ring-primary/40" />
+              <img
+                src={settings.avatar}
+                alt=""
+                className="size-16 rounded-full object-cover ring-2 ring-primary/40"
+              />
             ) : (
               <div className="size-16 rounded-full gradient-primary flex items-center justify-center ring-2 ring-primary/40">
-                <span className="text-primary-foreground font-bold">{initials || <User className="size-6" />}</span>
+                <span className="text-primary-foreground font-bold">
+                  {initials || <User className="size-6" />}
+                </span>
               </div>
             )}
           </div>
@@ -93,7 +116,9 @@ function SettingsPage() {
               placeholder="Your name"
               maxLength={40}
             />
-            <p className="text-xs text-muted-foreground mt-0.5">{transactions.length} transactions saved</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {transactions.length} transactions saved
+            </p>
           </div>
         </div>
         <div className="mt-4 grid grid-cols-1 min-[360px]:grid-cols-2 gap-2">
@@ -111,23 +136,33 @@ function SettingsPage() {
             <X className="size-4" /> Remove
           </button>
         </div>
-        <input ref={fileRef} type="file" accept="image/*" onChange={onAvatarFile} className="hidden" />
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          onChange={onAvatarFile}
+          className="hidden"
+        />
       </GlassCard>
 
       {/* Theme */}
       <GlassCard className="mt-3 p-4">
         <p className="text-sm font-semibold mb-3">Appearance</p>
         <div className="grid grid-cols-2 gap-2">
-          {([
-            { id: "dark", label: "Dark", Icon: Moon },
-            { id: "light", label: "Light", Icon: Sun },
-          ] as const).map(({ id, label, Icon }) => (
+          {(
+            [
+              { id: "dark", label: "Dark", Icon: Moon },
+              { id: "light", label: "Light", Icon: Sun },
+            ] as const
+          ).map(({ id, label, Icon }) => (
             <button
               key={id}
               onClick={() => store.updateSettings({ theme: id })}
               className={cn(
                 "h-14 rounded-2xl flex items-center justify-center gap-2 transition",
-                settings.theme === id ? "gradient-primary text-primary-foreground shadow-glow" : "glass text-muted-foreground"
+                settings.theme === id
+                  ? "gradient-primary text-primary-foreground shadow-glow"
+                  : "glass text-muted-foreground",
               )}
             >
               <Icon className="size-4" />
@@ -140,7 +175,9 @@ function SettingsPage() {
       {/* Currency (locked to BDT) */}
       <GlassCard className="mt-3 p-4">
         <p className="text-sm font-semibold mb-1">Currency</p>
-        <p className="text-xs text-muted-foreground mb-3">Using Bangladeshi Taka (৳) across the app</p>
+        <p className="text-xs text-muted-foreground mb-3">
+          Using Bangladeshi Taka (৳) across the app
+        </p>
         <div className="rounded-2xl gradient-primary text-primary-foreground h-12 flex items-center justify-center gap-2 font-semibold">
           <span>৳</span> BDT
         </div>
@@ -153,7 +190,9 @@ function SettingsPage() {
           disabled={transactions.length === 0}
           className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-muted/40 transition disabled:opacity-40"
         >
-          <div className="size-10 rounded-xl bg-muted flex items-center justify-center"><Download className="size-4" /></div>
+          <div className="size-10 rounded-xl bg-muted flex items-center justify-center">
+            <Download className="size-4" />
+          </div>
           <div className="min-w-0 flex-1 text-left">
             <p className="text-sm font-medium">Export as CSV</p>
             <p className="text-xs text-muted-foreground">Download all your transactions</p>
@@ -164,7 +203,9 @@ function SettingsPage() {
           disabled={transactions.length === 0}
           className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-destructive/10 transition disabled:opacity-40"
         >
-          <div className="size-10 rounded-xl bg-destructive/15 flex items-center justify-center"><Trash2 className="size-4 text-destructive" /></div>
+          <div className="size-10 rounded-xl bg-destructive/15 flex items-center justify-center">
+            <Trash2 className="size-4 text-destructive" />
+          </div>
           <div className="min-w-0 flex-1 text-left">
             <p className="text-sm font-medium text-destructive">Delete all transactions</p>
             <p className="text-xs text-muted-foreground">This cannot be undone</p>
@@ -172,7 +213,9 @@ function SettingsPage() {
         </button>
       </GlassCard>
 
-      <p className="text-center text-xs text-muted-foreground mt-8">PocketLedger · v2.0 · Data stored locally</p>
+      <p className="text-center text-xs text-muted-foreground mt-8">
+        PocketLedger · v2.0 · Data stored locally
+      </p>
     </div>
   );
 }

@@ -1,7 +1,26 @@
 import {
-  UtensilsCrossed, Car, ShoppingBag, Clapperboard, Receipt, HeartPulse,
-  Home, Plane, GraduationCap, Gift, Briefcase, TrendingUp, Banknote, Sparkles,
-  ArrowLeftRight, Coffee, Fuel, Dumbbell, PawPrint, Baby, Wifi, Phone,
+  UtensilsCrossed,
+  Car,
+  ShoppingBag,
+  Clapperboard,
+  Receipt,
+  HeartPulse,
+  Home,
+  Plane,
+  GraduationCap,
+  Gift,
+  Briefcase,
+  TrendingUp,
+  Banknote,
+  Sparkles,
+  ArrowLeftRight,
+  Coffee,
+  Fuel,
+  Dumbbell,
+  PawPrint,
+  Baby,
+  Wifi,
+  Phone,
   type LucideIcon,
 } from "lucide-react";
 import type { CustomCategory } from "./storage";
@@ -14,16 +33,52 @@ export interface Category {
 }
 
 export const iconRegistry: Record<string, LucideIcon> = {
-  UtensilsCrossed, Car, ShoppingBag, Clapperboard, Receipt, HeartPulse,
-  Home, Plane, GraduationCap, Gift, Briefcase, TrendingUp, Banknote, Sparkles,
-  ArrowLeftRight, Coffee, Fuel, Dumbbell, PawPrint, Baby, Wifi, Phone,
+  UtensilsCrossed,
+  Car,
+  ShoppingBag,
+  Clapperboard,
+  Receipt,
+  HeartPulse,
+  Home,
+  Plane,
+  GraduationCap,
+  Gift,
+  Briefcase,
+  TrendingUp,
+  Banknote,
+  Sparkles,
+  ArrowLeftRight,
+  Coffee,
+  Fuel,
+  Dumbbell,
+  PawPrint,
+  Baby,
+  Wifi,
+  Phone,
 };
 
 export const pickerIcons: string[] = [
-  "UtensilsCrossed", "Coffee", "Car", "Fuel", "ShoppingBag", "Clapperboard",
-  "Receipt", "HeartPulse", "Home", "Plane", "GraduationCap", "Gift",
-  "Dumbbell", "PawPrint", "Baby", "Wifi", "Phone", "Briefcase",
-  "TrendingUp", "Banknote", "Sparkles",
+  "UtensilsCrossed",
+  "Coffee",
+  "Car",
+  "Fuel",
+  "ShoppingBag",
+  "Clapperboard",
+  "Receipt",
+  "HeartPulse",
+  "Home",
+  "Plane",
+  "GraduationCap",
+  "Gift",
+  "Dumbbell",
+  "PawPrint",
+  "Baby",
+  "Wifi",
+  "Phone",
+  "Briefcase",
+  "TrendingUp",
+  "Banknote",
+  "Sparkles",
 ];
 
 export const pickerColors: string[] = [
@@ -70,8 +125,10 @@ export function allCategories(custom: CustomCategory[] = []): Category[] {
 }
 
 export function getCategory(name: string, custom: CustomCategory[] = []): Category {
-  return allCategories(custom).find((c) => c.name === name)
-    || baseCategories.find((c) => c.name === "Other")!;
+  return (
+    allCategories(custom).find((c) => c.name === name) ||
+    baseCategories.find((c) => c.name === "Other")!
+  );
 }
 
 // Backwards-compat export used by a few files

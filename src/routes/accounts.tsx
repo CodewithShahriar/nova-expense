@@ -54,15 +54,20 @@ function AccountsPage() {
                 <Pencil className="size-3.5" /> Edit
               </button>
               <button
-                onClick={() => { if (confirm(`Delete ${a.name}? Transactions tied to this account will also be removed.`)) store.deleteAccount(a.id); }}
+                onClick={() => {
+                  if (
+                    confirm(
+                      `Delete ${a.name}? Transactions tied to this account will also be removed.`,
+                    )
+                  )
+                    store.deleteAccount(a.id);
+                }}
                 className="flex-1 h-10 rounded-xl glass flex items-center justify-center gap-2 text-xs font-medium text-destructive"
               >
                 <Trash2 className="size-3.5" /> Delete
               </button>
             </div>
-            {editing === a.id && (
-              <EditAccountForm id={a.id} onClose={() => setEditing(null)} />
-            )}
+            {editing === a.id && <EditAccountForm id={a.id} onClose={() => setEditing(null)} />}
           </div>
         ))}
       </div>
@@ -93,7 +98,8 @@ function AddAccountForm({ onClose }: { onClose: () => void }) {
     if (!name.trim()) return;
     store.addAccount({
       name: name.trim(),
-      type, brand: brand.trim() || undefined,
+      type,
+      brand: brand.trim() || undefined,
       number: number.trim() || "- - -",
       balance: parseFloat(balance) || 0,
       gradient,
@@ -105,26 +111,74 @@ function AddAccountForm({ onClose }: { onClose: () => void }) {
     <GlassCard className="mt-5 p-4 space-y-3 animate-slide-up">
       <div className="flex items-center justify-between">
         <p className="font-semibold">New account</p>
-        <button onClick={onClose} className="size-8 rounded-full glass flex items-center justify-center"><X className="size-4" /></button>
+        <button
+          onClick={onClose}
+          className="size-8 rounded-full glass flex items-center justify-center"
+        >
+          <X className="size-4" />
+        </button>
       </div>
-      <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Account name (e.g. BRAC Bank)" className="glass rounded-2xl h-12 px-4 w-full text-sm outline-none" />
+      <input
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Account name (e.g. BRAC Bank)"
+        className="glass rounded-2xl h-12 px-4 w-full text-sm outline-none"
+      />
       <div className="grid grid-cols-2 min-[380px]:grid-cols-4 gap-2">
         {types.map((t) => (
-          <button key={t.id} onClick={() => setType(t.id)} className={cn("h-10 rounded-xl px-2 text-xs font-medium", type === t.id ? "gradient-primary text-primary-foreground" : "glass text-muted-foreground")}>{t.label}</button>
+          <button
+            key={t.id}
+            onClick={() => setType(t.id)}
+            className={cn(
+              "h-10 rounded-xl px-2 text-xs font-medium",
+              type === t.id
+                ? "gradient-primary text-primary-foreground"
+                : "glass text-muted-foreground",
+            )}
+          >
+            {t.label}
+          </button>
         ))}
       </div>
-      <input value={brand} onChange={(e) => setBrand(e.target.value)} placeholder="Brand / label (e.g. Visa, Mastercard, bKash)" className="glass rounded-2xl h-12 px-4 w-full text-sm outline-none" />
-      <input value={number} onChange={(e) => setNumber(e.target.value)} placeholder="Account number (demo)" className="glass rounded-2xl h-12 px-4 w-full text-sm outline-none" />
-      <input value={balance} onChange={(e) => setBalance(e.target.value.replace(/[^0-9.]/g, ""))} inputMode="decimal" placeholder="Opening balance" className="glass rounded-2xl h-12 px-4 w-full text-sm outline-none tabular" />
+      <input
+        value={brand}
+        onChange={(e) => setBrand(e.target.value)}
+        placeholder="Brand / label (e.g. Visa, Mastercard, bKash)"
+        className="glass rounded-2xl h-12 px-4 w-full text-sm outline-none"
+      />
+      <input
+        value={number}
+        onChange={(e) => setNumber(e.target.value)}
+        placeholder="Account number (demo)"
+        className="glass rounded-2xl h-12 px-4 w-full text-sm outline-none"
+      />
+      <input
+        value={balance}
+        onChange={(e) => setBalance(e.target.value.replace(/[^0-9.]/g, ""))}
+        inputMode="decimal"
+        placeholder="Opening balance"
+        className="glass rounded-2xl h-12 px-4 w-full text-sm outline-none tabular"
+      />
       <div>
         <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Card color</p>
         <div className="flex gap-2 overflow-x-auto no-scrollbar">
           {gradients.map((g) => (
-            <button key={g} onClick={() => setGradient(g)} className={cn("shrink-0 h-10 w-16 rounded-xl border-2", gradient === g ? "border-primary" : "border-transparent")} style={{ background: g }} />
+            <button
+              key={g}
+              onClick={() => setGradient(g)}
+              className={cn(
+                "shrink-0 h-10 w-16 rounded-xl border-2",
+                gradient === g ? "border-primary" : "border-transparent",
+              )}
+              style={{ background: g }}
+            />
           ))}
         </div>
       </div>
-      <button onClick={save} className="w-full h-12 rounded-2xl gradient-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2">
+      <button
+        onClick={save}
+        className="w-full h-12 rounded-2xl gradient-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2"
+      >
         <Check className="size-4" /> Create account
       </button>
     </GlassCard>
@@ -156,9 +210,18 @@ function EditAccountForm({ id, onClose }: { id: string; onClose: () => void }) {
     <GlassCard className="p-4 space-y-3 animate-slide-up">
       <div className="flex items-center justify-between">
         <p className="font-semibold">Edit account</p>
-        <button onClick={onClose} className="size-8 rounded-full glass flex items-center justify-center"><X className="size-4" /></button>
+        <button
+          onClick={onClose}
+          className="size-8 rounded-full glass flex items-center justify-center"
+        >
+          <X className="size-4" />
+        </button>
       </div>
-      <input value={name} onChange={(e) => setName(e.target.value)} className="glass rounded-2xl h-12 px-4 w-full text-sm outline-none" />
+      <input
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        className="glass rounded-2xl h-12 px-4 w-full text-sm outline-none"
+      />
       <div className="grid grid-cols-2 min-[380px]:grid-cols-4 gap-2">
         {types.map((t) => (
           <button
@@ -166,15 +229,27 @@ function EditAccountForm({ id, onClose }: { id: string; onClose: () => void }) {
             onClick={() => setType(t.id)}
             className={cn(
               "h-10 rounded-xl px-2 text-xs font-medium",
-              type === t.id ? "gradient-primary text-primary-foreground" : "glass text-muted-foreground",
+              type === t.id
+                ? "gradient-primary text-primary-foreground"
+                : "glass text-muted-foreground",
             )}
           >
             {t.label}
           </button>
         ))}
       </div>
-      <input value={brand} onChange={(e) => setBrand(e.target.value)} placeholder="Brand" className="glass rounded-2xl h-12 px-4 w-full text-sm outline-none" />
-      <input value={number} onChange={(e) => setNumber(e.target.value)} placeholder="Number" className="glass rounded-2xl h-12 px-4 w-full text-sm outline-none" />
+      <input
+        value={brand}
+        onChange={(e) => setBrand(e.target.value)}
+        placeholder="Brand"
+        className="glass rounded-2xl h-12 px-4 w-full text-sm outline-none"
+      />
+      <input
+        value={number}
+        onChange={(e) => setNumber(e.target.value)}
+        placeholder="Number"
+        className="glass rounded-2xl h-12 px-4 w-full text-sm outline-none"
+      />
       <input
         value={balance}
         onChange={(e) => setBalance(e.target.value.replace(/[^0-9.]/g, ""))}
@@ -184,10 +259,21 @@ function EditAccountForm({ id, onClose }: { id: string; onClose: () => void }) {
       />
       <div className="flex gap-2 overflow-x-auto no-scrollbar">
         {gradients.map((g) => (
-          <button key={g} onClick={() => setGradient(g)} className={cn("shrink-0 h-10 w-16 rounded-xl border-2", gradient === g ? "border-primary" : "border-transparent")} style={{ background: g }} />
+          <button
+            key={g}
+            onClick={() => setGradient(g)}
+            className={cn(
+              "shrink-0 h-10 w-16 rounded-xl border-2",
+              gradient === g ? "border-primary" : "border-transparent",
+            )}
+            style={{ background: g }}
+          />
         ))}
       </div>
-      <button onClick={save} className="w-full h-12 rounded-2xl gradient-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2">
+      <button
+        onClick={save}
+        className="w-full h-12 rounded-2xl gradient-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2"
+      >
         <Check className="size-4" /> Save
       </button>
     </GlassCard>

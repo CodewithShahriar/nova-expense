@@ -29,7 +29,13 @@ export function BottomNav() {
       <nav className="fixed bottom-0 inset-x-0 z-40 safe-bottom pt-2 px-2 min-[380px]:px-3">
         <div className="glass-strong rounded-[1.5rem] min-[380px]:rounded-3xl shadow-elegant mx-auto w-full max-w-lg grid grid-cols-5 items-center h-[3.75rem] min-[380px]:h-16 px-1">
           {items.map((it) => (
-            <NavItem key={it.to} to={it.to} label={it.label} icon={it.icon} active={isActive(path, it)} />
+            <NavItem
+              key={it.to}
+              to={it.to}
+              label={it.label}
+              icon={it.icon}
+              active={isActive(path, it)}
+            />
           ))}
         </div>
       </nav>
@@ -42,17 +48,35 @@ function isActive(path: string, it: { to: string; exact?: boolean }) {
   return path === it.to || path.startsWith(it.to + "/");
 }
 
-function NavItem({ to, label, icon: Icon, active }: { to: NavTo; label: string; icon: typeof Home; active: boolean }) {
+function NavItem({
+  to,
+  label,
+  icon: Icon,
+  active,
+}: {
+  to: NavTo;
+  label: string;
+  icon: typeof Home;
+  active: boolean;
+}) {
   return (
     <Link
       to={to}
       className={cn(
         "flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl py-1.5 transition-colors",
-        active ? "text-primary" : "text-muted-foreground"
+        active ? "text-primary" : "text-muted-foreground",
       )}
     >
-      <Icon className={cn("size-[1.125rem] min-[380px]:size-5 transition-transform", active && "scale-110")} strokeWidth={active ? 2.5 : 2} />
-      <span className="max-w-full truncate text-[9px] min-[380px]:text-[10px] font-medium tracking-wide">{label}</span>
+      <Icon
+        className={cn(
+          "size-[1.125rem] min-[380px]:size-5 transition-transform",
+          active && "scale-110",
+        )}
+        strokeWidth={active ? 2.5 : 2}
+      />
+      <span className="max-w-full truncate text-[9px] min-[380px]:text-[10px] font-medium tracking-wide">
+        {label}
+      </span>
     </Link>
   );
 }

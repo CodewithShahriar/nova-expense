@@ -42,7 +42,9 @@ export function AccountCard({
             <p className="text-[10px] uppercase tracking-[0.2em] text-white/70">
               {account.brand || account.type}
             </p>
-            <p className="mt-1 truncate font-display text-base min-[380px]:text-lg font-semibold">{account.name}</p>
+            <p className="mt-1 truncate font-display text-base min-[380px]:text-lg font-semibold">
+              {account.name}
+            </p>
           </div>
           <Wifi className="size-5 shrink-0 rotate-90 text-white/80" />
         </div>

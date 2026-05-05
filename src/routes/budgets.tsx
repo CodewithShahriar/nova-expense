@@ -37,7 +37,10 @@ function BudgetsPage() {
   const totalSpent = budgets.reduce((a, b) => a + (spendByCat[b.category] || 0), 0);
   const totalPct = totalLimit > 0 ? Math.min(1, totalSpent / totalLimit) : 0;
 
-  const available = allCategories(custom).filter((c) => c.type !== "income" && c.name !== "Transfer" && !budgets.find((b) => b.category === c.name));
+  const available = allCategories(custom).filter(
+    (c) =>
+      c.type !== "income" && c.name !== "Transfer" && !budgets.find((b) => b.category === c.name),
+  );
 
   return (
     <div className="px-4 min-[380px]:px-5 pt-[calc(env(safe-area-inset-top)+1rem)] animate-fade-in">
@@ -46,16 +49,26 @@ function BudgetsPage() {
 
       {/* Overall */}
       <GlassCard className="mt-5 p-5 relative overflow-hidden">
-        <div className="absolute -top-16 -right-10 size-40 rounded-full opacity-30 blur-3xl" style={{ background: "var(--gradient-primary)" }} />
+        <div
+          className="absolute -top-16 -right-10 size-40 rounded-full opacity-30 blur-3xl"
+          style={{ background: "var(--gradient-primary)" }}
+        />
         <p className="text-xs uppercase tracking-widest text-muted-foreground">This month</p>
         <div className="mt-1 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
-          <span className="truncate font-display text-2xl min-[380px]:text-3xl font-bold tabular">{formatMoney(totalSpent, currency, true)}</span>
-          <span className="text-sm text-muted-foreground">of {formatMoney(totalLimit, currency, true)}</span>
+          <span className="truncate font-display text-2xl min-[380px]:text-3xl font-bold tabular">
+            {formatMoney(totalSpent, currency, true)}
+          </span>
+          <span className="text-sm text-muted-foreground">
+            of {formatMoney(totalLimit, currency, true)}
+          </span>
         </div>
         <div className="mt-4 h-2.5 rounded-full bg-muted overflow-hidden">
           <div
             className="h-full rounded-full transition-all duration-700"
-            style={{ width: `${totalPct * 100}%`, background: totalPct >= 1 ? "var(--gradient-danger)" : "var(--gradient-primary)" }}
+            style={{
+              width: `${totalPct * 100}%`,
+              background: totalPct >= 1 ? "var(--gradient-danger)" : "var(--gradient-primary)",
+            }}
           />
         </div>
       </GlassCard>
@@ -73,7 +86,10 @@ function BudgetsPage() {
           return (
             <GlassCard key={b.category} className="p-4">
               <div className="flex flex-wrap items-center gap-3">
-                <div className="size-10 rounded-2xl flex items-center justify-center shrink-0" style={{ background: `color-mix(in oklch, ${cat.color} 18%, transparent)` }}>
+                <div
+                  className="size-10 rounded-2xl flex items-center justify-center shrink-0"
+                  style={{ background: `color-mix(in oklch, ${cat.color} 18%, transparent)` }}
+                >
                   <Icon className="size-4" style={{ color: cat.color }} />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -93,7 +109,11 @@ function BudgetsPage() {
                       autoFocus
                     />
                     <button
-                      onClick={() => { const v = parseFloat(value); if (v > 0) store.upsertBudget({ category: b.category, limit: v }); setEditing(null); }}
+                      onClick={() => {
+                        const v = parseFloat(value);
+                        if (v > 0) store.upsertBudget({ category: b.category, limit: v });
+                        setEditing(null);
+                      }}
                       className="size-9 rounded-xl gradient-primary flex items-center justify-center"
                     >
                       <Check className="size-4 text-primary-foreground" />
@@ -101,7 +121,10 @@ function BudgetsPage() {
                   </>
                 ) : (
                   <button
-                    onClick={() => { setEditing(b.category); setValue(String(b.limit)); }}
+                    onClick={() => {
+                      setEditing(b.category);
+                      setValue(String(b.limit));
+                    }}
                     className="size-9 rounded-xl glass flex items-center justify-center text-muted-foreground"
                     aria-label="Edit"
                   >
@@ -118,8 +141,19 @@ function BudgetsPage() {
                   }}
                 />
               </div>
-              {over && <p className="mt-2 text-xs text-destructive font-medium">Exceeded by {formatMoney(spent - b.limit, currency)}</p>}
-              {near && <p className="mt-2 text-xs text-warning font-medium" style={{ color: "var(--color-warning)" }}>Nearing limit — {Math.round(pct * 100)}% used</p>}
+              {over && (
+                <p className="mt-2 text-xs text-destructive font-medium">
+                  Exceeded by {formatMoney(spent - b.limit, currency)}
+                </p>
+              )}
+              {near && (
+                <p
+                  className="mt-2 text-xs text-warning font-medium"
+                  style={{ color: "var(--color-warning)" }}
+                >
+                  Nearing limit — {Math.round(pct * 100)}% used
+                </p>
+              )}
             </GlassCard>
           );
         })}
@@ -130,14 +164,24 @@ function BudgetsPage() {
         <GlassCard className="mt-3 p-4 space-y-3">
           <div className="flex items-center gap-2">
             <p className="text-sm font-semibold flex-1">New budget</p>
-            <button onClick={() => setAdding(false)} className="size-8 rounded-full glass flex items-center justify-center"><X className="size-4" /></button>
+            <button
+              onClick={() => setAdding(false)}
+              className="size-8 rounded-full glass flex items-center justify-center"
+            >
+              <X className="size-4" />
+            </button>
           </div>
           <div className="flex gap-2 overflow-x-auto no-scrollbar">
             {available.map((c) => (
               <button
                 key={c.name}
                 onClick={() => setNewCat(c.name)}
-                className={cn("shrink-0 rounded-full px-3 h-9 text-xs font-medium", newCat === c.name ? "gradient-primary text-primary-foreground" : "glass text-muted-foreground")}
+                className={cn(
+                  "shrink-0 rounded-full px-3 h-9 text-xs font-medium",
+                  newCat === c.name
+                    ? "gradient-primary text-primary-foreground"
+                    : "glass text-muted-foreground",
+                )}
               >
                 {c.name}
               </button>
@@ -153,7 +197,14 @@ function BudgetsPage() {
               className="min-w-0 flex-1 h-11 rounded-xl bg-muted px-3 text-sm outline-none tabular"
             />
             <button
-              onClick={() => { const v = parseFloat(newLimit); if (v > 0 && newCat) { store.upsertBudget({ category: newCat, limit: v }); setAdding(false); setNewLimit(""); } }}
+              onClick={() => {
+                const v = parseFloat(newLimit);
+                if (v > 0 && newCat) {
+                  store.upsertBudget({ category: newCat, limit: v });
+                  setAdding(false);
+                  setNewLimit("");
+                }
+              }}
               className="h-11 px-4 rounded-xl gradient-primary text-primary-foreground font-semibold text-sm"
             >
               Add
@@ -163,7 +214,10 @@ function BudgetsPage() {
       ) : (
         available.length > 0 && (
           <button
-            onClick={() => { setAdding(true); setNewCat(available[0].name); }}
+            onClick={() => {
+              setAdding(true);
+              setNewCat(available[0].name);
+            }}
             className="mt-3 w-full h-14 rounded-2xl glass flex items-center justify-center gap-2 text-sm font-semibold text-primary"
           >
             <Plus className="size-4" /> Add budget

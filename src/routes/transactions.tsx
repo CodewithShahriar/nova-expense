@@ -23,7 +23,8 @@ function TransactionsPage() {
       if (filter !== "All" && t.category !== filter) return false;
       if (query) {
         const q = query.toLowerCase();
-        if (!t.note?.toLowerCase().includes(q) && !t.category.toLowerCase().includes(q)) return false;
+        if (!t.note?.toLowerCase().includes(q) && !t.category.toLowerCase().includes(q))
+          return false;
       }
       return true;
     });
@@ -65,7 +66,9 @@ function TransactionsPage() {
             onClick={() => setFilter(f)}
             className={cn(
               "shrink-0 rounded-full px-4 h-9 text-xs font-medium transition",
-              filter === f ? "gradient-primary text-primary-foreground shadow-glow" : "glass text-muted-foreground"
+              filter === f
+                ? "gradient-primary text-primary-foreground shadow-glow"
+                : "glass text-muted-foreground",
             )}
           >
             {f}
@@ -81,7 +84,9 @@ function TransactionsPage() {
         )}
         {grouped.map(([date, items]) => {
           // day total = expenses only (as label says "total expense for that date")
-          const dayExpense = items.filter((i) => i.type === "expense").reduce((a, b) => a + b.amount, 0);
+          const dayExpense = items
+            .filter((i) => i.type === "expense")
+            .reduce((a, b) => a + b.amount, 0);
           return (
             <div key={date}>
               <div className="flex items-center justify-between px-1 mb-2">
@@ -99,9 +104,11 @@ function TransactionsPage() {
                   const Icon = isTransfer ? ArrowLeftRight : cat.icon;
 
                   const amountColor =
-                    t.type === "expense" ? "text-destructive"
-                    : t.type === "income" ? "text-primary"
-                    : "text-muted-foreground";
+                    t.type === "expense"
+                      ? "text-destructive"
+                      : t.type === "income"
+                        ? "text-primary"
+                        : "text-muted-foreground";
                   const sign = t.type === "expense" ? "−" : t.type === "income" ? "+" : "";
 
                   const subtitle = isTransfer
@@ -111,20 +118,35 @@ function TransactionsPage() {
                   return (
                     <div key={t.id} className="group relative">
                       <GlassCard className="flex items-center gap-3 p-3">
-                        <div className="size-11 rounded-2xl flex items-center justify-center shrink-0" style={{ background: `color-mix(in oklch, ${cat.color} 18%, transparent)` }}>
+                        <div
+                          className="size-11 rounded-2xl flex items-center justify-center shrink-0"
+                          style={{
+                            background: `color-mix(in oklch, ${cat.color} 18%, transparent)`,
+                          }}
+                        >
                           <Icon className="size-5" style={{ color: cat.color }} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{t.note || (isTransfer ? "Transfer" : t.category)}</p>
+                          <p className="text-sm font-medium truncate">
+                            {t.note || (isTransfer ? "Transfer" : t.category)}
+                          </p>
                           <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
                         </div>
                         <div className="shrink-0 text-right">
-                          <p className={cn("font-display text-sm min-[380px]:text-base font-semibold tabular", amountColor)}>
-                            {sign}{formatMoney(t.amount, currency, true).replace("-", "")}
+                          <p
+                            className={cn(
+                              "font-display text-sm min-[380px]:text-base font-semibold tabular",
+                              amountColor,
+                            )}
+                          >
+                            {sign}
+                            {formatMoney(t.amount, currency, true).replace("-", "")}
                           </p>
                         </div>
                         <button
-                          onClick={() => { if (confirm("Delete this transaction?")) store.deleteTransaction(t.id); }}
+                          onClick={() => {
+                            if (confirm("Delete this transaction?")) store.deleteTransaction(t.id);
+                          }}
                           className="ml-1 size-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition"
                           aria-label="Delete"
                         >
@@ -145,8 +167,10 @@ function TransactionsPage() {
 
 function formatDayLabel(dateStr: string) {
   const d = new Date(dateStr);
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const y = new Date(today); y.setDate(y.getDate() - 1);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const y = new Date(today);
+  y.setDate(y.getDate() - 1);
   if (d.toDateString() === today.toDateString()) return "Today";
   if (d.toDateString() === y.toDateString()) return "Yesterday";
   return d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });

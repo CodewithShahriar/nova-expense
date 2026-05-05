@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { X, Search, Plus, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { allCategories, pickerIcons, pickerColors, iconRegistry } from "@/lib/categories";
@@ -25,7 +25,11 @@ export function CategoryPicker({
   const [newColor, setNewColor] = useState(pickerColors[0]);
 
   useEffect(() => {
-    if (!open) { setQuery(""); setCreating(false); setNewName(""); }
+    if (!open) {
+      setQuery("");
+      setCreating(false);
+      setNewName("");
+    }
   }, [open]);
 
   const list = allCategories(custom).filter((c) => c.type === type || c.type === "both");
@@ -45,63 +49,83 @@ export function CategoryPicker({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center animate-fade-in" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center animate-fade-in"
+      onClick={onClose}
+    >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div
-        className="relative w-full max-w-lg glass-strong rounded-t-[2rem] sm:rounded-[2rem] border-t border-border p-4 min-[380px]:p-5 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] animate-slide-up max-h-[88dvh] overflow-y-auto"
+        className="relative flex w-full max-w-lg flex-col glass-strong rounded-t-[2rem] sm:rounded-[2rem] border-t border-border p-4 min-[380px]:p-5 pb-[calc(env(safe-area-inset-bottom)+1rem)] animate-slide-up max-h-[min(88dvh,calc(100dvh-env(safe-area-inset-top)-0.75rem))] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display text-xl font-bold">{creating ? "New category" : "Choose category"}</h2>
-          <button onClick={onClose} className="size-9 rounded-full glass flex items-center justify-center"><X className="size-4" /></button>
+        <div className="mb-4 flex shrink-0 items-center justify-between">
+          <h2 className="font-display text-lg min-[380px]:text-xl font-bold">
+            {creating ? "New category" : "Choose category"}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="size-9 rounded-full glass flex items-center justify-center"
+          >
+            <X className="size-4" />
+          </button>
         </div>
 
         {!creating ? (
-          <>
-            <div className="glass rounded-2xl h-11 px-3 flex items-center gap-2 mb-4">
+          <div className="flex min-h-0 flex-1 flex-col">
+            <div className="glass mb-3 min-[380px]:mb-4 shrink-0 rounded-2xl h-11 px-3 flex items-center gap-2">
               <Search className="size-4 text-muted-foreground" />
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search categories…"
-                className="bg-transparent outline-none flex-1 text-sm"
-                autoFocus
+                className="min-w-0 bg-transparent outline-none flex-1 text-base placeholder:text-muted-foreground/60"
               />
             </div>
 
-            <div className="grid grid-cols-3 min-[380px]:grid-cols-4 gap-2 min-[380px]:gap-3">
+            <div className="grid min-h-0 flex-1 grid-cols-3 min-[380px]:grid-cols-4 content-start gap-2 min-[380px]:gap-3 overflow-y-auto no-scrollbar pr-0.5 pb-3">
               {filtered.map((c) => {
                 const Icon = c.icon;
                 const active = value === c.name;
                 return (
                   <button
                     key={c.name}
-                    onClick={() => { onChange(c.name); onClose(); }}
+                    type="button"
+                    onClick={() => {
+                      onChange(c.name);
+                      onClose();
+                    }}
                     className={cn(
-                      "flex min-w-0 flex-col items-center gap-2 rounded-2xl p-2 min-[380px]:p-3 transition",
-                      active ? "glass-strong ring-2 ring-primary/70" : "glass"
+                      "flex min-h-[5.5rem] min-w-0 flex-col items-center justify-center gap-2 rounded-2xl p-2 min-[380px]:p-3 transition",
+                      active ? "glass-strong ring-2 ring-primary/70" : "glass",
                     )}
                   >
-                    <div className="size-10 rounded-xl flex items-center justify-center" style={{ background: `color-mix(in oklch, ${c.color} 22%, transparent)` }}>
+                    <div
+                      className="size-9 min-[380px]:size-10 rounded-xl flex items-center justify-center"
+                      style={{ background: `color-mix(in oklch, ${c.color} 22%, transparent)` }}
+                    >
                       <Icon className="size-5" style={{ color: c.color }} />
                     </div>
-                    <span className="max-w-full truncate text-[11px] font-medium text-center leading-tight">{c.name}</span>
+                    <span className="max-w-full truncate text-[11px] font-medium text-center leading-tight">
+                      {c.name}
+                    </span>
                   </button>
                 );
               })}
               <button
+                type="button"
                 onClick={() => setCreating(true)}
-                className="flex flex-col items-center gap-2 rounded-2xl p-2 min-[380px]:p-3 glass border-dashed border border-primary/40"
+                className="flex min-h-[5.5rem] flex-col items-center justify-center gap-2 rounded-2xl p-2 min-[380px]:p-3 glass border-dashed border border-primary/40"
               >
-                <div className="size-10 rounded-xl gradient-primary flex items-center justify-center">
+                <div className="size-9 min-[380px]:size-10 rounded-xl gradient-primary flex items-center justify-center">
                   <Plus className="size-5 text-primary-foreground" />
                 </div>
                 <span className="text-[11px] font-medium">Add new</span>
               </button>
             </div>
-          </>
+          </div>
         ) : (
-          <div className="space-y-4">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto no-scrollbar pb-3">
             <input
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
@@ -120,8 +144,12 @@ export function CategoryPicker({
                   return (
                     <button
                       key={n}
+                      type="button"
                       onClick={() => setNewIcon(n)}
-                      className={cn("size-11 rounded-xl flex items-center justify-center", a ? "gradient-primary text-primary-foreground" : "glass")}
+                      className={cn(
+                        "size-11 rounded-xl flex items-center justify-center",
+                        a ? "gradient-primary text-primary-foreground" : "glass",
+                      )}
                     >
                       <Icon className="size-4" />
                     </button>
@@ -136,8 +164,12 @@ export function CategoryPicker({
                 {pickerColors.map((c) => (
                   <button
                     key={c}
+                    type="button"
                     onClick={() => setNewColor(c)}
-                    className={cn("size-8 rounded-full border-2", newColor === c ? "border-primary scale-110" : "border-transparent")}
+                    className={cn(
+                      "size-8 rounded-full border-2",
+                      newColor === c ? "border-primary scale-110" : "border-transparent",
+                    )}
                     style={{ background: c }}
                     aria-label="Color"
                   />
@@ -146,8 +178,19 @@ export function CategoryPicker({
             </div>
 
             <div className="flex gap-2 pt-2">
-              <button onClick={() => setCreating(false)} className="flex-1 h-12 rounded-2xl glass font-medium text-sm">Cancel</button>
-              <button onClick={saveCustom} disabled={!newName.trim()} className="flex-1 h-12 rounded-2xl gradient-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-40">
+              <button
+                type="button"
+                onClick={() => setCreating(false)}
+                className="flex-1 h-12 rounded-2xl glass font-medium text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={saveCustom}
+                disabled={!newName.trim()}
+                className="flex-1 h-12 rounded-2xl gradient-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-40"
+              >
                 <Check className="size-4" /> Save
               </button>
             </div>

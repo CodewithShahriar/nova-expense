@@ -2,9 +2,15 @@ import { type Account } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import { CreditCard, Wallet, Banknote, Landmark } from "lucide-react";
 
-const iconFor = (t: Account["type"]) => t === "card" ? CreditCard : t === "cash" ? Banknote : t === "wallet" ? Wallet : Landmark;
+const iconFor = (t: Account["type"]) =>
+  t === "card" ? CreditCard : t === "cash" ? Banknote : t === "wallet" ? Wallet : Landmark;
 
-export function AccountSelect({ accounts, value, onChange, exclude }: {
+export function AccountSelect({
+  accounts,
+  value,
+  onChange,
+  exclude,
+}: {
   accounts: Account[];
   value?: string;
   onChange: (id: string) => void;
@@ -23,10 +29,13 @@ export function AccountSelect({ accounts, value, onChange, exclude }: {
             onClick={() => onChange(a.id)}
             className={cn(
               "shrink-0 rounded-2xl p-3 pr-4 flex items-center gap-3 transition min-w-[142px] max-w-[78vw]",
-              active ? "glass-strong ring-1 ring-primary/70" : "glass"
+              active ? "glass-strong ring-1 ring-primary/70" : "glass",
             )}
           >
-            <div className="size-9 rounded-xl flex items-center justify-center text-white" style={{ background: a.gradient }}>
+            <div
+              className="size-9 rounded-xl flex items-center justify-center text-white"
+              style={{ background: a.gradient }}
+            >
               <Icon className="size-4" />
             </div>
             <div className="text-left min-w-0">
