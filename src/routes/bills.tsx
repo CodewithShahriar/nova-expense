@@ -359,7 +359,9 @@ function BillCard({
             <BillBadge status={status} label={billTimingLabel(bill)} />
             <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-[11px] text-muted-foreground">
               <CalendarDays className="size-3" />
-              {formatDueDate(bill.nextDueDate || bill.dueDate)}
+              {status === "paid" && bill.paidAt
+                ? `Paid ${formatDueDate(bill.paidAt)}`
+                : formatDueDate(bill.nextDueDate || bill.dueDate)}
             </span>
           </div>
 

@@ -412,6 +412,8 @@ function billFromDoc(data: DocumentData, id: string): Bill {
     notes: data.notes,
     paidAt: data.paidAt,
     transactionId: data.transactionId,
+    parentBillId: data.parentBillId,
+    history: Boolean(data.history),
   };
 }
 

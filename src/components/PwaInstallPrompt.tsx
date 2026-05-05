@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Download, Smartphone, Wifi, WifiOff, X } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 type InstallPromptEvent = Event & {
@@ -18,6 +19,7 @@ export function PwaInstallPrompt() {
   const [online, setOnline] = useState(() =>
     typeof navigator === "undefined" ? true : navigator.onLine,
   );
+  const [showConnectionBadge, setShowConnectionBadge] = useState(true);
 
   const standalone = useMemo(
     () =>
@@ -39,8 +41,32 @@ export function PwaInstallPrompt() {
       setInstallEvent(null);
     }
 
+    const openingTimer = window.setTimeout(() => setShowConnectionBadge(false), 2600);
+
+    function showConnection(status: boolean) {
+      setOnline(status);
+      setShowConnectionBadge(true);
+
+      if (status) {
+        toast.success("Back online", {
+          description: "Nova will sync saved changes when possible.",
+        });
+      } else {
+        toast.warning("Offline mode", {
+          description: "Changes are saved locally and will sync after reconnecting.",
+        });
+      }
+
+      window.setTimeout(
+        () => {
+          if (status) setShowConnectionBadge(false);
+        },
+        status ? 2600 : 0,
+      );
+    }
+
     function updateOnline() {
-      setOnline(navigator.onLine);
+      showConnection(navigator.onLine);
     }
 
     window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
@@ -53,6 +79,7 @@ export function PwaInstallPrompt() {
       window.removeEventListener("appinstalled", onInstalled);
       window.removeEventListener("online", updateOnline);
       window.removeEventListener("offline", updateOnline);
+      window.clearTimeout(openingTimer);
     };
   }, []);
 
@@ -72,18 +99,20 @@ export function PwaInstallPrompt() {
 
   return (
     <>
-      <div
-        className={cn(
-          "fixed left-1/2 top-[calc(env(safe-area-inset-top)+0.75rem)] z-[70] flex -translate-x-1/2 items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold shadow-card backdrop-blur-xl transition",
-          online
-            ? "border-primary/20 bg-primary/15 text-primary"
-            : "border-warning/25 bg-warning/15 text-warning",
-        )}
-        style={!online ? { color: "var(--color-warning)" } : undefined}
-      >
-        {online ? <Wifi className="size-3.5" /> : <WifiOff className="size-3.5" />}
-        {online ? "Online" : "Offline mode"}
-      </div>
+      {showConnectionBadge && (
+        <div
+          className={cn(
+            "fixed left-1/2 top-[calc(env(safe-area-inset-top)+0.75rem)] z-[70] flex -translate-x-1/2 items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold shadow-card backdrop-blur-xl transition animate-fade-in",
+            online
+              ? "border-primary/20 bg-primary/15 text-primary"
+              : "border-warning/25 bg-warning/15 text-warning",
+          )}
+          style={!online ? { color: "var(--color-warning)" } : undefined}
+        >
+          {online ? <Wifi className="size-3.5" /> : <WifiOff className="size-3.5" />}
+          {online ? "Online" : "Offline mode"}
+        </div>
+      )}
 
       {showInstall && (
         <div className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+5.75rem)] z-[65] mx-auto max-w-lg animate-slide-up">

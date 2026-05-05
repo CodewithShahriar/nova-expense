@@ -14,7 +14,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { AccountCard } from "@/components/AccountCard";
 import { getCategory } from "@/lib/categories";
 import { cn } from "@/lib/utils";
-import { billRuntimeStatus, billTimingLabel, formatDueDate } from "@/lib/bills";
+import { billRuntimeStatus, billTimingLabel, daysUntil, formatDueDate } from "@/lib/bills";
 
 export const Route = createFileRoute("/")({
   component: Dashboard,
@@ -56,7 +56,11 @@ function Dashboard() {
   const reminderBills = useMemo(
     () =>
       bills
-        .filter((bill) => billRuntimeStatus(bill) !== "paid")
+        .filter((bill) => {
+          const status = billRuntimeStatus(bill);
+          if (status === "paid") return false;
+          return status === "overdue" || daysUntil(bill.nextDueDate || bill.dueDate) <= 3;
+        })
         .sort(
           (a, b) => +new Date(a.nextDueDate || a.dueDate) - +new Date(b.nextDueDate || b.dueDate),
         )

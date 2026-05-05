@@ -2,6 +2,7 @@ import type { Bill } from "@/lib/storage";
 
 // Ensure that bills with status 'paid' are correctly identified
 export function billRuntimeStatus(bill: Bill): Bill["status"] {
+  if (bill.history) return "paid";
   if (bill.status === "paid" && bill.repeat === "none") return "paid";
 
   const today = startOfDay(new Date());

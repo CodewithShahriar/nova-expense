@@ -42,6 +42,7 @@ export interface Goal {
 
 export interface Bill {
   id: string;
+  parentBillId?: string;
   name: string;
   amount: number;
   dueDate: string;
@@ -53,6 +54,7 @@ export interface Bill {
   notes?: string;
   paidAt?: string;
   transactionId?: string;
+  history?: boolean;
 }
 
 export interface CustomCategory {
@@ -256,7 +258,7 @@ function normalizeBills(bills: Bill[]): Bill[] {
 
     return {
       ...nextBill,
-      status: billRuntimeStatus(nextBill),
+      status: nextBill.history ? "paid" : billRuntimeStatus(nextBill),
     };
   });
 }
@@ -355,7 +357,7 @@ export const store = {
   },
   markBillPaid: (id: string) => {
     const bill = state.bills.find((item) => item.id === id);
-    if (!bill || (bill.status === "paid" && bill.repeat === "none")) return;
+    if (!bill || bill.history || (bill.status === "paid" && bill.repeat === "none")) return;
 
     const tx: Transaction = {
       id: crypto.randomUUID(),
@@ -368,14 +370,31 @@ export const store = {
     };
     const accounts = applyTxBalance(state.accounts, tx, 1);
     const paidAt = tx.date;
+    const paidRecord: Bill = {
+      ...bill,
+      id: crypto.randomUUID(),
+      parentBillId: bill.parentBillId || bill.id,
+      dueDate: bill.nextDueDate || bill.dueDate,
+      nextDueDate: bill.nextDueDate || bill.dueDate,
+      status: "paid",
+      paidAt,
+      transactionId: tx.id,
+      history: true,
+    };
 
     write({
       ...state,
       accounts,
       transactions: [tx, ...state.transactions],
-      bills: state.bills.map((item) =>
-        item.id === id ? nextBillCycle(item, paidAt, tx.id) : item,
-      ),
+      bills:
+        bill.repeat === "none"
+          ? state.bills.map((item) => (item.id === id ? nextBillCycle(item, paidAt, tx.id) : item))
+          : [
+              ...state.bills.map((item) =>
+                item.id === id ? nextBillCycle(item, paidAt, tx.id) : item,
+              ),
+              paidRecord,
+            ],
     });
   },
 
@@ -454,6 +473,7 @@ function nextBillCycle(bill: Bill, paidAt: string, transactionId: string): Bill 
       paidAt,
       transactionId,
       nextDueDate: bill.nextDueDate || bill.dueDate,
+      history: true,
     };
   }
 
