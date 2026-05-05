@@ -116,34 +116,7 @@ When signed out, app data is stored in browser `localStorage` under the key:
 pocketledger:v2
 ```
 
-When signed in, data syncs to Firestore under:
 
-```text
-users/{uid}
-users/{uid}/accounts/{accountId}
-users/{uid}/transactions/{transactionId}
-users/{uid}/budgets/{category}
-users/{uid}/bills/{billId}
-```
-
-The storage layer lives in:
-
-```text
-src/lib/storage.ts
-```
-
-It manages:
-
-- Accounts
-- Transactions
-- Budgets
-- Bills
-- Goals
-- Custom categories
-- Settings
-
-To enable Firebase, copy `.env.example` to `.env.local` and add your Firebase web app config.
-Enable Email/Password sign-in in Firebase Authentication and create a Cloud Firestore database.
 
 ## Styling
 
