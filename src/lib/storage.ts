@@ -378,16 +378,6 @@ export const store = {
       ),
     });
   },
-  refreshBillStatuses: () => {
-    write({
-      ...state,
-      bills: state.bills.map((bill) => ({
-        ...bill,
-        nextDueDate: bill.nextDueDate || bill.dueDate,
-        status: billRuntimeStatus(bill),
-      })),
-    });
-  },
 
   addCustomCategory: (c: CustomCategory) => {
     if (state.customCategories.find((x) => x.name.toLowerCase() === c.name.toLowerCase())) return;
