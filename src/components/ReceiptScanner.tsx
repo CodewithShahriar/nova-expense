@@ -1,5 +1,16 @@
 import { useRef, useState } from "react";
-import { Camera, Check, FileImage, Loader2, ScanLine, Sparkles, Upload, X } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Camera,
+  Check,
+  FileImage,
+  Loader2,
+  ScanLine,
+  Sparkles,
+  Upload,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { AccountSelect } from "@/components/AccountSelect";
 import { DatePicker } from "@/components/DatePicker";
@@ -36,12 +47,14 @@ export function ReceiptScanner({
   const [category, setCategory] = useState("Food");
   const [accountId, setAccountId] = useState(accounts[0]?.id || "");
   const [note, setNote] = useState("");
+  const [reviewWarning, setReviewWarning] = useState<string | null>(null);
 
   async function processFile(file?: File) {
     if (!file) return;
     setScanning(true);
     setDone(false);
     setRawText("");
+    setReviewWarning(null);
 
     try {
       const resized = await resizeReceiptImage(file);
@@ -71,6 +84,13 @@ export function ReceiptScanner({
       setMerchant(result.merchant);
       setNote(result.merchant);
     }
+
+    const missing = [
+      !result.amount && "amount",
+      !result.date && "date",
+      !result.merchant && "merchant",
+    ].filter(Boolean);
+    setReviewWarning(missing.length ? "Please review extracted details" : null);
 
     if (!result.amount) {
       toast.error("Could not detect amount", {
@@ -119,13 +139,24 @@ export function ReceiptScanner({
               <p className="text-xs text-muted-foreground">Extract amount, date, and merchant</p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex size-9 items-center justify-center rounded-full glass"
-          >
-            <X className="size-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="hidden h-9 items-center gap-2 rounded-full glass px-3 text-xs font-semibold text-muted-foreground min-[380px]:flex"
+            >
+              <ArrowLeft className="size-4" />
+              Back
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Back to transaction form"
+              className="flex size-9 items-center justify-center rounded-full glass"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-2">
@@ -193,6 +224,19 @@ export function ReceiptScanner({
               <Sparkles className="size-5" />
               <p className="text-sm font-semibold">Details extracted</p>
             </div>
+          </div>
+        )}
+
+        {reviewWarning && (
+          <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4">
+            <div className="flex items-center gap-3 text-amber-200">
+              <AlertTriangle className="size-5" />
+              <p className="text-sm font-semibold">{reviewWarning}</p>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              OCR can misread receipts. Confirm amount, date, merchant, account, and category before
+              saving.
+            </p>
           </div>
         )}
 
@@ -273,6 +317,14 @@ export function ReceiptScanner({
           >
             <Check className="size-4" />
             Save expense
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl glass text-sm font-semibold text-muted-foreground"
+          >
+            <ArrowLeft className="size-4" />
+            Back to transaction form
           </button>
         </div>
       </div>

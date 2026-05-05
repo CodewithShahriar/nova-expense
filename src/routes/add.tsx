@@ -37,7 +37,7 @@ function AddTransaction() {
   const [fromId, setFromId] = useState<string>(accounts[0]?.id || "");
   const [toId, setToId] = useState<string>(accounts[1]?.id || accounts[0]?.id || "");
   const [catOpen, setCatOpen] = useState(false);
-  const [scannerOpen, setScannerOpen] = useState(search.scan === "receipt");
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const noteRef = useRef<HTMLInputElement>(null);
 
@@ -159,10 +159,17 @@ function AddTransaction() {
         <button
           type="button"
           onClick={() => setScannerOpen(true)}
-          className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl glass text-sm font-semibold text-primary"
+          className="flex min-h-16 w-full items-center gap-3 rounded-3xl border border-primary/15 bg-primary/10 px-4 text-left shadow-sm active:scale-[0.99] transition"
         >
-          <ScanLine className="size-4" />
-          Scan receipt
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl gradient-primary shadow-glow">
+            <ScanLine className="size-5 text-primary-foreground" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-bold text-foreground">Scan receipt</span>
+            <span className="block text-xs text-muted-foreground">
+              Upload a receipt and review the extracted details.
+            </span>
+          </span>
         </button>
       </div>
 

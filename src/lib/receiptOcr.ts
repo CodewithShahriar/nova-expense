@@ -48,59 +48,142 @@ export function parseReceiptText(rawText: string): ReceiptOcrResult {
 }
 
 function parseAmount(lines: string[]) {
-  const weighted: Array<{ value: number; score: number }> = [];
+  const priorityMatchers = [
+    /\btotal\s*payment\b/i,
+    /\bgross\s*total\b/i,
+    /\btotal\b/i,
+    /\bnet\s*total\b/i,
+    /\bamount\b/i,
+  ];
+  const prioritized: Array<{ value: number; priority: number }> = [];
+  const fallback: number[] = [];
 
   lines.forEach((line) => {
-    const lower = line.toLowerCase();
-    const amountMatches = line.match(
-      /(?:৳|tk|bdt)?\s*([0-9]{1,3}(?:[, ]?[0-9]{3})*(?:\.[0-9]{1,2})|[0-9]+(?:\.[0-9]{1,2})?)/gi,
-    );
-    if (!amountMatches) return;
+    if (isIgnoredAmountLine(line)) return;
 
-    amountMatches.forEach((match) => {
-      const numeric = Number(match.replace(/৳|tk|bdt/gi, "").replace(/[, ]/g, ""));
-      if (!Number.isFinite(numeric) || numeric <= 0) return;
-      let score = numeric;
-      if (/total|amount|grand|net|payable|paid|balance due/.test(lower)) score += 100000;
-      if (/subtotal|change|cash|vat|tax|discount|qty|quantity/.test(lower)) score -= 50000;
-      weighted.push({ value: numeric, score });
-    });
+    const values = moneyValuesFromLine(line);
+    if (!values.length) return;
+
+    const priority = priorityMatchers.findIndex((matcher) => matcher.test(line));
+    if (priority >= 0) {
+      prioritized.push({ value: Math.max(...values), priority });
+      return;
+    }
+
+    fallback.push(...values);
   });
 
-  return weighted.sort((a, b) => b.score - a.score)[0]?.value;
+  if (prioritized.length) {
+    return prioritized.sort((a, b) => a.priority - b.priority || b.value - a.value)[0]?.value;
+  }
+
+  return fallback.sort((a, b) => b - a)[0];
 }
 
 function parseDate(lines: string[]) {
   const joined = lines.join(" ");
-  const match =
+  const monthNameMatch = joined.match(
+    /\b(\d{1,2})[\s./~-]*(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*[\s./~-]*(\d{2,4})\b/i,
+  );
+
+  if (monthNameMatch) {
+    return toIsoDate(
+      Number(monthNameMatch[3]),
+      monthFromName(monthNameMatch[2]),
+      Number(monthNameMatch[1]),
+    );
+  }
+
+  const numericMatch =
     joined.match(/\b(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})\b/) ||
     joined.match(/\b(\d{4})[/-](\d{1,2})[/-](\d{1,2})\b/);
 
-  if (!match) return undefined;
+  if (!numericMatch) return undefined;
 
-  let day: number;
-  let month: number;
-  let year: number;
-
-  if (match[1].length === 4) {
-    year = Number(match[1]);
-    month = Number(match[2]);
-    day = Number(match[3]);
-  } else {
-    day = Number(match[1]);
-    month = Number(match[2]);
-    year = Number(match[3]);
-    if (year < 100) year += 2000;
+  if (numericMatch[1].length === 4) {
+    return toIsoDate(Number(numericMatch[1]), Number(numericMatch[2]), Number(numericMatch[3]));
   }
 
-  const date = new Date(year, month - 1, day);
-  if (Number.isNaN(date.getTime())) return undefined;
-  return date.toISOString();
+  return toIsoDate(Number(numericMatch[3]), Number(numericMatch[2]), Number(numericMatch[1]));
 }
 
 function parseMerchant(lines: string[]) {
-  const ignored = /receipt|invoice|cash memo|date|time|phone|mobile|vat|bin|total|amount/i;
-  return lines.find((line) => line.length >= 3 && line.length <= 48 && !ignored.test(line));
+  const ignored =
+    /phone|mobile|bin|invoice|date|time|paid|bill|receipt|cash memo|vat|total|amount|guest|payment|returned/i;
+
+  return lines
+    .map(cleanMerchantLine)
+    .find(
+      (line) =>
+        line.length >= 3 &&
+        line.length <= 48 &&
+        /[a-z]/i.test(line) &&
+        !ignored.test(line) &&
+        !/\d{5,}/.test(line),
+    );
+}
+
+function isIgnoredAmountLine(line: string) {
+  return /phone|mobile|bin|invoice|guest|returned|account|card|number\s*of|qty|quantity|item\s*name|price\s*t?\.?\s*price/i.test(
+    line,
+  );
+}
+
+function moneyValuesFromLine(line: string) {
+  const hasMoneySignal = /৳|tk|bdt|total|amount|cash|payment|\d+\.\d{1,2}/i.test(line);
+  if (!hasMoneySignal) return [];
+
+  const matches = line.match(/\d+(?:[, ]?\d{3})*(?:\.\d{1,2})?/g) || [];
+  return matches
+    .map((match) => {
+      const normalized = match.replace(/[, ]/g, "");
+      if (!normalized.includes(".") && normalized.length >= 7) return undefined;
+      const value = Number(normalized);
+      return Number.isFinite(value) && value > 0 ? value : undefined;
+    })
+    .filter((value): value is number => typeof value === "number");
+}
+
+function monthFromName(month: string) {
+  const key = month.toLowerCase().slice(0, 3);
+  const months: Record<string, number> = {
+    jan: 1,
+    feb: 2,
+    mar: 3,
+    apr: 4,
+    may: 5,
+    jun: 6,
+    jul: 7,
+    aug: 8,
+    sep: 9,
+    oct: 10,
+    nov: 11,
+    dec: 12,
+  };
+  return months[key];
+}
+
+function toIsoDate(year: number, month: number | undefined, day: number) {
+  if (!month) return undefined;
+  const fullYear = year < 100 ? 2000 + year : year;
+  const date = new Date(Date.UTC(fullYear, month - 1, day));
+  if (
+    Number.isNaN(date.getTime()) ||
+    date.getUTCFullYear() !== fullYear ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return undefined;
+  }
+  return date.toISOString();
+}
+
+function cleanMerchantLine(line: string) {
+  return line
+    .replace(/[=_*~|]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^[^\w]+|[^\w]+$/g, "");
 }
 
 function fileToDataUrl(file: File) {
