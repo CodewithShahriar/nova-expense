@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import { Search, Trash2, ArrowLeftRight } from "lucide-react";
 import { store, useStore, formatMoney } from "@/lib/storage";
 import { getCategory, allCategories } from "@/lib/categories";
@@ -43,41 +43,72 @@ function TransactionsPage() {
   const dailySummaries = useMemo(() => {
     const summaries = new Map<
       string,
-      { income: number; expense: number; net: number; closingBalance: number }
+      {
+        income: number;
+        expense: number;
+        accountBalances: Array<{ id: string; name: string; balance: number }>;
+      }
     >();
+    const effectsByAccount = new Map(accounts.map((account) => [account.id, 0]));
+    const transactionsByDate = new Map<string, typeof transactions>();
 
     for (const t of transactions) {
       const key = new Date(t.date).toDateString();
+      const dayTransactions = transactionsByDate.get(key) || [];
+      dayTransactions.push(t);
+      transactionsByDate.set(key, dayTransactions);
+
       const current = summaries.get(key) || {
         income: 0,
         expense: 0,
-        net: 0,
-        closingBalance: 0,
+        accountBalances: [],
       };
 
       if (t.type === "income") {
         current.income += t.amount;
-        current.net += t.amount;
+        addAccountEffect(effectsByAccount, t.accountId, t.amount);
       } else if (t.type === "expense") {
         current.expense += t.amount;
-        current.net -= t.amount;
+        addAccountEffect(effectsByAccount, t.accountId, -t.amount);
+      } else if (t.type === "transfer") {
+        addAccountEffect(effectsByAccount, t.fromAccountId, -t.amount);
+        addAccountEffect(effectsByAccount, t.toAccountId, t.amount);
       }
 
       summaries.set(key, current);
     }
 
-    const currentBalance = accounts.reduce((total, account) => total + account.balance, 0);
-    const totalTransactionNet = Array.from(summaries.values()).reduce(
-      (total, day) => total + day.net,
-      0,
+    const runningBalances = new Map(
+      accounts.map((account) => [
+        account.id,
+        account.balance - (effectsByAccount.get(account.id) || 0),
+      ]),
     );
-    let runningBalance = currentBalance - totalTransactionNet;
 
     for (const [date, summary] of Array.from(summaries.entries()).sort(
       (a, b) => +new Date(a[0]) - +new Date(b[0]),
     )) {
-      runningBalance += summary.net;
-      summaries.set(date, { ...summary, closingBalance: runningBalance });
+      const dayTransactions = transactionsByDate.get(date) || [];
+
+      for (const t of dayTransactions) {
+        if (t.type === "income") {
+          addAccountEffect(runningBalances, t.accountId, t.amount);
+        } else if (t.type === "expense") {
+          addAccountEffect(runningBalances, t.accountId, -t.amount);
+        } else if (t.type === "transfer") {
+          addAccountEffect(runningBalances, t.fromAccountId, -t.amount);
+          addAccountEffect(runningBalances, t.toAccountId, t.amount);
+        }
+      }
+
+      summaries.set(date, {
+        ...summary,
+        accountBalances: accounts.map((account) => ({
+          id: account.id,
+          name: account.name,
+          balance: runningBalances.get(account.id) || 0,
+        })),
+      });
     }
 
     return summaries;
@@ -129,9 +160,12 @@ function TransactionsPage() {
           const summary = dailySummaries.get(date) || {
             income: 0,
             expense: 0,
-            closingBalance: accounts.reduce((total, account) => total + account.balance, 0),
+            accountBalances: accounts.map((account) => ({
+              id: account.id,
+              name: account.name,
+              balance: account.balance,
+            })),
           };
-          const isLowBalance = summary.closingBalance <= 0;
           return (
             <div key={date}>
               <div className="flex items-center justify-between gap-3 px-1 mb-2">
@@ -151,14 +185,7 @@ function TransactionsPage() {
                       </span>
                     )}
                   </div>
-                  <p
-                    className={cn(
-                      "mt-0.5 text-[11px] font-semibold tabular",
-                      isLowBalance ? "text-destructive" : "text-primary",
-                    )}
-                  >
-                    Balance {formatMoney(summary.closingBalance, currency, true)}
-                  </p>
+                  <AccountBalanceTicker balances={summary.accountBalances} currency={currency} />
                 </div>
               </div>
               <div className="space-y-2">
@@ -227,6 +254,57 @@ function TransactionsPage() {
       </div>
     </div>
   );
+}
+
+function AccountBalanceTicker({
+  balances,
+  currency,
+}: {
+  balances: Array<{ id: string; name: string; balance: number }>;
+  currency: string;
+}) {
+  const visibleBalances = balances.length
+    ? balances
+    : [{ id: "empty", name: "Balance", balance: 0 }];
+  const stepMs = 3000;
+  const duration = visibleBalances.length * stepMs;
+
+  return (
+    <div className="relative mt-0.5 h-4 min-w-36 overflow-hidden text-right text-[11px] font-semibold tabular">
+      {visibleBalances.map((account, index) => {
+        const shouldRotate = visibleBalances.length > 1;
+        const style = shouldRotate
+          ? ({
+              "--account-balance-duration": `${duration}ms`,
+              "--account-balance-delay": `${index * stepMs}ms`,
+            } as CSSProperties)
+          : undefined;
+
+        return (
+          <span
+            key={account.id}
+            className={cn(
+              shouldRotate ? "animate-account-balance absolute inset-x-0 top-0 opacity-0" : "",
+              "block truncate",
+              account.balance <= 0 ? "text-destructive" : "text-primary",
+            )}
+            style={style}
+          >
+            {account.name} {formatMoney(account.balance, currency, true)}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+function addAccountEffect(
+  balances: Map<string, number>,
+  accountId: string | undefined,
+  amount: number,
+) {
+  if (!accountId || !balances.has(accountId)) return;
+  balances.set(accountId, (balances.get(accountId) || 0) + amount);
 }
 
 function formatDayLabel(dateStr: string) {
