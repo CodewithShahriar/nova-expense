@@ -371,6 +371,7 @@ function accountFromDoc(data: DocumentData, id: string): Account {
     brand: data.brand,
     number: data.number,
     balance: Number(data.balance || 0),
+    order: typeof data.order === "number" ? data.order : undefined,
     gradient: data.gradient || "linear-gradient(135deg, oklch(0.38 0.12 160), oklch(0.24 0.1 170))",
   };
 }

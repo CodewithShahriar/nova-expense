@@ -7,6 +7,7 @@ export type AccountType = "bank" | "cash" | "wallet" | "card";
 
 export interface Account {
   id: string;
+  order?: number;
   name: string; // e.g. "BRAC Bank"
   type: AccountType;
   brand?: string; // e.g. "VISA", "Mastercard", "bKash"
@@ -88,6 +89,7 @@ const KEY = "pocketledger:v2";
 const defaultAccounts: Account[] = [
   {
     id: "acc-brac",
+    order: 0,
     name: "BRAC Bank",
     type: "card",
     brand: "Visa Platinum",
@@ -97,6 +99,7 @@ const defaultAccounts: Account[] = [
   },
   {
     id: "acc-bankasia",
+    order: 1,
     name: "Bank Asia",
     type: "card",
     brand: "Mastercard",
@@ -106,6 +109,7 @@ const defaultAccounts: Account[] = [
   },
   {
     id: "acc-cash",
+    order: 2,
     name: "Cash Wallet",
     type: "cash",
     brand: "Cash",
@@ -115,6 +119,7 @@ const defaultAccounts: Account[] = [
   },
   {
     id: "acc-bkash",
+    order: 3,
     name: "bKash",
     type: "wallet",
     brand: "bKash Personal",
@@ -148,7 +153,7 @@ function read(): AppState {
     return {
       ...defaultState,
       ...parsed,
-      accounts: parsed.accounts?.length ? parsed.accounts : defaultAccounts,
+      accounts: normalizeAccounts(parsed.accounts?.length ? parsed.accounts : defaultAccounts),
       transactions: parsed.transactions || [],
       budgets: parsed.budgets || defaultState.budgets,
       bills: normalizeBills(parsed.bills || []),
@@ -211,13 +216,19 @@ function normalizeState(next: Partial<AppState>): AppState {
     ...defaultState,
     ...next,
     transactions: next.transactions || [],
-    accounts: next.accounts?.length ? next.accounts : defaultAccounts,
+    accounts: normalizeAccounts(next.accounts?.length ? next.accounts : defaultAccounts),
     budgets: next.budgets || defaultState.budgets,
     bills: normalizeBills(next.bills || []),
     goals: next.goals || [],
     customCategories: next.customCategories || [],
     settings: { ...defaultState.settings, ...next.settings, currency: "BDT" },
   };
+}
+
+function normalizeAccounts(accounts: Account[]): Account[] {
+  return accounts
+    .map((account, index) => ({ ...account, order: account.order ?? index }))
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 }
 
 export function registerCloudWriter(writer: ((next: AppState) => Promise<void>) | null) {
@@ -305,13 +316,34 @@ export const store = {
   },
 
   addAccount: (a: Omit<Account, "id">) => {
-    write({ ...state, accounts: [...state.accounts, { ...a, id: crypto.randomUUID() }] });
+    write({
+      ...state,
+      accounts: [
+        ...state.accounts,
+        { ...a, id: crypto.randomUUID(), order: state.accounts.length },
+      ],
+    });
   },
   updateAccount: (id: string, patch: Partial<Account>) => {
     write({
       ...state,
       accounts: state.accounts.map((a) => (a.id === id ? { ...a, ...patch } : a)),
     });
+  },
+  reorderAccounts: (ids: string[]) => {
+    const byId = new Map(state.accounts.map((account) => [account.id, account]));
+    const ordered: Account[] = [];
+    ids.forEach((id, index) => {
+      const account = byId.get(id);
+      if (!account) return;
+      byId.delete(id);
+      ordered.push({ ...account, order: index });
+    });
+    const remaining = Array.from(byId.values()).map((account, index) => ({
+      ...account,
+      order: ordered.length + index,
+    }));
+    write({ ...state, accounts: [...ordered, ...remaining] });
   },
   deleteAccount: (id: string) => {
     // Remove transactions tied to this account, keep others

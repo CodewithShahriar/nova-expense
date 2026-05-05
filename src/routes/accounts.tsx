@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { ArrowLeft, Plus, Pencil, Trash2, Check, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, GripVertical, Pencil, Plus, Trash2, X } from "lucide-react";
 import { store, useStore, formatMoney, type AccountType } from "@/lib/storage";
 import { GlassCard } from "@/components/GlassCard";
 import { AccountCard } from "@/components/AccountCard";
@@ -31,8 +31,19 @@ function AccountsPage() {
   const currency = useStore((s) => s.settings.currency);
   const [editing, setEditing] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [reordering, setReordering] = useState(false);
 
   const total = accounts.reduce((a, b) => a + b.balance, 0);
+
+  function moveAccount(id: string, direction: -1 | 1) {
+    const index = accounts.findIndex((account) => account.id === id);
+    const nextIndex = index + direction;
+    if (index < 0 || nextIndex < 0 || nextIndex >= accounts.length) return;
+
+    const next = [...accounts];
+    [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+    store.reorderAccounts(next.map((account) => account.id));
+  }
 
   return (
     <div className="px-4 min-[380px]:px-5 pt-[calc(env(safe-area-inset-top)+1rem)] animate-fade-in">
@@ -40,34 +51,77 @@ function AccountsPage() {
       <p className="text-sm text-muted-foreground mt-1">{accounts.length} accounts · Net worth</p>
       <p className="mt-1 font-display text-3xl font-bold tabular">{formatMoney(total, currency)}</p>
 
+      {accounts.length > 1 && (
+        <button
+          onClick={() => {
+            setEditing(null);
+            setReordering((value) => !value);
+          }}
+          className={cn(
+            "mt-5 h-10 rounded-xl px-4 inline-flex items-center gap-2 text-xs font-semibold transition",
+            reordering ? "gradient-primary text-primary-foreground" : "glass text-muted-foreground",
+          )}
+        >
+          {reordering ? <Check className="size-3.5" /> : <GripVertical className="size-3.5" />}
+          {reordering ? "Done reordering" : "Reorder cards"}
+        </button>
+      )}
+
       <div className="mt-6 space-y-4">
-        {accounts.map((a) => (
+        {accounts.map((a, index) => (
           <div key={a.id} className="space-y-2">
-            <Link to="/accounts/$id" params={{ id: a.id }} className="block">
+            {reordering ? (
               <AccountCard account={a} currency={currency} />
-            </Link>
+            ) : (
+              <Link to="/accounts/$id" params={{ id: a.id }} className="block">
+                <AccountCard account={a} currency={currency} />
+              </Link>
+            )}
             <div className="flex gap-2">
-              <button
-                onClick={() => setEditing(a.id)}
-                className="flex-1 h-10 rounded-xl glass flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground"
-              >
-                <Pencil className="size-3.5" /> Edit
-              </button>
-              <button
-                onClick={() => {
-                  if (
-                    confirm(
-                      `Delete ${a.name}? Transactions tied to this account will also be removed.`,
-                    )
-                  )
-                    store.deleteAccount(a.id);
-                }}
-                className="flex-1 h-10 rounded-xl glass flex items-center justify-center gap-2 text-xs font-medium text-destructive"
-              >
-                <Trash2 className="size-3.5" /> Delete
-              </button>
+              {reordering ? (
+                <>
+                  <button
+                    onClick={() => moveAccount(a.id, -1)}
+                    disabled={index === 0}
+                    className="flex-1 h-10 rounded-xl glass flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground disabled:opacity-35"
+                  >
+                    <ArrowUp className="size-3.5" /> Up
+                  </button>
+                  <button
+                    onClick={() => moveAccount(a.id, 1)}
+                    disabled={index === accounts.length - 1}
+                    className="flex-1 h-10 rounded-xl glass flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground disabled:opacity-35"
+                  >
+                    <ArrowDown className="size-3.5" /> Down
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setEditing(a.id)}
+                    className="flex-1 h-10 rounded-xl glass flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground"
+                  >
+                    <Pencil className="size-3.5" /> Edit
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (
+                        confirm(
+                          `Delete ${a.name}? Transactions tied to this account will also be removed.`,
+                        )
+                      )
+                        store.deleteAccount(a.id);
+                    }}
+                    className="flex-1 h-10 rounded-xl glass flex items-center justify-center gap-2 text-xs font-medium text-destructive"
+                  >
+                    <Trash2 className="size-3.5" /> Delete
+                  </button>
+                </>
+              )}
             </div>
-            {editing === a.id && <EditAccountForm id={a.id} onClose={() => setEditing(null)} />}
+            {!reordering && editing === a.id && (
+              <EditAccountForm id={a.id} onClose={() => setEditing(null)} />
+            )}
           </div>
         ))}
       </div>
@@ -279,6 +333,3 @@ function EditAccountForm({ id, onClose }: { id: string; onClose: () => void }) {
     </GlassCard>
   );
 }
-
-// retained
-void ArrowLeft;
