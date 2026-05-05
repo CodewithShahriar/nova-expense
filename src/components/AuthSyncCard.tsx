@@ -135,15 +135,6 @@ export function AuthSyncCard() {
             />
           </div>
 
-          <div className="mb-4 grid grid-cols-3 gap-2">
-            <StatusMetric label="Mode" value={signedIn ? "Cloud" : "Local"} />
-            <StatusMetric label="Security" value="Private" />
-            <StatusMetric
-              label="State"
-              value={sync.mode === "error" ? "Review" : signedIn ? "Synced" : "Ready"}
-            />
-          </div>
-
           {!configured && (
             <PremiumAlert
               tone="warning"
@@ -338,15 +329,6 @@ function StatusBadge({ mode, label }: { mode: string; label: string }) {
     >
       {label}
     </span>
-  );
-}
-
-function StatusMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl bg-muted/40 p-3">
-      <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</p>
-      <p className="mt-1 truncate text-sm font-semibold">{value}</p>
-    </div>
   );
 }
 
