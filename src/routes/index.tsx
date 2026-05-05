@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useRef } from "react";
 import {
   ArrowLeftRight,
+  Bell,
   Settings as SettingsIcon,
   Sparkles,
   Target,
@@ -13,6 +14,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { AccountCard } from "@/components/AccountCard";
 import { getCategory } from "@/lib/categories";
 import { cn } from "@/lib/utils";
+import { billRuntimeStatus, billTimingLabel, formatDueDate } from "@/lib/bills";
 
 export const Route = createFileRoute("/")({
   component: Dashboard,
@@ -21,6 +23,7 @@ export const Route = createFileRoute("/")({
 function Dashboard() {
   const transactions = useStore((s) => s.transactions);
   const accounts = useStore((s) => s.accounts);
+  const bills = useStore((s) => s.bills);
   const settings = useStore((s) => s.settings);
   const custom = useStore((s) => s.customCategories);
   const currency = settings.currency;
@@ -50,6 +53,14 @@ function Dashboard() {
   }, [transactions]);
 
   const recent = transactions.slice(0, 5);
+  const reminderBills = useMemo(
+    () =>
+      bills
+        .filter((bill) => billRuntimeStatus(bill) !== "paid")
+        .sort((a, b) => +new Date(a.dueDate) - +new Date(b.dueDate))
+        .slice(0, 2),
+    [bills],
+  );
 
   const insight = useMemo(() => {
     if (transactions.length === 0) return "Add your first transaction to unlock insights.";
@@ -184,6 +195,42 @@ function Dashboard() {
             )}
           </div>
         </GlassCard>
+
+        {reminderBills.length > 0 && (
+          <GlassCard className="mt-3 p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="flex size-8 items-center justify-center rounded-xl bg-primary/15">
+                  <Bell className="size-4 text-primary" />
+                </div>
+                <p className="text-sm font-semibold">Bill reminders</p>
+              </div>
+              <Link to="/bills" className="text-xs font-medium text-primary">
+                View all
+              </Link>
+            </div>
+            <div className="space-y-2">
+              {reminderBills.map((bill) => (
+                <div key={bill.id} className="flex items-center gap-3 rounded-2xl bg-muted/35 p-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{bill.name}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {billTimingLabel(bill)} · {formatDueDate(bill.dueDate)}
+                    </p>
+                  </div>
+                  <p
+                    className={cn(
+                      "shrink-0 font-display text-sm font-semibold tabular",
+                      billRuntimeStatus(bill) === "overdue" ? "text-destructive" : "text-primary",
+                    )}
+                  >
+                    {formatMoney(bill.amount, currency, true)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </GlassCard>
+        )}
 
         {/* Recent */}
         <div className="flex items-center justify-between mt-6 mb-3">

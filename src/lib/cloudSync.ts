@@ -368,14 +368,20 @@ function budgetFromDoc(data: DocumentData): Budget {
 }
 
 function billFromDoc(data: DocumentData, id: string): Bill {
+  const status = data.status || (data.paid ? "paid" : "upcoming");
+
   return {
     id,
     name: data.name || "Bill",
     amount: Number(data.amount || 0),
     dueDate: data.dueDate || new Date().toISOString(),
-    category: data.category,
+    repeat: data.repeat || "none",
+    status,
+    category: data.category || "Bills",
     accountId: data.accountId,
-    paid: Boolean(data.paid),
+    notes: data.notes,
+    paidAt: data.paidAt,
+    transactionId: data.transactionId,
   };
 }
 

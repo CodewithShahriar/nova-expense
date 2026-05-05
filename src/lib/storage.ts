@@ -44,9 +44,13 @@ export interface Bill {
   name: string;
   amount: number;
   dueDate: string;
-  category?: string;
+  repeat: "none" | "weekly" | "monthly" | "yearly";
+  status: "upcoming" | "paid" | "overdue";
+  category: string;
   accountId?: string;
-  paid?: boolean;
+  notes?: string;
+  paidAt?: string;
+  transactionId?: string;
 }
 
 export interface CustomCategory {
@@ -305,6 +309,56 @@ export const store = {
   },
   deleteBudget: (category: string) => {
     write({ ...state, budgets: state.budgets.filter((b) => b.category !== category) });
+  },
+
+  addBill: (bill: Omit<Bill, "id" | "status"> & { status?: Bill["status"] }) => {
+    write({
+      ...state,
+      bills: [
+        ...state.bills,
+        { ...bill, id: crypto.randomUUID(), status: bill.status || "upcoming" },
+      ],
+    });
+  },
+  updateBill: (id: string, patch: Partial<Bill>) => {
+    write({
+      ...state,
+      bills: state.bills.map((bill) => (bill.id === id ? { ...bill, ...patch } : bill)),
+    });
+  },
+  deleteBill: (id: string) => {
+    write({ ...state, bills: state.bills.filter((bill) => bill.id !== id) });
+  },
+  markBillPaid: (id: string) => {
+    const bill = state.bills.find((item) => item.id === id);
+    if (!bill || bill.status === "paid") return;
+
+    const tx: Transaction = {
+      id: crypto.randomUUID(),
+      type: "expense",
+      amount: bill.amount,
+      category: bill.category || "Bills",
+      note: bill.notes || bill.name,
+      date: new Date().toISOString(),
+      accountId: bill.accountId,
+    };
+    const accounts = applyTxBalance(state.accounts, tx, 1);
+
+    write({
+      ...state,
+      accounts,
+      transactions: [tx, ...state.transactions],
+      bills: state.bills.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              status: "paid",
+              paidAt: tx.date,
+              transactionId: tx.id,
+            }
+          : item,
+      ),
+    });
   },
 
   addCustomCategory: (c: CustomCategory) => {
