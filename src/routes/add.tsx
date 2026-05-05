@@ -1,12 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useRef, useState } from "react";
-import { ArrowLeft, Check } from "lucide-react";
+import { ArrowLeft, Check, ScanLine } from "lucide-react";
 import { store, useStore, type TxType } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import { getCategory } from "@/lib/categories";
 import { CategoryPicker } from "@/components/CategoryPicker";
 import { DatePicker } from "@/components/DatePicker";
 import { AccountSelect } from "@/components/AccountSelect";
+import { ReceiptScanner } from "@/components/ReceiptScanner";
 
 export const Route = createFileRoute("/add")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -14,6 +15,7 @@ export const Route = createFileRoute("/add")({
       search.type === "income" || search.type === "expense" || search.type === "transfer"
         ? search.type
         : undefined,
+    scan: search.scan === "receipt" ? "receipt" : undefined,
   }),
   component: AddTransaction,
 });
@@ -35,6 +37,7 @@ function AddTransaction() {
   const [fromId, setFromId] = useState<string>(accounts[0]?.id || "");
   const [toId, setToId] = useState<string>(accounts[1]?.id || accounts[0]?.id || "");
   const [catOpen, setCatOpen] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(search.scan === "receipt");
   const [error, setError] = useState<string | null>(null);
   const noteRef = useRef<HTMLInputElement>(null);
 
@@ -150,6 +153,17 @@ function AddTransaction() {
             </button>
           ))}
         </div>
+      </div>
+
+      <div className="shrink-0 px-4 min-[380px]:px-5 mt-3">
+        <button
+          type="button"
+          onClick={() => setScannerOpen(true)}
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl glass text-sm font-semibold text-primary"
+        >
+          <ScanLine className="size-4" />
+          Scan receipt
+        </button>
       </div>
 
       <form
@@ -270,9 +284,16 @@ function AddTransaction() {
         onChange={setCategory}
         type={type === "income" ? "income" : "expense"}
       />
+
+      {scannerOpen && (
+        <ReceiptScanner
+          accounts={accounts}
+          customCategories={custom}
+          currency={currency}
+          onClose={() => setScannerOpen(false)}
+          onSaved={() => navigate({ to: "/" })}
+        />
+      )}
     </div>
   );
 }
-
-// placeholder to silence unused import on currency (retained for future use)
-void ((c: string) => c);

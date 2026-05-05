@@ -382,6 +382,8 @@ function transactionFromDoc(data: DocumentData, id: string): Transaction {
     amount: Number(data.amount || 0),
     category: data.category || "Other",
     note: data.note,
+    merchant: data.merchant,
+    receiptImage: data.receiptImage,
     date: data.date || new Date().toISOString(),
     accountId: data.accountId,
     fromAccountId: data.fromAccountId,

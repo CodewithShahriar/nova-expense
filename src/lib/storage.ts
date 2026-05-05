@@ -21,6 +21,8 @@ export interface Transaction {
   amount: number;
   category: string; // "Transfer" for transfer type
   note?: string;
+  merchant?: string;
+  receiptImage?: string;
   date: string; // ISO
   accountId?: string; // for expense/income
   fromAccountId?: string; // for transfer

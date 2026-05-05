@@ -251,7 +251,7 @@ function Dashboard() {
               <p className="text-sm text-muted-foreground">No transactions yet</p>
               <Link
                 to="/add"
-                search={{ type: undefined }}
+                search={{ type: undefined, scan: undefined }}
                 className="mt-3 inline-flex rounded-full gradient-primary px-4 py-2 text-xs font-semibold text-primary-foreground"
               >
                 Add your first

@@ -21,7 +21,7 @@ export function BottomNav() {
       {/* Floating add button */}
       <Link
         to="/add"
-        search={{ type: undefined }}
+        search={{ type: "expense", scan: "receipt" }}
         aria-label="Add transaction"
         className="fixed left-1/2 -translate-x-1/2 bottom-[calc(env(safe-area-inset-bottom)+4.25rem)] z-50 size-[3.25rem] min-[380px]:size-14 rounded-full gradient-primary shadow-glow flex items-center justify-center active:scale-95 transition-transform"
       >
