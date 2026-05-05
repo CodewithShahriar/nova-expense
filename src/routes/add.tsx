@@ -9,18 +9,26 @@ import { DatePicker } from "@/components/DatePicker";
 import { AccountSelect } from "@/components/AccountSelect";
 
 export const Route = createFileRoute("/add")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    type:
+      search.type === "income" || search.type === "expense" || search.type === "transfer"
+        ? search.type
+        : undefined,
+  }),
   component: AddTransaction,
 });
 
 function AddTransaction() {
   const navigate = useNavigate();
+  const search = Route.useSearch();
   const currency = useStore((s) => s.settings.currency);
   const accounts = useStore((s) => s.accounts);
   const custom = useStore((s) => s.customCategories);
 
-  const [type, setType] = useState<TxType>("expense");
+  const initialType = (search.type || "expense") as TxType;
+  const [type, setType] = useState<TxType>(initialType);
   const [amount, setAmount] = useState("");
-  const [category, setCategory] = useState<string>("Food");
+  const [category, setCategory] = useState<string>(initialType === "income" ? "Salary" : "Food");
   const [note, setNote] = useState("");
   const [date, setDate] = useState(() => new Date().toISOString());
   const [accountId, setAccountId] = useState<string>(accounts[0]?.id || "");

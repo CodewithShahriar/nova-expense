@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import { initCloudSync } from "./lib/cloudSync";
+import { registerServiceWorker } from "./lib/pwa";
 import "./styles.css";
 
 const rootElement = document.getElementById("root");
@@ -11,6 +12,7 @@ if (!rootElement) {
 }
 
 initCloudSync();
+registerServiceWorker();
 
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>

@@ -1,13 +1,44 @@
 {
-  "name": "PocketLedger — Expense Tracker",
-  "short_name": "PocketLedger",
-  "description": "Premium mobile-first expense tracker",
+  "name": "Nova Expense",
+  "short_name": "Nova",
+  "description": "Premium mobile-first expense tracking with cloud sync, bills, budgets, and reports.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#0a0c10",
   "theme_color": "#0a0c10",
   "orientation": "portrait",
   "icons": [
     { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Add Expense",
+      "short_name": "Expense",
+      "description": "Quickly add a new expense",
+      "url": "/add?type=expense",
+      "icons": [
+        { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+      ]
+    },
+    {
+      "name": "Add Income",
+      "short_name": "Income",
+      "description": "Quickly add new income",
+      "url": "/add?type=income",
+      "icons": [
+        { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+      ]
+    },
+    {
+      "name": "View Dashboard",
+      "short_name": "Dashboard",
+      "description": "Open your Nova Expense dashboard",
+      "url": "/",
+      "icons": [
+        { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+      ]
+    }
   ]
 }

@@ -6,7 +6,6 @@ import {
   getDocs,
   onSnapshot,
   serverTimestamp,
-  setDoc,
   writeBatch,
   type DocumentData,
   type Firestore,
@@ -42,6 +41,7 @@ let initialized = false;
 let activeUser: User | null = null;
 let syncTimer: number | null = null;
 let remoteUnsubscribers: Unsubscribe[] = [];
+let pendingOnlineState: AppState | null = null;
 
 export function initCloudSync() {
   if (initialized) return;
@@ -102,6 +102,16 @@ export function initCloudSync() {
       setSyncStatus({ mode: "error", user: syncUser, error: errorMessage(error) });
     }
   });
+
+  window.addEventListener("online", () => {
+    if (!activeUser || !pendingOnlineState) return;
+    const next = pendingOnlineState;
+    pendingOnlineState = null;
+    scheduleRemoteWrite(db, activeUser, next).catch((error: unknown) => {
+      pendingOnlineState = next;
+      setSyncStatus({ mode: "error", error: errorMessage(error) });
+    });
+  });
 }
 
 function userDoc(db: Firestore, user: User) {
@@ -113,6 +123,16 @@ function userCollection(db: Firestore, user: User, name: string) {
 }
 
 async function scheduleRemoteWrite(db: Firestore, user: User, state: AppState) {
+  if (typeof navigator !== "undefined" && !navigator.onLine) {
+    pendingOnlineState = state;
+    setSyncStatus({
+      mode: "error",
+      user: { uid: user.uid, email: user.email },
+      error: "You are offline. Changes are saved locally and will sync when you reconnect.",
+    });
+    return;
+  }
+
   if (syncTimer) window.clearTimeout(syncTimer);
 
   setSyncStatus({
@@ -125,6 +145,7 @@ async function scheduleRemoteWrite(db: Firestore, user: User, state: AppState) {
     syncTimer = window.setTimeout(() => {
       writeRemoteState(db, user, state)
         .then(() => {
+          pendingOnlineState = null;
           setSyncStatus({
             mode: "synced",
             user: { uid: user.uid, email: user.email },
@@ -132,7 +153,10 @@ async function scheduleRemoteWrite(db: Firestore, user: User, state: AppState) {
           });
           resolve();
         })
-        .catch(reject);
+        .catch((error) => {
+          pendingOnlineState = state;
+          reject(error);
+        });
     }, 450);
   });
 }
