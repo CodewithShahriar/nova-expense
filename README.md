@@ -11,7 +11,8 @@ Nova Expense is a mobile-first expense tracking web app built with Vite, React, 
 - Budget tracking by category with monthly progress
 - Reports with category breakdowns and six-month income/expense charts
 - Settings for profile name, avatar, theme, CSV export, and transaction cleanup
-- Local-first data storage using `localStorage`
+- Firebase email/password login with Firestore sync across devices
+- Local-first data storage using `localStorage` when signed out
 - Mobile-friendly layout with bottom navigation
 - SPA routing with fallback redirects for direct route reloads
 
@@ -26,6 +27,7 @@ Nova Expense is a mobile-first expense tracking web app built with Vite, React, 
 - Lucide React icons
 - Recharts
 - date-fns
+- Firebase
 
 ## Project Structure
 
@@ -108,10 +110,20 @@ Routes are defined in `src/routes/` and wired through TanStack Router via `src/r
 
 ## Data Storage
 
-App data is stored in browser `localStorage` under the key:
+When signed out, app data is stored in browser `localStorage` under the key:
 
 ```text
 pocketledger:v2
+```
+
+When signed in, data syncs to Firestore under:
+
+```text
+users/{uid}
+users/{uid}/accounts/{accountId}
+users/{uid}/transactions/{transactionId}
+users/{uid}/budgets/{category}
+users/{uid}/bills/{billId}
 ```
 
 The storage layer lives in:
@@ -125,11 +137,13 @@ It manages:
 - Accounts
 - Transactions
 - Budgets
+- Bills
 - Goals
 - Custom categories
 - Settings
 
-Because data is local-only, clearing browser site data will reset the app.
+To enable Firebase, copy `.env.example` to `.env.local` and add your Firebase web app config.
+Enable Email/Password sign-in in Firebase Authentication and create a Cloud Firestore database.
 
 ## Styling
 
@@ -166,4 +180,3 @@ with:
 ```
 
 That lets direct visits like `/accounts` or `/reports` load the app correctly.
-

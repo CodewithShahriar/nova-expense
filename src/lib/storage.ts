@@ -39,6 +39,16 @@ export interface Goal {
   deadline?: string;
 }
 
+export interface Bill {
+  id: string;
+  name: string;
+  amount: number;
+  dueDate: string;
+  category?: string;
+  accountId?: string;
+  paid?: boolean;
+}
+
 export interface CustomCategory {
   name: string;
   icon: string; // lucide icon name
@@ -57,6 +67,7 @@ export interface AppState {
   transactions: Transaction[];
   accounts: Account[];
   budgets: Budget[];
+  bills: Bill[];
   goals: Goal[];
   customCategories: CustomCategory[];
   settings: Settings;
@@ -112,6 +123,7 @@ const defaultState: AppState = {
     { category: "Shopping", limit: 6000 },
     { category: "Entertainment", limit: 2500 },
   ],
+  bills: [],
   goals: [],
   customCategories: [],
   settings: { currency: "BDT", theme: "dark", name: "You" },
@@ -127,6 +139,11 @@ function read(): AppState {
       ...defaultState,
       ...parsed,
       accounts: parsed.accounts?.length ? parsed.accounts : defaultAccounts,
+      transactions: parsed.transactions || [],
+      budgets: parsed.budgets || defaultState.budgets,
+      bills: parsed.bills || [],
+      goals: parsed.goals || [],
+      customCategories: parsed.customCategories || [],
       settings: { ...defaultState.settings, ...parsed.settings, currency: "BDT" },
     };
   } catch {
@@ -137,6 +154,23 @@ function read(): AppState {
 let state: AppState = defaultState;
 let initialized = false;
 const listeners = new Set<() => void>();
+const syncListeners = new Set<() => void>();
+let cloudWriter: ((next: AppState) => Promise<void>) | null = null;
+let applyingRemoteState = false;
+
+export type SyncMode = "local" | "loading" | "syncing" | "synced" | "error";
+
+export interface SyncStatus {
+  mode: SyncMode;
+  user: { uid: string; email: string | null } | null;
+  error: string | null;
+}
+
+let syncStatus: SyncStatus = {
+  mode: "local",
+  user: null,
+  error: null,
+};
 
 function ensureInit() {
   if (!initialized && typeof window !== "undefined") {
@@ -151,6 +185,42 @@ function write(next: AppState) {
     localStorage.setItem(KEY, JSON.stringify(next));
   }
   listeners.forEach((l) => l());
+  if (cloudWriter && !applyingRemoteState) {
+    cloudWriter(next).catch((error: unknown) => {
+      setSyncStatus({ mode: "error", error: errorMessage(error) });
+    });
+  }
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Something went wrong while syncing.";
+}
+
+function normalizeState(next: Partial<AppState>): AppState {
+  return {
+    ...defaultState,
+    ...next,
+    transactions: next.transactions || [],
+    accounts: next.accounts?.length ? next.accounts : defaultAccounts,
+    budgets: next.budgets || defaultState.budgets,
+    bills: next.bills || [],
+    goals: next.goals || [],
+    customCategories: next.customCategories || [],
+    settings: { ...defaultState.settings, ...next.settings, currency: "BDT" },
+  };
+}
+
+export function registerCloudWriter(writer: ((next: AppState) => Promise<void>) | null) {
+  cloudWriter = writer;
+}
+
+export function hasLocalSnapshot() {
+  return typeof window !== "undefined" && Boolean(localStorage.getItem(KEY));
+}
+
+export function setSyncStatus(patch: Partial<SyncStatus>) {
+  syncStatus = { ...syncStatus, ...patch };
+  syncListeners.forEach((l) => l());
 }
 
 // Apply a transaction's effect on account balances
@@ -176,6 +246,11 @@ export const store = {
   subscribe: (l: () => void) => {
     listeners.add(l);
     return () => listeners.delete(l);
+  },
+  replaceFromCloud: (next: Partial<AppState>) => {
+    applyingRemoteState = true;
+    write(normalizeState(next));
+    applyingRemoteState = false;
   },
 
   addTransaction: (tx: Omit<Transaction, "id">) => {
@@ -302,6 +377,19 @@ export const store = {
 export function useStore<T>(selector: (s: AppState) => T): T {
   ensureInit();
   const snapshot = useSyncExternalStore(store.subscribe, store.get, () => defaultState);
+
+  return selector(snapshot);
+}
+
+export function useSyncStatus<T>(selector: (s: SyncStatus) => T): T {
+  const snapshot = useSyncExternalStore(
+    (listener) => {
+      syncListeners.add(listener);
+      return () => syncListeners.delete(listener);
+    },
+    () => syncStatus,
+    () => syncStatus,
+  );
 
   return selector(snapshot);
 }

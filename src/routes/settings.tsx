@@ -3,6 +3,7 @@ import { useRef } from "react";
 import { ArrowLeft, Download, Moon, Sun, Trash2, User, Upload, X } from "lucide-react";
 import { store, useStore } from "@/lib/storage";
 import { GlassCard } from "@/components/GlassCard";
+import { AuthSyncCard } from "@/components/AuthSyncCard";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/settings")({
@@ -144,6 +145,8 @@ function SettingsPage() {
           className="hidden"
         />
       </GlassCard>
+
+      <AuthSyncCard />
 
       {/* Theme */}
       <GlassCard className="mt-3 p-4">
