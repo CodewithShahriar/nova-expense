@@ -2,6 +2,7 @@ import { Outlet, useLocation } from "@tanstack/react-router";
 import { BottomNav } from "./BottomNav";
 import { useEffect } from "react";
 import { useStore } from "@/lib/storage";
+import { Toaster } from "@/components/ui/sonner";
 
 export function AppShell() {
   const location = useLocation();
@@ -27,6 +28,7 @@ export function AppShell() {
         <Outlet />
       </div>
       {!hideNav && <BottomNav />}
+      <Toaster position="top-center" richColors closeButton />
     </div>
   );
 }
