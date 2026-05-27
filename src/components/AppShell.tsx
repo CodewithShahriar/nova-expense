@@ -15,6 +15,20 @@ export function AppShell() {
     else root.classList.remove("light");
   }, [theme]);
 
+  useEffect(() => {
+    function onWheel(event: WheelEvent) {
+      if (!event.deltaY || event.defaultPrevented) return;
+      if (hasScrollableParent(event.target)) return;
+      if (!hasWheelTrapParent(event.target)) return;
+
+      event.preventDefault();
+      window.scrollBy({ top: event.deltaY, behavior: "auto" });
+    }
+
+    window.addEventListener("wheel", onWheel, { passive: false, capture: true });
+    return () => window.removeEventListener("wheel", onWheel, { capture: true });
+  }, []);
+
   const hideNav = location.pathname === "/add";
 
   return (
@@ -33,4 +47,37 @@ export function AppShell() {
       <Toaster position="top-center" richColors closeButton />
     </div>
   );
+}
+
+function hasScrollableParent(target: EventTarget | null) {
+  if (!(target instanceof Element)) return false;
+
+  let node: Element | null = target;
+  while (node && node !== document.body && node !== document.documentElement) {
+    const style = window.getComputedStyle(node);
+    const canScrollY =
+      /(auto|scroll)/.test(style.overflowY) && node.scrollHeight > node.clientHeight;
+
+    if (canScrollY) return true;
+    node = node.parentElement;
+  }
+
+  return false;
+}
+
+function hasWheelTrapParent(target: EventTarget | null) {
+  if (!(target instanceof Element)) return false;
+
+  let node: Element | null = target;
+  while (node && node !== document.body && node !== document.documentElement) {
+    const style = window.getComputedStyle(node);
+    const isFixed = style.position === "fixed";
+    const isHorizontalScroller =
+      /(auto|scroll)/.test(style.overflowX) && node.scrollWidth > node.clientWidth;
+
+    if (isFixed || isHorizontalScroller) return true;
+    node = node.parentElement;
+  }
+
+  return false;
 }
