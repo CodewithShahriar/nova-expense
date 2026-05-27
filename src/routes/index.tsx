@@ -127,7 +127,10 @@ function Dashboard() {
           className="flex gap-3 overflow-x-auto snap-x snap-mandatory no-scrollbar px-4 min-[380px]:px-5 pb-1"
         >
           {accounts.map((a) => (
-            <div key={a.id} className="snap-center shrink-0 w-[92%] min-[380px]:w-[88%]">
+            <div
+              key={a.id}
+              className="snap-center shrink-0 w-[92%] min-[380px]:w-[88%] md:w-[23rem]"
+            >
               <Link to="/accounts/$id" params={{ id: a.id }}>
                 <AccountCard account={a} currency={currency} />
               </Link>

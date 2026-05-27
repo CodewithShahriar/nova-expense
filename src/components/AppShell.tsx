@@ -25,7 +25,7 @@ export function AppShell() {
         style={{ background: "var(--gradient-hero)" }}
         aria-hidden
       />
-      <div className="relative z-10 mx-auto w-full max-w-lg pb-[calc(env(safe-area-inset-bottom)+8rem)]">
+      <div className="relative z-10 mx-auto w-full max-w-lg md:max-w-3xl xl:max-w-5xl pb-[calc(env(safe-area-inset-bottom)+8rem)]">
         <Outlet />
       </div>
       {!hideNav && <BottomNav />}

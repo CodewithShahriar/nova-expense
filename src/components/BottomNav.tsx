@@ -39,7 +39,7 @@ export function BottomNav() {
       </Link>
 
       <nav className="fixed bottom-0 inset-x-0 z-40 safe-bottom pt-2 px-2 min-[380px]:px-3">
-        <div className="glass-strong rounded-[1.5rem] min-[380px]:rounded-3xl shadow-elegant mx-auto w-full max-w-lg grid grid-cols-7 items-center h-[3.75rem] min-[380px]:h-16 px-1">
+        <div className="glass-strong rounded-[1.5rem] min-[380px]:rounded-3xl shadow-elegant mx-auto w-full max-w-lg md:max-w-3xl xl:max-w-4xl grid grid-cols-7 items-center h-[3.75rem] min-[380px]:h-16 md:h-[4.25rem] px-1 md:px-2">
           {items.map((it) => (
             <NavItem
               key={it.to}
@@ -81,12 +81,12 @@ function NavItem({
     >
       <Icon
         className={cn(
-          "size-[1.125rem] min-[380px]:size-5 transition-transform",
+          "size-[1.125rem] min-[380px]:size-5 md:size-[1.35rem] transition-transform",
           active && "scale-110",
         )}
         strokeWidth={active ? 2.5 : 2}
       />
-      <span className="max-w-full truncate text-[9px] min-[380px]:text-[10px] font-medium tracking-wide">
+      <span className="max-w-full truncate text-[9px] min-[380px]:text-[10px] md:text-xs font-medium tracking-wide">
         {label}
       </span>
     </Link>
