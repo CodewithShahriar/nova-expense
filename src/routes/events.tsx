@@ -220,7 +220,6 @@ function EventDetail({
   const Icon = eventIcons[event.icon] || CalendarDays;
   const totals = eventTotals(event);
   const remaining = typeof event.budget === "number" ? event.budget - totals.cost : null;
-  const breakdown = categoryBreakdown(event);
 
   if (editingEvent) {
     return (
@@ -308,47 +307,6 @@ function EventDetail({
                 background: totals.cost > event.budget ? "var(--gradient-danger)" : event.color,
               }}
             />
-          </div>
-        )}
-      </GlassCard>
-
-      <GlassCard className="p-4">
-        <div className="mb-3 flex items-center justify-between">
-          <p className="text-sm font-semibold">Category breakdown</p>
-          <span className="text-xs text-muted-foreground">{breakdown.length} categories</span>
-        </div>
-        {breakdown.length === 0 ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">
-            Add costs to see the breakdown.
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {breakdown.map((item) => {
-              const cat = getCategory(item.category);
-              const Icon = cat.icon;
-              const pct = totals.cost > 0 ? item.amount / totals.cost : 0;
-
-              return (
-                <div key={item.category}>
-                  <div className="flex items-center gap-2">
-                    <Icon className="size-4 shrink-0" style={{ color: cat.color }} />
-                    <span className="min-w-0 flex-1 truncate text-sm">{item.category}</span>
-                    <span className="text-xs text-muted-foreground tabular">
-                      {Math.round(pct * 100)}%
-                    </span>
-                    <span className="w-20 truncate text-right text-sm font-semibold tabular">
-                      {formatMoney(item.amount, currency, true)}
-                    </span>
-                  </div>
-                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full"
-                      style={{ width: `${pct * 100}%`, background: cat.color }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
           </div>
         )}
       </GlassCard>
@@ -827,17 +785,6 @@ function eventTotals(event: ExpenseEvent) {
   );
 
   return { income, cost, net: income - cost };
-}
-
-function categoryBreakdown(event: ExpenseEvent) {
-  const map = new Map<string, number>();
-  event.expenses.forEach((expense) => {
-    if (expense.type === "income") return;
-    map.set(expense.category, (map.get(expense.category) || 0) + expense.amount);
-  });
-  return Array.from(map.entries())
-    .map(([category, amount]) => ({ category, amount }))
-    .sort((a, b) => b.amount - a.amount);
 }
 
 function HorizontalScroll({ className, children }: { className: string; children: ReactNode }) {
