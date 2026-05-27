@@ -29,6 +29,17 @@ function TransactionsPage() {
     return () => window.clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    if (!previewTx) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [previewTx]);
+
   const filtered = useMemo(() => {
     return transactions.filter((t) => {
       if (filter !== "All" && t.category !== filter) return false;
@@ -318,7 +329,11 @@ function ReceiptPreview({
   onEdit: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/70 px-3 pb-3 backdrop-blur-sm animate-fade-in sm:items-center sm:pb-0">
+    <div
+      className="fixed inset-0 z-[80] flex items-end justify-center bg-black/70 px-3 pb-3 backdrop-blur-sm animate-fade-in sm:items-center sm:pb-0"
+      onWheel={(event) => event.stopPropagation()}
+      onTouchMove={(event) => event.stopPropagation()}
+    >
       <div className="glass-strong max-h-[92dvh] w-full max-w-2xl overflow-hidden rounded-3xl shadow-elegant">
         <div className="flex items-center justify-between gap-3 p-4">
           <div className="min-w-0">
