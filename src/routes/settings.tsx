@@ -104,10 +104,9 @@ function SettingsPage() {
         </div>
       </div>
 
-      <GlassCard className="relative overflow-hidden rounded-[1.75rem] p-5 shadow-elegant">
+      <GlassCard className="relative overflow-hidden rounded-[1.75rem] p-5 shadow-elegant bg-gradient-to-br from-cyan-200/20 via-sky-200/10 to-white/80 border border-white/10">
         <div
-          className="pointer-events-none absolute inset-x-0 top-0 h-24 opacity-25"
-          style={{ background: "var(--gradient-primary)" }}
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.18),_transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(14,165,233,0.12),_transparent_30%)]"
           aria-hidden
         />
         <div className="relative">
