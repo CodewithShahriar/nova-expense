@@ -36,7 +36,7 @@ export function BottomNav() {
       {/* Floating add button */}
       <Link
         to="/add"
-        search={{ type: undefined, scan: undefined }}
+        search={{ type: undefined, scan: undefined, edit: undefined }}
         aria-label="Add transaction"
         onWheel={passWheelToPage}
         className="fixed left-1/2 -translate-x-1/2 bottom-[calc(env(safe-area-inset-bottom)+3.55rem)] z-50 size-[3.25rem] min-[380px]:size-14 rounded-full gradient-primary shadow-glow flex items-center justify-center active:scale-95 transition-transform"

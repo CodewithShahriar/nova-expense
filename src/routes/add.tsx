@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useRef, useState } from "react";
-import { ArrowLeft, Check, ScanLine } from "lucide-react";
+import { ArrowLeft, Check, ImagePlus, ScanLine, Trash2 } from "lucide-react";
 import { store, useStore, type TxType } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import { getCategory } from "@/lib/categories";
@@ -8,6 +8,8 @@ import { CategoryPicker } from "@/components/CategoryPicker";
 import { DatePicker } from "@/components/DatePicker";
 import { AccountSelect } from "@/components/AccountSelect";
 import { ReceiptScanner } from "@/components/ReceiptScanner";
+import { resizeReceiptImage } from "@/lib/receiptOcr";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/add")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -16,6 +18,7 @@ export const Route = createFileRoute("/add")({
         ? search.type
         : undefined,
     scan: search.scan === "receipt" ? "receipt" : undefined,
+    edit: typeof search.edit === "string" ? search.edit : undefined,
   }),
   component: AddTransaction,
 });
@@ -26,23 +29,46 @@ function AddTransaction() {
   const currency = useStore((s) => s.settings.currency);
   const accounts = useStore((s) => s.accounts);
   const custom = useStore((s) => s.customCategories);
+  const transactions = useStore((s) => s.transactions);
+  const editing = search.edit ? transactions.find((t) => t.id === search.edit) : undefined;
 
-  const initialType = (search.type || "expense") as TxType;
+  const initialType = (editing?.type || search.type || "expense") as TxType;
+  const initialCategory =
+    editing?.type === "transfer"
+      ? "Transfer"
+      : editing?.category || (initialType === "income" ? "Salary" : "Food");
   const [type, setType] = useState<TxType>(initialType);
-  const [amount, setAmount] = useState("");
-  const [category, setCategory] = useState<string>(initialType === "income" ? "Salary" : "Food");
-  const [note, setNote] = useState("");
-  const [date, setDate] = useState(() => new Date().toISOString());
-  const [accountId, setAccountId] = useState<string>(accounts[0]?.id || "");
-  const [fromId, setFromId] = useState<string>(accounts[0]?.id || "");
-  const [toId, setToId] = useState<string>(accounts[1]?.id || accounts[0]?.id || "");
+  const [amount, setAmount] = useState(editing ? String(editing.amount) : "");
+  const [category, setCategory] = useState<string>(initialCategory);
+  const [note, setNote] = useState(editing?.note || "");
+  const [date, setDate] = useState(() => editing?.date || new Date().toISOString());
+  const [accountId, setAccountId] = useState<string>(editing?.accountId || accounts[0]?.id || "");
+  const [fromId, setFromId] = useState<string>(editing?.fromAccountId || accounts[0]?.id || "");
+  const [toId, setToId] = useState<string>(
+    editing?.toAccountId || accounts[1]?.id || accounts[0]?.id || "",
+  );
+  const [receiptImage, setReceiptImage] = useState<string | undefined>(editing?.receiptImage);
   const [catOpen, setCatOpen] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const noteRef = useRef<HTMLInputElement>(null);
+  const receiptRef = useRef<HTMLInputElement>(null);
 
   const cat = getCategory(category, custom);
   const CatIcon = cat.icon;
+
+  async function attachReceipt(file?: File) {
+    if (!file) return;
+    try {
+      const resized = await resizeReceiptImage(file);
+      setReceiptImage(resized);
+      toast.success("Receipt attached");
+    } catch {
+      toast.error("Could not attach image", {
+        description: "Try a smaller or clearer image file.",
+      });
+    }
+  }
 
   function keepNoteVisible() {
     window.setTimeout(() => {
@@ -67,7 +93,7 @@ function AddTransaction() {
         setError("Pick two different accounts");
         return;
       }
-      store.addTransaction({
+      const payload = {
         type,
         amount: value,
         category: "Transfer",
@@ -75,7 +101,10 @@ function AddTransaction() {
         date,
         fromAccountId: fromId,
         toAccountId: toId,
-      });
+        receiptImage,
+      };
+      if (editing) store.updateTransaction(editing.id, payload);
+      else store.addTransaction(payload);
     } else {
       if (!category) {
         setError("Pick a category");
@@ -85,16 +114,19 @@ function AddTransaction() {
         setError("Select an account");
         return;
       }
-      store.addTransaction({
+      const payload = {
         type,
         amount: value,
-        category,
+        category: category,
         note: note.trim() || undefined,
         date,
         accountId,
-      });
+        receiptImage,
+      };
+      if (editing) store.updateTransaction(editing.id, payload);
+      else store.addTransaction(payload);
     }
-    navigate({ to: "/" });
+    navigate({ to: editing ? "/transactions" : "/" });
   }
 
   const typeColor =
@@ -114,7 +146,7 @@ function AddTransaction() {
         >
           <ArrowLeft className="size-5" />
         </button>
-        <h1 className="font-semibold">New transaction</h1>
+        <h1 className="font-semibold">{editing ? "Edit transaction" : "New transaction"}</h1>
         <div className="size-10" />
       </div>
 
@@ -275,12 +307,61 @@ function AddTransaction() {
           />
         </label>
 
+        <div className="mt-4">
+          <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">
+            Receipt image (optional)
+          </p>
+          {receiptImage ? (
+            <div className="glass overflow-hidden rounded-2xl">
+              <img
+                src={receiptImage}
+                alt="Attached receipt"
+                className="max-h-56 w-full object-cover"
+              />
+              <div className="flex gap-2 p-2">
+                <button
+                  type="button"
+                  onClick={() => receiptRef.current?.click()}
+                  className="flex h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-muted text-xs font-semibold"
+                >
+                  <ImagePlus className="size-4" />
+                  Change
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setReceiptImage(undefined)}
+                  className="flex h-10 w-12 items-center justify-center rounded-xl bg-muted text-muted-foreground hover:text-destructive"
+                  aria-label="Remove receipt"
+                >
+                  <Trash2 className="size-4" />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => receiptRef.current?.click()}
+              className="glass flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl text-sm font-semibold text-primary"
+            >
+              <ImagePlus className="size-5" />
+              Upload receipt image
+            </button>
+          )}
+          <input
+            ref={receiptRef}
+            type="file"
+            accept="image/*"
+            onChange={(e) => attachReceipt(e.target.files?.[0])}
+            className="hidden"
+          />
+        </div>
+
         <button
           type="submit"
           className="sticky bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] mt-6 min-h-14 rounded-2xl gradient-primary text-primary-foreground font-semibold shadow-glow flex w-full items-center justify-center gap-2 active:scale-[0.98] transition"
         >
           <Check className="size-5" />
-          Save transaction
+          {editing ? "Save changes" : "Save transaction"}
         </button>
       </form>
 

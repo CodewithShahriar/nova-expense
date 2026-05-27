@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Search, Trash2, ArrowLeftRight } from "lucide-react";
-import { store, useStore, formatMoney } from "@/lib/storage";
+import { Search, Trash2, ArrowLeftRight, Pencil, Image as ImageIcon, X } from "lucide-react";
+import { store, useStore, formatMoney, type Transaction } from "@/lib/storage";
 import { getCategory, allCategories } from "@/lib/categories";
 import { GlassCard } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,7 @@ export const Route = createFileRoute("/transactions")({
 });
 
 function TransactionsPage() {
+  const navigate = useNavigate();
   const transactions = useStore((s) => s.transactions);
   const accounts = useStore((s) => s.accounts);
   const currency = useStore((s) => s.settings.currency);
@@ -18,6 +19,7 @@ function TransactionsPage() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<string>("All");
   const [balanceTick, setBalanceTick] = useState(0);
+  const [previewTx, setPreviewTx] = useState<Transaction | null>(null);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -221,7 +223,10 @@ function TransactionsPage() {
 
                   return (
                     <div key={t.id} className="group relative">
-                      <GlassCard className="flex items-center gap-3 p-3">
+                      <GlassCard
+                        className="flex cursor-pointer items-center gap-3 p-3"
+                        onClick={() => t.receiptImage && setPreviewTx(t)}
+                      >
                         <div
                           className="size-11 rounded-2xl flex items-center justify-center shrink-0"
                           style={{
@@ -235,6 +240,12 @@ function TransactionsPage() {
                             {t.note || (isTransfer ? "Transfer" : t.category)}
                           </p>
                           <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
+                          {t.receiptImage && (
+                            <p className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-primary">
+                              <ImageIcon className="size-3" />
+                              Receipt attached
+                            </p>
+                          )}
                         </div>
                         <div className="shrink-0 text-right">
                           <p
@@ -248,7 +259,21 @@ function TransactionsPage() {
                           </p>
                         </div>
                         <button
-                          onClick={() => {
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            navigate({
+                              to: "/add",
+                              search: { type: undefined, scan: undefined, edit: t.id },
+                            });
+                          }}
+                          className="ml-1 size-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition"
+                          aria-label="Edit"
+                        >
+                          <Pencil className="size-4" />
+                        </button>
+                        <button
+                          onClick={(event) => {
+                            event.stopPropagation();
                             if (confirm("Delete this transaction?")) store.deleteTransaction(t.id);
                           }}
                           className="ml-1 size-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition"
@@ -264,6 +289,77 @@ function TransactionsPage() {
             </div>
           );
         })}
+      </div>
+      {previewTx?.receiptImage && (
+        <ReceiptPreview
+          transaction={previewTx}
+          currency={currency}
+          onClose={() => setPreviewTx(null)}
+          onEdit={() => {
+            const id = previewTx.id;
+            setPreviewTx(null);
+            navigate({ to: "/add", search: { type: undefined, scan: undefined, edit: id } });
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function ReceiptPreview({
+  transaction,
+  currency,
+  onClose,
+  onEdit,
+}: {
+  transaction: Transaction;
+  currency: string;
+  onClose: () => void;
+  onEdit: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/70 px-3 pb-3 backdrop-blur-sm animate-fade-in sm:items-center sm:pb-0">
+      <div className="glass-strong max-h-[92dvh] w-full max-w-2xl overflow-hidden rounded-3xl shadow-elegant">
+        <div className="flex items-center justify-between gap-3 p-4">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold">
+              {transaction.note || transaction.category}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {formatMoney(transaction.amount, currency)} -{" "}
+              {new Date(transaction.date).toLocaleDateString(undefined, {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })}
+            </p>
+          </div>
+          <div className="flex shrink-0 gap-2">
+            <button
+              type="button"
+              onClick={onEdit}
+              className="flex size-9 items-center justify-center rounded-xl glass text-primary"
+              aria-label="Edit transaction"
+            >
+              <Pencil className="size-4" />
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex size-9 items-center justify-center rounded-xl glass"
+              aria-label="Close"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+        </div>
+        <div className="max-h-[72dvh] overflow-auto bg-black/25">
+          <img
+            src={transaction.receiptImage}
+            alt="Transaction receipt"
+            className="mx-auto max-h-[72dvh] w-full object-contain"
+          />
+        </div>
       </div>
     </div>
   );
