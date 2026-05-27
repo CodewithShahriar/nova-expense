@@ -18,7 +18,7 @@ export function AccountSelect({
 }) {
   const filtered = accounts.filter((a) => a.id !== exclude);
   return (
-    <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 min-[380px]:-mx-5 min-[380px]:px-5">
+    <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 py-1 min-[380px]:-mx-5 min-[380px]:px-5">
       {filtered.map((a) => {
         const Icon = iconFor(a.type);
         const active = value === a.id;
@@ -28,19 +28,37 @@ export function AccountSelect({
             type="button"
             onClick={() => onChange(a.id)}
             className={cn(
-              "shrink-0 rounded-2xl p-3 pr-4 flex items-center gap-3 transition min-w-[142px] max-w-[78vw]",
-              active ? "glass-strong ring-1 ring-primary/70" : "glass",
+              "relative shrink-0 rounded-2xl p-3 pr-4 flex items-center gap-3 transition min-w-[142px] max-w-[78vw] outline-none",
+              active
+                ? "glass-strong border-primary/55 shadow-[inset_0_0_0_1px_color-mix(in_oklch,var(--primary)_72%,transparent),0_10px_30px_-18px_var(--primary)]"
+                : "glass hover:border-primary/20",
             )}
           >
+            {active && (
+              <span
+                className="pointer-events-none absolute inset-[1px] rounded-[calc(1rem-1px)]"
+                style={{
+                  background:
+                    "linear-gradient(135deg, oklch(0.78 0.17 162 / 12%), transparent 55%)",
+                }}
+              />
+            )}
             <div
-              className="size-9 rounded-xl flex items-center justify-center text-white"
+              className="relative z-10 size-9 rounded-xl flex items-center justify-center text-white shadow-card"
               style={{ background: a.gradient }}
             >
               <Icon className="size-4" />
             </div>
-            <div className="text-left min-w-0">
+            <div className="relative z-10 text-left min-w-0">
               <p className="text-xs font-semibold truncate">{a.name}</p>
-              <p className="text-[10px] text-muted-foreground capitalize">{a.type}</p>
+              <p
+                className={cn(
+                  "text-[10px] capitalize",
+                  active ? "text-primary/80" : "text-muted-foreground",
+                )}
+              >
+                {a.type}
+              </p>
             </div>
           </button>
         );
