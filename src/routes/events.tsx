@@ -804,7 +804,6 @@ function scrollHorizontally(event: WheelEvent<HTMLDivElement>) {
   const canScrollRight = delta > 0 && target.scrollLeft < target.scrollWidth - target.clientWidth;
 
   if (canScrollLeft || canScrollRight) {
-    event.preventDefault();
     target.scrollLeft += delta;
   }
 }
