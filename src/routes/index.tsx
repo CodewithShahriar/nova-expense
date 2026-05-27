@@ -296,7 +296,7 @@ function Dashboard() {
                   )}
                 >
                   {sign}
-                  {formatMoney(t.amount, currency, true).replace("-", "")}
+                  {formatMoney(t.amount, currency).replace("-", "")}
                 </p>
               </GlassCard>
             );
