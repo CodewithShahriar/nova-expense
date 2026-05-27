@@ -60,6 +60,27 @@ export interface Bill {
   history?: boolean;
 }
 
+export interface EventExpense {
+  id: string;
+  type?: "expense" | "income";
+  title: string;
+  amount: number;
+  category: string;
+  date: string;
+  note?: string;
+}
+
+export interface ExpenseEvent {
+  id: string;
+  title: string;
+  description?: string;
+  date: string;
+  budget?: number;
+  color: string;
+  icon: string;
+  expenses: EventExpense[];
+}
+
 export interface CustomCategory {
   name: string;
   icon: string; // lucide icon name
@@ -79,6 +100,7 @@ export interface AppState {
   accounts: Account[];
   budgets: Budget[];
   bills: Bill[];
+  events: ExpenseEvent[];
   goals: Goal[];
   customCategories: CustomCategory[];
   settings: Settings;
@@ -141,6 +163,7 @@ const defaultState: AppState = {
     { category: "Entertainment", limit: 2500 },
   ],
   bills: [],
+  events: [],
   goals: [],
   customCategories: [],
   settings: { currency: "BDT", theme: "dark", name: "You" },
@@ -159,6 +182,7 @@ function read(): AppState {
       transactions: parsed.transactions || [],
       budgets: parsed.budgets || defaultState.budgets,
       bills: normalizeBills(parsed.bills || []),
+      events: normalizeEvents(parsed.events || []),
       goals: parsed.goals || [],
       customCategories: parsed.customCategories || [],
       settings: { ...defaultState.settings, ...parsed.settings, currency: "BDT" },
@@ -221,6 +245,7 @@ function normalizeState(next: Partial<AppState>): AppState {
     accounts: normalizeAccounts(next.accounts?.length ? next.accounts : defaultAccounts),
     budgets: next.budgets || defaultState.budgets,
     bills: normalizeBills(next.bills || []),
+    events: normalizeEvents(next.events || []),
     goals: next.goals || [],
     customCategories: next.customCategories || [],
     settings: { ...defaultState.settings, ...next.settings, currency: "BDT" },
@@ -276,6 +301,19 @@ function normalizeBills(bills: Bill[]): Bill[] {
       status: nextBill.history ? "paid" : billRuntimeStatus(nextBill),
     };
   });
+}
+
+function normalizeEvents(events: ExpenseEvent[]): ExpenseEvent[] {
+  return events
+    .map((event) => ({
+      ...event,
+      color: event.color || "oklch(0.78 0.17 162)",
+      icon: event.icon || "CalendarDays",
+      expenses: (event.expenses || [])
+        .map((expense) => ({ ...expense, type: expense.type || "expense" }))
+        .sort((a, b) => +new Date(b.date) - +new Date(a.date)),
+    }))
+    .sort((a, b) => +new Date(b.date) - +new Date(a.date));
 }
 
 export const store = {
@@ -431,6 +469,72 @@ export const store = {
               ),
               paidRecord,
             ],
+    });
+  },
+
+  addEvent: (event: Omit<ExpenseEvent, "id" | "expenses"> & { expenses?: EventExpense[] }) => {
+    const id = crypto.randomUUID();
+    write({
+      ...state,
+      events: normalizeEvents([...state.events, { ...event, id, expenses: event.expenses || [] }]),
+    });
+    return id;
+  },
+  updateEvent: (id: string, patch: Partial<Omit<ExpenseEvent, "id" | "expenses">>) => {
+    write({
+      ...state,
+      events: normalizeEvents(
+        state.events.map((event) => (event.id === id ? { ...event, ...patch } : event)),
+      ),
+    });
+  },
+  deleteEvent: (id: string) => {
+    write({ ...state, events: state.events.filter((event) => event.id !== id) });
+  },
+  addEventExpense: (eventId: string, expense: Omit<EventExpense, "id">) => {
+    const id = crypto.randomUUID();
+    write({
+      ...state,
+      events: state.events.map((event) =>
+        event.id === eventId
+          ? {
+              ...event,
+              expenses: [{ ...expense, id }, ...event.expenses].sort(
+                (a, b) => +new Date(b.date) - +new Date(a.date),
+              ),
+            }
+          : event,
+      ),
+    });
+    return id;
+  },
+  updateEventExpense: (
+    eventId: string,
+    expenseId: string,
+    patch: Partial<Omit<EventExpense, "id">>,
+  ) => {
+    write({
+      ...state,
+      events: state.events.map((event) =>
+        event.id === eventId
+          ? {
+              ...event,
+              expenses: event.expenses
+                .map((expense) => (expense.id === expenseId ? { ...expense, ...patch } : expense))
+                .sort((a, b) => +new Date(b.date) - +new Date(a.date)),
+            }
+          : event,
+      ),
+    });
+  },
+  deleteEventExpense: (eventId: string, expenseId: string) => {
+    write({
+      ...state,
+      events: state.events.map((event) =>
+        event.id === eventId
+          ? { ...event, expenses: event.expenses.filter((expense) => expense.id !== expenseId) }
+          : event,
+      ),
     });
   },
 

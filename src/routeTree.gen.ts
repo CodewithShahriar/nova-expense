@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TransactionsRouteImport } from './routes/transactions'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as EventsRouteImport } from './routes/events'
 import { Route as BudgetsRouteImport } from './routes/budgets'
 import { Route as BillsRouteImport } from './routes/bills'
 import { Route as AddRouteImport } from './routes/add'
@@ -32,6 +33,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const ReportsRoute = ReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EventsRoute = EventsRouteImport.update({
+  id: '/events',
+  path: '/events',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BudgetsRoute = BudgetsRouteImport.update({
@@ -71,6 +77,7 @@ export interface FileRoutesByFullPath {
   '/add': typeof AddRoute
   '/budgets': typeof BudgetsRoute
   '/bills': typeof BillsRoute
+  '/events': typeof EventsRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/transactions': typeof TransactionsRoute
@@ -82,6 +89,7 @@ export interface FileRoutesByTo {
   '/add': typeof AddRoute
   '/budgets': typeof BudgetsRoute
   '/bills': typeof BillsRoute
+  '/events': typeof EventsRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/transactions': typeof TransactionsRoute
@@ -94,6 +102,7 @@ export interface FileRoutesById {
   '/add': typeof AddRoute
   '/budgets': typeof BudgetsRoute
   '/bills': typeof BillsRoute
+  '/events': typeof EventsRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/transactions': typeof TransactionsRoute
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/add'
     | '/budgets'
     | '/bills'
+    | '/events'
     | '/reports'
     | '/settings'
     | '/transactions'
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/add'
     | '/budgets'
     | '/bills'
+    | '/events'
     | '/reports'
     | '/settings'
     | '/transactions'
@@ -129,6 +140,7 @@ export interface FileRouteTypes {
     | '/add'
     | '/budgets'
     | '/bills'
+    | '/events'
     | '/reports'
     | '/settings'
     | '/transactions'
@@ -141,6 +153,7 @@ export interface RootRouteChildren {
   AddRoute: typeof AddRoute
   BudgetsRoute: typeof BudgetsRoute
   BillsRoute: typeof BillsRoute
+  EventsRoute: typeof EventsRoute
   ReportsRoute: typeof ReportsRoute
   SettingsRoute: typeof SettingsRoute
   TransactionsRoute: typeof TransactionsRoute
@@ -181,6 +194,13 @@ declare module '@tanstack/react-router' {
       path: '/bills'
       fullPath: '/bills'
       preLoaderRoute: typeof BillsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/events': {
+      id: '/events'
+      path: '/events'
+      fullPath: '/events'
+      preLoaderRoute: typeof EventsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/add': {
@@ -232,6 +252,7 @@ const rootRouteChildren: RootRouteChildren = {
   AddRoute: AddRoute,
   BudgetsRoute: BudgetsRoute,
   BillsRoute: BillsRoute,
+  EventsRoute: EventsRoute,
   ReportsRoute: ReportsRoute,
   SettingsRoute: SettingsRoute,
   TransactionsRoute: TransactionsRoute,

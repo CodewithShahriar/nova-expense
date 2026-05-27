@@ -23,6 +23,7 @@ import {
   type Bill,
   type Budget,
   type CustomCategory,
+  type ExpenseEvent,
   type Goal,
   type Settings,
   type Transaction,
@@ -35,6 +36,7 @@ const COLLECTIONS = {
   transactions: "transactions",
   budgets: "budgets",
   bills: "bills",
+  events: "events",
 } as const;
 
 let initialized = false;
@@ -162,11 +164,12 @@ async function scheduleRemoteWrite(db: Firestore, user: User, state: AppState) {
 }
 
 async function readRemoteState(db: Firestore, user: User): Promise<RemoteState> {
-  const [accountsSnap, txSnap, budgetsSnap, billsSnap] = await Promise.all([
+  const [accountsSnap, txSnap, budgetsSnap, billsSnap, eventsSnap] = await Promise.all([
     getDocs(userCollection(db, user, COLLECTIONS.accounts)),
     getDocs(userCollection(db, user, COLLECTIONS.transactions)),
     getDocs(userCollection(db, user, COLLECTIONS.budgets)),
     getDocs(userCollection(db, user, COLLECTIONS.bills)),
+    getDocs(userCollection(db, user, COLLECTIONS.events)),
   ]);
 
   const currentUserDoc = await getDoc(userDoc(db, user));
@@ -177,6 +180,7 @@ async function readRemoteState(db: Firestore, user: User): Promise<RemoteState> 
     transactions: txSnap.docs.map((d) => transactionFromDoc(d.data(), d.id)),
     budgets: budgetsSnap.docs.map((d) => budgetFromDoc(d.data())),
     bills: billsSnap.docs.map((d) => billFromDoc(d.data(), d.id)),
+    events: eventsSnap.docs.map((d) => eventFromDoc(d.data(), d.id)),
     goals: (userData?.goals as Goal[] | undefined) || [],
     customCategories: (userData?.customCategories as CustomCategory[] | undefined) || [],
     settings: userData?.settings as Settings | undefined,
@@ -185,7 +189,8 @@ async function readRemoteState(db: Firestore, user: User): Promise<RemoteState> 
       accountsSnap.size ||
       txSnap.size ||
       budgetsSnap.size ||
-      billsSnap.size,
+      billsSnap.size ||
+      eventsSnap.size,
     ),
   };
 }
@@ -218,6 +223,7 @@ async function writeRemoteState(db: Firestore, user: User, state: AppState) {
     batch,
   );
   await syncCollection(db, user, COLLECTIONS.bills, state.bills, (item) => item.id, batch);
+  await syncCollection(db, user, COLLECTIONS.events, state.events, (item) => item.id, batch);
   await syncCollection(db, user, COLLECTIONS.budgets, state.budgets, budgetDocId, batch);
 
   await batch.commit();
@@ -315,6 +321,16 @@ function attachRemoteListeners(db: Firestore, user: User, initialState: AppState
       },
       syncError,
     ),
+    onSnapshot(
+      userCollection(db, user, COLLECTIONS.events),
+      (snapshot) => {
+        cached.events = snapshot.docs
+          .map((d) => eventFromDoc(d.data(), d.id))
+          .sort((a, b) => +new Date(b.date) - +new Date(a.date));
+        apply();
+      },
+      syncError,
+    ),
   ];
 }
 
@@ -341,6 +357,9 @@ function mergeStates(local: AppState, remote: Partial<AppState>): AppState {
     ),
     budgets: mergeByKey(local.budgets, remote.budgets || [], (b) => b.category),
     bills: mergeById(local.bills, remote.bills || []),
+    events: mergeById(local.events, remote.events || []).sort(
+      (a, b) => +new Date(b.date) - +new Date(a.date),
+    ),
     goals: mergeById(local.goals, remote.goals || []),
     customCategories: mergeByKey(local.customCategories, remote.customCategories || [], (c) =>
       c.name.toLowerCase(),
@@ -417,6 +436,31 @@ function billFromDoc(data: DocumentData, id: string): Bill {
     transactionId: data.transactionId,
     parentBillId: data.parentBillId,
     history: Boolean(data.history),
+  };
+}
+
+function eventFromDoc(data: DocumentData, id: string): ExpenseEvent {
+  return {
+    id,
+    title: data.title || "Event",
+    description: data.description,
+    date: data.date || new Date().toISOString(),
+    budget: data.budget === null || data.budget === undefined ? undefined : Number(data.budget),
+    color: data.color || "oklch(0.78 0.17 162)",
+    icon: data.icon || "CalendarDays",
+    expenses: Array.isArray(data.expenses)
+      ? data.expenses
+          .map((expense: DocumentData) => ({
+            id: expense.id || crypto.randomUUID(),
+            type: expense.type || "expense",
+            title: expense.title || "Expense",
+            amount: Number(expense.amount || 0),
+            category: expense.category || "Other",
+            date: expense.date || new Date().toISOString(),
+            note: expense.note,
+          }))
+          .sort((a, b) => +new Date(b.date) - +new Date(a.date))
+      : [],
   };
 }
 

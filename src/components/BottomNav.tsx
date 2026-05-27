@@ -1,8 +1,17 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, List, PieChart, Wallet, CreditCard, Plus, Receipt } from "lucide-react";
+import {
+  Home,
+  List,
+  PieChart,
+  Wallet,
+  CreditCard,
+  Plus,
+  Receipt,
+  CalendarDays,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type NavTo = "/" | "/transactions" | "/accounts" | "/reports" | "/budgets" | "/bills";
+type NavTo = "/" | "/transactions" | "/accounts" | "/reports" | "/budgets" | "/bills" | "/events";
 const items: { to: NavTo; label: string; icon: typeof Home; exact?: boolean }[] = [
   { to: "/", label: "Home", icon: Home, exact: true },
   { to: "/transactions", label: "Activity", icon: List },
@@ -10,6 +19,7 @@ const items: { to: NavTo; label: string; icon: typeof Home; exact?: boolean }[] 
   { to: "/reports", label: "Reports", icon: PieChart },
   { to: "/budgets", label: "Budgets", icon: Wallet },
   { to: "/bills", label: "Bills", icon: Receipt },
+  { to: "/events", label: "Events", icon: CalendarDays },
 ];
 
 export function BottomNav() {
@@ -29,7 +39,7 @@ export function BottomNav() {
       </Link>
 
       <nav className="fixed bottom-0 inset-x-0 z-40 safe-bottom pt-2 px-2 min-[380px]:px-3">
-        <div className="glass-strong rounded-[1.5rem] min-[380px]:rounded-3xl shadow-elegant mx-auto w-full max-w-lg grid grid-cols-6 items-center h-[3.75rem] min-[380px]:h-16 px-1">
+        <div className="glass-strong rounded-[1.5rem] min-[380px]:rounded-3xl shadow-elegant mx-auto w-full max-w-lg grid grid-cols-7 items-center h-[3.75rem] min-[380px]:h-16 px-1">
           {items.map((it) => (
             <NavItem
               key={it.to}

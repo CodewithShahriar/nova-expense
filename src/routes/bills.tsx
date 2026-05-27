@@ -89,11 +89,7 @@ function BillsPage() {
             </p>
           </div>
           <p className="font-display text-lg font-bold tabular">
-            {formatMoney(
-              grouped.overdue[0]?.amount || grouped.upcoming[0]?.amount || 0,
-              currency,
-              true,
-            )}
+            {formatMoney(grouped.overdue[0]?.amount || grouped.upcoming[0]?.amount || 0, currency)}
           </p>
         </div>
       </GlassCard>
@@ -351,7 +347,7 @@ function BillCard({
               </p>
             </div>
             <p className="shrink-0 font-display text-base font-bold tabular">
-              {formatMoney(bill.amount, currency, true)}
+              {formatMoney(bill.amount, currency)}
             </p>
           </div>
 
