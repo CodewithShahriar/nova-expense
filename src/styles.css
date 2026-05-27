@@ -217,6 +217,8 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
     width: 100%;
     overflow-x: hidden;
   }
@@ -234,7 +236,9 @@
   input,
   textarea,
   select {
-    font-size: 16px;
+    font-size: 16px !important;
+    line-height: 1.25;
+    touch-action: manipulation;
   }
 }
 
