@@ -18,6 +18,7 @@ export function AppShell() {
   useEffect(() => {
     function onWheel(event: WheelEvent) {
       if (!event.deltaY || event.defaultPrevented) return;
+      if (document.documentElement.dataset.scrollLock === "true") return;
       if (document.body.style.overflow === "hidden") return;
       if (hasScrollableParent(event.target)) return;
       if (!hasWheelTrapParent(event.target)) return;

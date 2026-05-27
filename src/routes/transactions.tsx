@@ -32,11 +32,28 @@ function TransactionsPage() {
   useEffect(() => {
     if (!previewTx) return;
 
+    const scrollY = window.scrollY;
     const previousOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    const previousPosition = document.body.style.position;
+    const previousTop = document.body.style.top;
+    const previousWidth = document.body.style.width;
+
+    document.documentElement.dataset.scrollLock = "true";
+    document.documentElement.style.overflow = "hidden";
     document.body.style.overflow = "hidden";
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = "100%";
 
     return () => {
+      delete document.documentElement.dataset.scrollLock;
+      document.documentElement.style.overflow = previousHtmlOverflow;
       document.body.style.overflow = previousOverflow;
+      document.body.style.position = previousPosition;
+      document.body.style.top = previousTop;
+      document.body.style.width = previousWidth;
+      window.scrollTo(0, scrollY);
     };
   }, [previewTx]);
 
@@ -331,10 +348,20 @@ function ReceiptPreview({
   return (
     <div
       className="fixed inset-0 z-[80] flex items-end justify-center bg-black/70 px-3 pb-3 backdrop-blur-sm animate-fade-in sm:items-center sm:pb-0"
-      onWheel={(event) => event.stopPropagation()}
-      onTouchMove={(event) => event.stopPropagation()}
+      onClick={onClose}
+      onWheel={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      }}
+      onTouchMove={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      }}
     >
-      <div className="glass-strong max-h-[92dvh] w-full max-w-2xl overflow-hidden rounded-3xl shadow-elegant">
+      <div
+        className="glass-strong max-h-[92dvh] w-full max-w-2xl overflow-hidden rounded-3xl shadow-elegant"
+        onClick={(event) => event.stopPropagation()}
+      >
         <div className="flex items-center justify-between gap-3 p-4">
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold">
