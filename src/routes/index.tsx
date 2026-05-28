@@ -15,6 +15,7 @@ import { AccountCard } from "@/components/AccountCard";
 import { getCategory } from "@/lib/categories";
 import { cn } from "@/lib/utils";
 import { billRuntimeStatus, billTimingLabel, daysUntil, formatDueDate } from "@/lib/bills";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
   component: Dashboard,
@@ -83,6 +84,18 @@ function Dashboard() {
     .slice(0, 2)
     .join("")
     .toUpperCase();
+
+  function loadSampleData() {
+    const loaded = store.seedDemo();
+    if (loaded) {
+      toast.success("Sample data loaded", {
+        description: "Demo accounts and transactions are ready.",
+      });
+      return;
+    }
+
+    toast.info("Sample data is already loaded");
+  }
 
   return (
     <div className="pt-[calc(env(safe-area-inset-top)+1rem)] animate-fade-in">
@@ -196,7 +209,8 @@ function Dashboard() {
             <p className="text-sm text-muted-foreground mt-0.5">{insight}</p>
             {transactions.length === 0 && (
               <button
-                onClick={() => store.seedDemo()}
+                type="button"
+                onClick={loadSampleData}
                 className="mt-3 text-xs font-semibold text-primary hover:underline"
               >
                 Load sample data →

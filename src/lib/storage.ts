@@ -569,7 +569,7 @@ export const store = {
 
   seedDemo: () => {
     ensureInit();
-    if (state.transactions.length > 0) return;
+    if (state.transactions.length > 0) return false;
     const now = new Date();
     const mk = (
       days: number,
@@ -610,6 +610,7 @@ export const store = {
     let accounts = mergeDemoAccounts(state.accounts);
     for (const t of demo) accounts = applyTxBalance(accounts, t, 1);
     write({ ...state, accounts, transactions: demo });
+    return true;
   },
 };
 
