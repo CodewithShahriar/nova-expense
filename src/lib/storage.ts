@@ -258,6 +258,12 @@ function normalizeAccounts(accounts: Account[]): Account[] {
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 }
 
+function mergeDemoAccounts(accounts: Account[]): Account[] {
+  const existingIds = new Set(accounts.map((account) => account.id));
+  const missingDemoAccounts = demoAccounts.filter((account) => !existingIds.has(account.id));
+  return normalizeAccounts([...accounts, ...missingDemoAccounts]);
+}
+
 export function registerCloudWriter(writer: ((next: AppState) => Promise<void>) | null) {
   cloudWriter = writer;
 }
@@ -557,10 +563,12 @@ export const store = {
   },
 
   updateSettings: (patch: Partial<Settings>) => {
+    ensureInit();
     write({ ...state, settings: { ...state.settings, ...patch } });
   },
 
   seedDemo: () => {
+    ensureInit();
     if (state.transactions.length > 0) return;
     const now = new Date();
     const mk = (
@@ -599,7 +607,7 @@ export const store = {
       mk(10, 3, "expense", 1500, "Health", "Pharmacy", "acc-bkash"),
     ];
     // Apply balances for seeded transactions
-    let accounts = state.accounts.length ? state.accounts : normalizeAccounts(demoAccounts);
+    let accounts = mergeDemoAccounts(state.accounts);
     for (const t of demo) accounts = applyTxBalance(accounts, t, 1);
     write({ ...state, accounts, transactions: demo });
   },
