@@ -258,6 +258,20 @@ function normalizeAccounts(accounts: Account[]): Account[] {
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 }
 
+function emptyWorkspaceState(settings: Settings): AppState {
+  return {
+    ...defaultState,
+    transactions: [],
+    accounts: [],
+    budgets: [...defaultState.budgets],
+    bills: [],
+    events: [],
+    goals: [],
+    customCategories: [],
+    settings: { ...settings },
+  };
+}
+
 function mergeDemoAccounts(accounts: Account[]): Account[] {
   const existingIds = new Set(accounts.map((account) => account.id));
   const missingDemoAccounts = demoAccounts.filter((account) => !existingIds.has(account.id));
@@ -565,6 +579,11 @@ export const store = {
   updateSettings: (patch: Partial<Settings>) => {
     ensureInit();
     write({ ...state, settings: { ...state.settings, ...patch } });
+  },
+
+  resetWorkspace: () => {
+    ensureInit();
+    write(emptyWorkspaceState(state.settings));
   },
 
   seedDemo: () => {

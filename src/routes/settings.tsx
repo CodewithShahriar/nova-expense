@@ -25,8 +25,19 @@ export const Route = createFileRoute("/settings")({
 function SettingsPage() {
   const settings = useStore((s) => s.settings);
   const transactions = useStore((s) => s.transactions);
+  const accounts = useStore((s) => s.accounts);
   const bills = useStore((s) => s.bills);
+  const events = useStore((s) => s.events);
+  const goals = useStore((s) => s.goals);
+  const customCategories = useStore((s) => s.customCategories);
   const fileRef = useRef<HTMLInputElement>(null);
+  const hasWorkspaceData =
+    transactions.length > 0 ||
+    accounts.length > 0 ||
+    bills.length > 0 ||
+    events.length > 0 ||
+    goals.length > 0 ||
+    customCategories.length > 0;
 
   function exportCSV() {
     const headers = ["date", "type", "amount", "category", "account", "note"];
@@ -53,8 +64,8 @@ function SettingsPage() {
   }
 
   function clearAll() {
-    if (confirm("Delete all transactions? This cannot be undone.")) {
-      transactions.forEach((t) => store.deleteTransaction(t.id));
+    if (confirm("Delete all app data? Accounts, cards, transactions, bills, and goals will reset.")) {
+      store.resetWorkspace();
     }
   }
 
@@ -220,7 +231,7 @@ function SettingsPage() {
         </div>
       </GlassCard>
 
-      <SectionTitle title="Data" description="Export or clear transaction records" />
+      <SectionTitle title="Data" description="Export transactions or reset workspace data" />
       <GlassCard className="mt-3 p-2">
         <button
           onClick={exportCSV}
@@ -237,15 +248,15 @@ function SettingsPage() {
         </button>
         <button
           onClick={clearAll}
-          disabled={transactions.length === 0}
+          disabled={!hasWorkspaceData}
           className="flex w-full items-center gap-3 rounded-2xl p-3 transition hover:bg-destructive/10 disabled:opacity-40"
         >
           <div className="flex size-10 items-center justify-center rounded-xl bg-destructive/15">
             <Trash2 className="size-4 text-destructive" />
           </div>
           <div className="min-w-0 flex-1 text-left">
-            <p className="text-sm font-medium text-destructive">Delete all transactions</p>
-            <p className="text-xs text-muted-foreground">This cannot be undone</p>
+            <p className="text-sm font-medium text-destructive">Reset all data</p>
+            <p className="text-xs text-muted-foreground">Accounts, cards, bills, goals, and transactions</p>
           </div>
         </button>
       </GlassCard>
