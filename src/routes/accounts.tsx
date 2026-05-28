@@ -1,6 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { ArrowDown, ArrowUp, Check, GripVertical, Pencil, Plus, Trash2, X } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowUp,
+  Check,
+  GripVertical,
+  Pencil,
+  Plus,
+  Trash2,
+  X,
+} from "lucide-react";
 import { store, useStore, formatMoney, type AccountType } from "@/lib/storage";
 import { GlassCard } from "@/components/GlassCard";
 import { AccountCard } from "@/components/AccountCard";
@@ -47,9 +57,22 @@ function AccountsPage() {
 
   return (
     <div className="px-4 min-[380px]:px-5 pt-[calc(env(safe-area-inset-top)+1rem)] animate-fade-in">
-      <h1 className="font-display text-3xl font-bold">Accounts</h1>
-      <p className="text-sm text-muted-foreground mt-1">{accounts.length} accounts · Net worth</p>
-      <p className="mt-1 font-display text-3xl font-bold tabular">{formatMoney(total, currency)}</p>
+      <div className="mb-4 flex items-center gap-3">
+        <Link
+          to="/"
+          aria-label="Back"
+          className="flex size-10 items-center justify-center rounded-full glass active:scale-95"
+        >
+          <ArrowLeft className="size-5" />
+        </Link>
+        <div className="min-w-0">
+          <h1 className="font-display text-3xl font-bold">Accounts</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {accounts.length} accounts · Net worth
+          </p>
+        </div>
+      </div>
+      <p className="font-display text-3xl font-bold tabular">{formatMoney(total, currency)}</p>
 
       {accounts.length > 1 && (
         <button

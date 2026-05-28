@@ -5,7 +5,6 @@ import {
   Bell,
   Settings as SettingsIcon,
   Sparkles,
-  Target,
   TrendingDown,
   User,
 } from "lucide-react";
@@ -48,9 +47,7 @@ function Dashboard() {
         else if (t.type === "expense") monthExpense += t.amount;
       }
     }
-    const savingsRate =
-      monthIncome > 0 ? Math.max(0, Math.min(1, (monthIncome - monthExpense) / monthIncome)) : 0;
-    return { weekSpent, monthIncome, monthExpense, savingsRate };
+    return { weekSpent, monthIncome, monthExpense };
   }, [transactions]);
 
   const recent = transactions.slice(0, 5);
@@ -166,35 +163,37 @@ function Dashboard() {
       </div>
 
       <div className="px-4 min-[380px]:px-5">
-        {/* Week + Savings */}
+        {/* Spending metrics */}
         <div className="grid grid-cols-1 min-[360px]:grid-cols-2 gap-3 mt-4">
-          <GlassCard className="p-4">
-            <div className="flex items-center gap-2 text-destructive">
-              <TrendingDown className="size-4" />
-              <span className="text-[11px] uppercase tracking-widest font-medium">
-                Spent this week
-              </span>
+          <GlassCard className="border-yellow-300/45 bg-yellow-300/20 p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-yellow-200/80 text-yellow-950">
+                <TrendingDown className="size-4" />
+              </div>
+              <div className="min-w-0">
+                <span className="text-[11px] uppercase tracking-widest font-medium text-yellow-900/75">
+                  Spent this week
+                </span>
+                <p className="mt-1 truncate font-display text-xl min-[380px]:text-2xl font-bold tabular text-yellow-950">
+                  {formatMoney(stats.weekSpent, currency, true)}
+                </p>
+              </div>
             </div>
-            <p className="mt-2 truncate font-display text-xl min-[380px]:text-2xl font-bold tabular">
-              {formatMoney(stats.weekSpent, currency, true)}
-            </p>
           </GlassCard>
 
-          <GlassCard className="p-4">
-            <div className="flex items-center gap-2 text-primary">
-              <Target className="size-4" />
-              <span className="text-[11px] uppercase tracking-widest font-medium">
-                Savings rate
-              </span>
-            </div>
-            <p className="mt-2 font-display text-2xl font-bold tabular">
-              {Math.round(stats.savingsRate * 100)}%
-            </p>
-            <div className="mt-2 h-1.5 rounded-full bg-muted overflow-hidden">
-              <div
-                className="h-full rounded-full gradient-primary transition-all duration-700"
-                style={{ width: `${stats.savingsRate * 100}%` }}
-              />
+          <GlassCard className="border-lime-300/45 bg-lime-300/20 p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-lime-200/80 text-lime-950">
+                <TrendingDown className="size-4" />
+              </div>
+              <div className="min-w-0">
+                <span className="text-[11px] uppercase tracking-widest font-medium text-lime-900/75">
+                  Spent this month
+                </span>
+                <p className="mt-1 truncate font-display text-xl min-[380px]:text-2xl font-bold tabular text-lime-950">
+                  {formatMoney(stats.monthExpense, currency, true)}
+                </p>
+              </div>
             </div>
           </GlassCard>
         </div>
