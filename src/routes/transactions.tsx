@@ -215,12 +215,12 @@ function TransactionsPage() {
                   <div className="flex items-center justify-end gap-2 text-[11px] font-semibold tabular">
                     {summary.income > 0 && (
                       <span className="text-primary">
-                        +{formatMoney(summary.income, currency, true)}
+                        +{formatMoney(summary.income, currency)}
                       </span>
                     )}
                     {summary.expense > 0 && (
                       <span className="text-destructive">
-                        -{formatMoney(summary.expense, currency, true)}
+                        -{formatMoney(summary.expense, currency)}
                       </span>
                     )}
                   </div>
@@ -283,7 +283,7 @@ function TransactionsPage() {
                             )}
                           >
                             {sign}
-                            {formatMoney(t.amount, currency, true).replace("-", "")}
+                            {formatMoney(t.amount, currency).replace("-", "")}
                           </p>
                         </div>
                         <button
@@ -430,7 +430,7 @@ function AccountBalanceTicker({
           account.balance <= 0 ? "text-destructive" : "text-primary",
         )}
       >
-        {account.name} {formatMoney(account.balance, currency, true)}
+        {account.name} {formatMoney(account.balance, currency)}
       </span>
     </div>
   );

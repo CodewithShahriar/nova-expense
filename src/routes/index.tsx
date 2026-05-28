@@ -165,33 +165,33 @@ function Dashboard() {
       <div className="px-4 min-[380px]:px-5">
         {/* Spending metrics */}
         <div className="grid grid-cols-2 gap-2 min-[380px]:gap-3 mt-4">
-          <GlassCard className="min-h-[5.75rem] border-yellow-300/80 bg-gradient-to-br from-yellow-200 to-yellow-400 p-3 min-[380px]:p-4 shadow-card">
+          <GlassCard className="min-h-[5.75rem] border-amber-300 bg-amber-300 p-3 min-[380px]:p-4 shadow-card">
             <div className="flex h-full items-center gap-2 min-[380px]:gap-3">
-              <div className="flex size-8 min-[380px]:size-9 shrink-0 items-center justify-center rounded-xl bg-yellow-100/85 text-yellow-950">
+              <div className="flex size-8 min-[380px]:size-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-950">
                 <TrendingDown className="size-3.5 min-[380px]:size-4" />
               </div>
               <div className="min-w-0">
-                <span className="block text-[10px] min-[380px]:text-[11px] uppercase tracking-widest font-medium leading-tight text-yellow-950/70">
+                <span className="block text-[10px] min-[380px]:text-[11px] uppercase tracking-widest font-medium leading-tight text-amber-950/70">
                   This week
                 </span>
-                <p className="mt-1 truncate font-display text-base min-[360px]:text-lg min-[430px]:text-2xl font-bold tabular text-yellow-950">
-                  {formatMoney(stats.weekSpent, currency, true)}
+                <p className="mt-1 truncate font-display text-sm min-[360px]:text-base min-[430px]:text-xl font-bold tabular text-amber-950">
+                  {formatMoney(stats.weekSpent, currency)}
                 </p>
               </div>
             </div>
           </GlassCard>
 
-          <GlassCard className="min-h-[5.75rem] border-lime-300/80 bg-gradient-to-br from-lime-200 to-lime-400 p-3 min-[380px]:p-4 shadow-card">
+          <GlassCard className="min-h-[5.75rem] border-sky-300 bg-sky-300 p-3 min-[380px]:p-4 shadow-card">
             <div className="flex h-full items-center gap-2 min-[380px]:gap-3">
-              <div className="flex size-8 min-[380px]:size-9 shrink-0 items-center justify-center rounded-xl bg-lime-100/85 text-lime-950">
+              <div className="flex size-8 min-[380px]:size-9 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-950">
                 <TrendingDown className="size-3.5 min-[380px]:size-4" />
               </div>
               <div className="min-w-0">
-                <span className="block text-[10px] min-[380px]:text-[11px] uppercase tracking-widest font-medium leading-tight text-lime-950/70">
+                <span className="block text-[10px] min-[380px]:text-[11px] uppercase tracking-widest font-medium leading-tight text-sky-950/70">
                   This month
                 </span>
-                <p className="mt-1 truncate font-display text-base min-[360px]:text-lg min-[430px]:text-2xl font-bold tabular text-lime-950">
-                  {formatMoney(stats.monthExpense, currency, true)}
+                <p className="mt-1 truncate font-display text-sm min-[360px]:text-base min-[430px]:text-xl font-bold tabular text-sky-950">
+                  {formatMoney(stats.monthExpense, currency)}
                 </p>
               </div>
             </div>
