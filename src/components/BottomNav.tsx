@@ -1,5 +1,4 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import type { WheelEvent } from "react";
 import {
   Home,
   List,
@@ -27,10 +26,6 @@ export function BottomNav() {
   const location = useLocation();
   const path = location.pathname;
 
-  function passWheelToPage(event: WheelEvent) {
-    if (event.deltaY) window.scrollBy({ top: event.deltaY, behavior: "auto" });
-  }
-
   return (
     <>
       {/* Floating add button */}
@@ -38,7 +33,6 @@ export function BottomNav() {
         to="/add"
         search={{ type: undefined, scan: undefined, edit: undefined }}
         aria-label="Add transaction"
-        onWheel={passWheelToPage}
         className="fixed left-1/2 -translate-x-1/2 bottom-[calc(env(safe-area-inset-bottom)+3.55rem)] z-50 size-[3.25rem] min-[380px]:size-14 rounded-full gradient-primary shadow-glow flex items-center justify-center active:scale-95 transition-transform"
       >
         <Plus className="size-5 min-[380px]:size-6 text-primary-foreground" strokeWidth={2.75} />
@@ -46,7 +40,6 @@ export function BottomNav() {
 
       <nav
         className="fixed bottom-0 inset-x-0 z-40 pt-2 px-2 min-[380px]:px-3 pb-[calc(env(safe-area-inset-bottom)+0.25rem)]"
-        onWheel={passWheelToPage}
       >
         <div className="glass-strong rounded-[1.5rem] min-[380px]:rounded-3xl shadow-elegant mx-auto w-full max-w-lg md:max-w-3xl xl:max-w-4xl grid grid-cols-7 items-center h-[3.75rem] min-[380px]:h-16 md:h-[4.25rem] px-1 md:px-2">
           {items.map((it) => (
