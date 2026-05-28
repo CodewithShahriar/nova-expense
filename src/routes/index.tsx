@@ -164,33 +164,33 @@ function Dashboard() {
 
       <div className="px-4 min-[380px]:px-5">
         {/* Spending metrics */}
-        <div className="grid grid-cols-1 min-[360px]:grid-cols-2 gap-3 mt-4">
-          <GlassCard className="border-yellow-300/45 bg-yellow-300/20 p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-yellow-200/80 text-yellow-950">
-                <TrendingDown className="size-4" />
+        <div className="grid grid-cols-2 gap-2 min-[380px]:gap-3 mt-4">
+          <GlassCard className="min-h-[5.75rem] border-yellow-300/80 bg-gradient-to-br from-yellow-200 to-yellow-400 p-3 min-[380px]:p-4 shadow-card">
+            <div className="flex h-full items-center gap-2 min-[380px]:gap-3">
+              <div className="flex size-8 min-[380px]:size-9 shrink-0 items-center justify-center rounded-xl bg-yellow-100/85 text-yellow-950">
+                <TrendingDown className="size-3.5 min-[380px]:size-4" />
               </div>
               <div className="min-w-0">
-                <span className="text-[11px] uppercase tracking-widest font-medium text-yellow-900/75">
-                  Spent this week
+                <span className="block text-[10px] min-[380px]:text-[11px] uppercase tracking-widest font-medium leading-tight text-yellow-950/70">
+                  This week
                 </span>
-                <p className="mt-1 truncate font-display text-xl min-[380px]:text-2xl font-bold tabular text-yellow-950">
+                <p className="mt-1 truncate font-display text-base min-[360px]:text-lg min-[430px]:text-2xl font-bold tabular text-yellow-950">
                   {formatMoney(stats.weekSpent, currency, true)}
                 </p>
               </div>
             </div>
           </GlassCard>
 
-          <GlassCard className="border-lime-300/45 bg-lime-300/20 p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-lime-200/80 text-lime-950">
-                <TrendingDown className="size-4" />
+          <GlassCard className="min-h-[5.75rem] border-lime-300/80 bg-gradient-to-br from-lime-200 to-lime-400 p-3 min-[380px]:p-4 shadow-card">
+            <div className="flex h-full items-center gap-2 min-[380px]:gap-3">
+              <div className="flex size-8 min-[380px]:size-9 shrink-0 items-center justify-center rounded-xl bg-lime-100/85 text-lime-950">
+                <TrendingDown className="size-3.5 min-[380px]:size-4" />
               </div>
               <div className="min-w-0">
-                <span className="text-[11px] uppercase tracking-widest font-medium text-lime-900/75">
-                  Spent this month
+                <span className="block text-[10px] min-[380px]:text-[11px] uppercase tracking-widest font-medium leading-tight text-lime-950/70">
+                  This month
                 </span>
-                <p className="mt-1 truncate font-display text-xl min-[380px]:text-2xl font-bold tabular text-lime-950">
+                <p className="mt-1 truncate font-display text-base min-[360px]:text-lg min-[430px]:text-2xl font-bold tabular text-lime-950">
                   {formatMoney(stats.monthExpense, currency, true)}
                 </p>
               </div>
