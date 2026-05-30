@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TransactionsRouteImport } from './routes/transactions'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ReviewRouteImport } from './routes/review'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as EventsRouteImport } from './routes/events'
 import { Route as BudgetsRouteImport } from './routes/budgets'
@@ -28,6 +29,11 @@ const TransactionsRoute = TransactionsRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReviewRoute = ReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReportsRoute = ReportsRouteImport.update({
@@ -79,6 +85,7 @@ export interface FileRoutesByFullPath {
   '/bills': typeof BillsRoute
   '/events': typeof EventsRoute
   '/reports': typeof ReportsRoute
+  '/review': typeof ReviewRoute
   '/settings': typeof SettingsRoute
   '/transactions': typeof TransactionsRoute
   '/accounts/$id': typeof AccountsIdRoute
@@ -91,6 +98,7 @@ export interface FileRoutesByTo {
   '/bills': typeof BillsRoute
   '/events': typeof EventsRoute
   '/reports': typeof ReportsRoute
+  '/review': typeof ReviewRoute
   '/settings': typeof SettingsRoute
   '/transactions': typeof TransactionsRoute
   '/accounts/$id': typeof AccountsIdRoute
@@ -104,6 +112,7 @@ export interface FileRoutesById {
   '/bills': typeof BillsRoute
   '/events': typeof EventsRoute
   '/reports': typeof ReportsRoute
+  '/review': typeof ReviewRoute
   '/settings': typeof SettingsRoute
   '/transactions': typeof TransactionsRoute
   '/accounts/$id': typeof AccountsIdRoute
@@ -118,6 +127,7 @@ export interface FileRouteTypes {
     | '/bills'
     | '/events'
     | '/reports'
+    | '/review'
     | '/settings'
     | '/transactions'
     | '/accounts/$id'
@@ -130,6 +140,7 @@ export interface FileRouteTypes {
     | '/bills'
     | '/events'
     | '/reports'
+    | '/review'
     | '/settings'
     | '/transactions'
     | '/accounts/$id'
@@ -142,6 +153,7 @@ export interface FileRouteTypes {
     | '/bills'
     | '/events'
     | '/reports'
+    | '/review'
     | '/settings'
     | '/transactions'
     | '/accounts/$id'
@@ -155,6 +167,7 @@ export interface RootRouteChildren {
   BillsRoute: typeof BillsRoute
   EventsRoute: typeof EventsRoute
   ReportsRoute: typeof ReportsRoute
+  ReviewRoute: typeof ReviewRoute
   SettingsRoute: typeof SettingsRoute
   TransactionsRoute: typeof TransactionsRoute
 }
@@ -180,6 +193,13 @@ declare module '@tanstack/react-router' {
       path: '/reports'
       fullPath: '/reports'
       preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/review': {
+      id: '/review'
+      path: '/review'
+      fullPath: '/review'
+      preLoaderRoute: typeof ReviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/budgets': {
@@ -254,6 +274,7 @@ const rootRouteChildren: RootRouteChildren = {
   BillsRoute: BillsRoute,
   EventsRoute: EventsRoute,
   ReportsRoute: ReportsRoute,
+  ReviewRoute: ReviewRoute,
   SettingsRoute: SettingsRoute,
   TransactionsRoute: TransactionsRoute,
 }

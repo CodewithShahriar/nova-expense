@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import {
   PieChart,
@@ -14,7 +14,7 @@ import {
 import { useStore, formatMoney } from "@/lib/storage";
 import { getCategory } from "@/lib/categories";
 import { GlassCard } from "@/components/GlassCard";
-import { TrendingUp, TrendingDown, Flame } from "lucide-react";
+import { TrendingUp, TrendingDown, Flame, CalendarDays, ChevronRight } from "lucide-react";
 
 export const Route = createFileRoute("/reports")({
   component: ReportsPage,
@@ -81,8 +81,23 @@ function ReportsPage() {
       <h1 className="font-display text-3xl font-bold">Reports</h1>
       <p className="text-sm text-muted-foreground mt-1">Your month at a glance</p>
 
+      <Link to="/review">
+        <GlassCard className="mt-5 flex items-center gap-3 p-4 transition active:scale-[0.99]">
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl gradient-primary shadow-glow">
+            <CalendarDays className="size-5 text-primary-foreground" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold">Monthly Review</p>
+            <p className="mt-0.5 truncate text-xs text-muted-foreground">
+              See this month's spending story and saving opportunities
+            </p>
+          </div>
+          <ChevronRight className="size-5 shrink-0 text-muted-foreground" />
+        </GlassCard>
+      </Link>
+
       {/* Income vs Expense */}
-      <div className="grid grid-cols-1 min-[360px]:grid-cols-2 gap-3 mt-5">
+      <div className="grid grid-cols-1 min-[360px]:grid-cols-2 gap-3 mt-3">
         <GlassCard className="p-4">
           <div className="flex items-center gap-2 text-primary">
             <TrendingUp className="size-4" />
@@ -112,7 +127,7 @@ function ReportsPage() {
           <div className="min-w-0 flex-1">
             <p className="text-xs text-muted-foreground">Top spending category</p>
             <p className="font-semibold">
-              {topCategory} ·{" "}
+              {topCategory} -{" "}
               <span className="tabular">{formatMoney(byCategory[0].value, currency, true)}</span>
             </p>
           </div>
