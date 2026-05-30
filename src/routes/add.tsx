@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ArrowLeft, Check, ImagePlus, ScanLine, Trash2 } from "lucide-react";
-import { store, useStore, type TxType } from "@/lib/storage";
+import { store, useStore, type Transaction, type TxType } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import { getCategory } from "@/lib/categories";
 import { CategoryPicker } from "@/components/CategoryPicker";
@@ -51,11 +51,22 @@ function AddTransaction() {
   const [catOpen, setCatOpen] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [noteFocused, setNoteFocused] = useState(false);
   const noteRef = useRef<HTMLInputElement>(null);
   const receiptRef = useRef<HTMLInputElement>(null);
 
   const cat = getCategory(category, custom);
   const CatIcon = cat.icon;
+  const noteSuggestions = useMemo(
+    () => suggestNotes(transactions, {
+      category,
+      type,
+      query: note,
+      editingId: editing?.id,
+    }),
+    [transactions, category, type, note, editing?.id],
+  );
+  const showNoteSuggestions = noteFocused && type !== "transfer" && noteSuggestions.length > 0;
 
   async function attachReceipt(file?: File) {
     if (!file) return;
@@ -299,12 +310,35 @@ function AddTransaction() {
             type="text"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            onFocus={keepNoteVisible}
+            onFocus={() => {
+              setNoteFocused(true);
+              keepNoteVisible();
+            }}
+            onBlur={() => window.setTimeout(() => setNoteFocused(false), 120)}
             maxLength={120}
             placeholder="What was this for?"
             enterKeyHint="done"
             className="glass mt-2 rounded-2xl px-4 h-12 w-full text-sm outline-none placeholder:text-muted-foreground/60"
           />
+          {showNoteSuggestions && (
+            <div className="mt-2 flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+              {noteSuggestions.map((suggestion) => (
+                <button
+                  key={suggestion}
+                  type="button"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => {
+                    setNote(suggestion);
+                    noteRef.current?.focus();
+                  }}
+                  className="glass h-9 max-w-[16rem] shrink-0 truncate rounded-full px-3 text-xs font-semibold text-muted-foreground transition hover:text-foreground"
+                  title={suggestion}
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          )}
         </label>
 
         <div className="mt-4">
@@ -384,4 +418,60 @@ function AddTransaction() {
       )}
     </div>
   );
+}
+
+function suggestNotes(
+  transactions: Transaction[],
+  {
+    category,
+    type,
+    query,
+    editingId,
+  }: { category: string; type: TxType; query: string; editingId?: string },
+) {
+  if (type === "transfer") return [];
+
+  const normalizedQuery = normalizeNote(query);
+  const notes = new Map<string, { note: string; count: number; lastSeen: number }>();
+
+  transactions.forEach((transaction, index) => {
+    const note = transaction.note?.trim();
+    if (
+      !note ||
+      transaction.id === editingId ||
+      transaction.type !== type ||
+      transaction.category !== category
+    ) {
+      return;
+    }
+
+    const key = normalizeNote(note);
+    if (!key || key === normalizedQuery) return;
+
+    const current = notes.get(key);
+    notes.set(key, {
+      note: current?.note || note,
+      count: (current?.count || 0) + 1,
+      lastSeen: current ? Math.min(current.lastSeen, index) : index,
+    });
+  });
+
+  return Array.from(notes.values())
+    .filter(({ note }) => {
+      if (!normalizedQuery) return true;
+      return normalizeNote(note).includes(normalizedQuery);
+    })
+    .sort((a, b) => {
+      const aNote = normalizeNote(a.note);
+      const bNote = normalizeNote(b.note);
+      const aStarts = normalizedQuery && aNote.startsWith(normalizedQuery) ? 1 : 0;
+      const bStarts = normalizedQuery && bNote.startsWith(normalizedQuery) ? 1 : 0;
+      return bStarts - aStarts || b.count - a.count || a.lastSeen - b.lastSeen;
+    })
+    .slice(0, 5)
+    .map(({ note }) => note);
+}
+
+function normalizeNote(value: string) {
+  return value.trim().toLowerCase().replace(/\s+/g, " ");
 }
