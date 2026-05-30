@@ -1,7 +1,14 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import { ArrowLeft, Check, ImagePlus, ScanLine, Trash2 } from "lucide-react";
-import { store, useStore, type Bill, type Transaction, type TxType } from "@/lib/storage";
+import {
+  formatMoney,
+  store,
+  useStore,
+  type Bill,
+  type Transaction,
+  type TxType,
+} from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import { getCategory } from "@/lib/categories";
 import { CategoryPicker } from "@/components/CategoryPicker";
@@ -142,6 +149,11 @@ function AddTransaction() {
           current: payload,
           transactions,
           bills,
+        });
+        alertUnusualTransaction({
+          current: payload,
+          transactions,
+          currency,
         });
       }
     }
@@ -611,4 +623,44 @@ function nextRecurringDate(date: Date, repeat: Extract<Bill["repeat"], "weekly" 
   if (repeat === "weekly") next.setDate(next.getDate() + 7);
   else next.setMonth(next.getMonth() + 1);
   return next;
+}
+
+function alertUnusualTransaction({
+  current,
+  transactions,
+  currency,
+}: {
+  current: Omit<Transaction, "id">;
+  transactions: Transaction[];
+  currency: string;
+}) {
+  if (current.type !== "expense") return;
+
+  const categoryAmounts = transactions
+    .filter(
+      (transaction) =>
+        transaction.type === current.type &&
+        transaction.category === current.category &&
+        transaction.amount > 0,
+    )
+    .map((transaction) => transaction.amount);
+
+  if (categoryAmounts.length < 5) return;
+
+  const usual = median(categoryAmounts);
+  const highEnough = current.amount >= usual * 2.2;
+  const meaningfulDifference = current.amount - usual >= Math.max(500, usual * 0.8);
+  if (!highEnough || !meaningfulDifference) return;
+
+  toast.warning("Unusual transaction", {
+    description: `${formatMoney(current.amount, currency)} is higher than your usual ${current.category} spend of about ${formatMoney(usual, currency)}.`,
+  });
+}
+
+function median(values: number[]) {
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0
+    ? (sorted[middle - 1] + sorted[middle]) / 2
+    : sorted[middle];
 }
