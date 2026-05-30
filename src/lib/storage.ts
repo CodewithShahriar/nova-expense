@@ -93,6 +93,7 @@ export interface Settings {
   theme: "dark" | "light";
   name: string;
   avatar?: string; // data URL
+  categoryOrder?: Partial<Record<"expense" | "income", string[]>>;
 }
 
 export interface AppState {
@@ -256,6 +257,20 @@ function normalizeAccounts(accounts: Account[]): Account[] {
   return accounts
     .map((account, index) => ({ ...account, order: account.order ?? index }))
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+}
+
+function normalizeCategoryOrder(order: unknown): NonNullable<Settings["categoryOrder"]> {
+  if (!order || typeof order !== "object" || Array.isArray(order)) return {};
+
+  const byType = order as Partial<Record<"expense" | "income", unknown>>;
+  return {
+    expense: Array.isArray(byType.expense)
+      ? byType.expense.filter((item): item is string => typeof item === "string")
+      : undefined,
+    income: Array.isArray(byType.income)
+      ? byType.income.filter((item): item is string => typeof item === "string")
+      : undefined,
+  };
 }
 
 function emptyWorkspaceState(settings: Settings): AppState {
@@ -560,10 +575,51 @@ export const store = {
 
   addCustomCategory: (c: CustomCategory) => {
     if (state.customCategories.find((x) => x.name.toLowerCase() === c.name.toLowerCase())) return;
-    write({ ...state, customCategories: [...state.customCategories, c] });
+    const categoryOrder = normalizeCategoryOrder(state.settings.categoryOrder);
+    const orderType = c.type === "both" ? "expense" : c.type;
+    write({
+      ...state,
+      customCategories: [...state.customCategories, c],
+      settings: {
+        ...state.settings,
+        categoryOrder: {
+          ...categoryOrder,
+          [orderType]: [...(categoryOrder[orderType] || []), c.name],
+        },
+      },
+    });
   },
   deleteCustomCategory: (name: string) => {
-    write({ ...state, customCategories: state.customCategories.filter((c) => c.name !== name) });
+    const categoryOrder = normalizeCategoryOrder(state.settings.categoryOrder);
+    write({
+      ...state,
+      customCategories: state.customCategories.filter((c) => c.name !== name),
+      settings: {
+        ...state.settings,
+        categoryOrder: {
+          expense: (categoryOrder.expense || []).filter((item) => item !== name),
+          income: (categoryOrder.income || []).filter((item) => item !== name),
+        },
+      },
+    });
+  },
+  reorderCategories: (type: "expense" | "income", names: string[]) => {
+    const seen = new Set<string>();
+    const categoryOrder = normalizeCategoryOrder(state.settings.categoryOrder);
+    write({
+      ...state,
+      settings: {
+        ...state.settings,
+        categoryOrder: {
+          ...categoryOrder,
+          [type]: names.filter((name) => {
+            if (seen.has(name)) return false;
+            seen.add(name);
+            return true;
+          }),
+        },
+      },
+    });
   },
 
   addGoal: (g: Omit<Goal, "id">) => {

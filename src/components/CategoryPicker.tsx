@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { X, Search, Plus, Check } from "lucide-react";
+import { useEffect, useState, type DragEvent } from "react";
+import { X, Search, Plus, Check, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { allCategories, pickerIcons, pickerColors, iconRegistry } from "@/lib/categories";
 import { store, useStore, type CustomCategory } from "@/lib/storage";
@@ -18,11 +18,13 @@ export function CategoryPicker({
   type: "expense" | "income";
 }) {
   const custom = useStore((s) => s.customCategories);
+  const categoryOrder = useStore((s) => categoryOrderForType(s.settings.categoryOrder, type));
   const [query, setQuery] = useState("");
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
   const [newIcon, setNewIcon] = useState(pickerIcons[0]);
   const [newColor, setNewColor] = useState(pickerColors[0]);
+  const [draggingName, setDraggingName] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) {
@@ -32,8 +34,12 @@ export function CategoryPicker({
     }
   }, [open]);
 
-  const list = allCategories(custom).filter((c) => c.type === type || c.type === "both");
+  const list = orderCategories(
+    allCategories(custom).filter((c) => c.type === type || c.type === "both"),
+    categoryOrder,
+  );
   const filtered = list.filter((c) => c.name.toLowerCase().includes(query.toLowerCase()));
+  const canReorder = !query.trim();
 
   function saveCustom() {
     const name = newName.trim();
@@ -44,6 +50,33 @@ export function CategoryPicker({
     setCreating(false);
     setNewName("");
     onClose();
+  }
+
+  function dragStart(event: DragEvent<HTMLButtonElement>, name: string) {
+    if (!canReorder) return;
+    setDraggingName(name);
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", name);
+  }
+
+  function dropOn(name: string) {
+    if (!draggingName || draggingName === name) {
+      setDraggingName(null);
+      return;
+    }
+
+    const from = list.findIndex((category) => category.name === draggingName);
+    const to = list.findIndex((category) => category.name === name);
+    if (from < 0 || to < 0) {
+      setDraggingName(null);
+      return;
+    }
+
+    const next = [...list];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    store.reorderCategories(type, next.map((category) => category.name));
+    setDraggingName(null);
   }
 
   if (!open) return null;
@@ -91,15 +124,33 @@ export function CategoryPicker({
                   <button
                     key={c.name}
                     type="button"
+                    draggable={canReorder}
+                    onDragStart={(event) => dragStart(event, c.name)}
+                    onDragEnd={() => setDraggingName(null)}
+                    onDragOver={(event) => {
+                      if (!canReorder || !draggingName || draggingName === c.name) return;
+                      event.preventDefault();
+                      event.dataTransfer.dropEffect = "move";
+                    }}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      dropOn(c.name);
+                    }}
                     onClick={() => {
                       onChange(c.name);
                       onClose();
                     }}
                     className={cn(
-                      "flex min-h-[5.5rem] min-w-0 flex-col items-center justify-center gap-2 rounded-2xl p-2 min-[380px]:p-3 transition",
-                      active ? "glass-strong ring-2 ring-primary/70" : "glass",
+                      "relative flex min-h-[5.5rem] min-w-0 flex-col items-center justify-center gap-2 rounded-2xl p-2 min-[380px]:p-3 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
+                      active
+                        ? "glass-strong border-primary/55 shadow-[inset_0_0_0_1px_color-mix(in_oklch,var(--primary)_72%,transparent),0_10px_30px_-18px_var(--primary)]"
+                        : "glass",
+                      draggingName === c.name && "opacity-50",
                     )}
                   >
+                    {canReorder && (
+                      <GripVertical className="absolute right-1.5 top-1.5 size-3.5 text-muted-foreground/55" />
+                    )}
                     <div
                       className="size-9 min-[380px]:size-10 rounded-xl flex items-center justify-center"
                       style={{ background: `color-mix(in oklch, ${c.color} 22%, transparent)` }}
@@ -199,4 +250,31 @@ export function CategoryPicker({
       </div>
     </div>
   );
+}
+
+function orderCategories<T extends { name: string }>(categories: T[], order: string[]) {
+  if (!order.length) return categories;
+
+  const index = new Map(order.map((name, position) => [name, position]));
+  return [...categories].sort((a, b) => {
+    const aIndex = index.get(a.name);
+    const bIndex = index.get(b.name);
+    if (aIndex === undefined && bIndex === undefined) return 0;
+    if (aIndex === undefined) return 1;
+    if (bIndex === undefined) return -1;
+    return aIndex - bIndex;
+  });
+}
+
+function categoryOrderForType(
+  order: unknown,
+  type: "expense" | "income",
+): string[] {
+  if (Array.isArray(order)) return order.filter((item): item is string => typeof item === "string");
+  if (!order || typeof order !== "object") return [];
+
+  const byType = (order as Partial<Record<"expense" | "income", unknown>>)[type];
+  return Array.isArray(byType)
+    ? byType.filter((item): item is string => typeof item === "string")
+    : [];
 }
