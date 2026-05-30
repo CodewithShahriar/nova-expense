@@ -86,6 +86,7 @@ export interface CustomCategory {
   icon: string; // lucide icon name
   color: string; // oklch
   type: "expense" | "income" | "both";
+  hidden?: boolean;
 }
 
 export interface Settings {
@@ -574,12 +575,19 @@ export const store = {
   },
 
   addCustomCategory: (c: CustomCategory) => {
-    if (state.customCategories.find((x) => x.name.toLowerCase() === c.name.toLowerCase())) return;
+    const existing = state.customCategories.find(
+      (x) => x.name.toLowerCase() === c.name.toLowerCase(),
+    );
+    if (existing && !existing.hidden) return;
     const categoryOrder = normalizeCategoryOrder(state.settings.categoryOrder);
     const orderType = c.type === "both" ? "expense" : c.type;
     write({
       ...state,
-      customCategories: [...state.customCategories, c],
+      customCategories: existing
+        ? state.customCategories.map((category) =>
+            category.name.toLowerCase() === c.name.toLowerCase() ? c : category,
+          )
+        : [...state.customCategories, c],
       settings: {
         ...state.settings,
         categoryOrder: {
@@ -591,14 +599,79 @@ export const store = {
   },
   deleteCustomCategory: (name: string) => {
     const categoryOrder = normalizeCategoryOrder(state.settings.categoryOrder);
+    const existing = state.customCategories.find((c) => c.name === name);
+    const hiddenCategory: CustomCategory = existing
+      ? { ...existing, hidden: true }
+      : { name, icon: "Sparkles", color: "oklch(0.7 0.05 240)", type: "both", hidden: true };
     write({
       ...state,
-      customCategories: state.customCategories.filter((c) => c.name !== name),
+      customCategories: existing
+        ? state.customCategories.map((c) => (c.name === name ? hiddenCategory : c))
+        : [...state.customCategories, hiddenCategory],
       settings: {
         ...state.settings,
         categoryOrder: {
           expense: (categoryOrder.expense || []).filter((item) => item !== name),
           income: (categoryOrder.income || []).filter((item) => item !== name),
+        },
+      },
+    });
+  },
+  updateCustomCategory: (name: string, patch: CustomCategory) => {
+    const existing = state.customCategories.find((c) => c.name === name);
+    const duplicate = state.customCategories.find(
+      (c) =>
+        c.name !== name && !c.hidden && c.name.toLowerCase() === patch.name.toLowerCase(),
+    );
+    if (duplicate) return;
+
+    const nextName = patch.name.trim();
+    if (!nextName) return;
+    const rename = nextName !== name;
+    const categoryOrder = normalizeCategoryOrder(state.settings.categoryOrder);
+    const nextCategory = { ...patch, name: nextName, hidden: false };
+    const hiddenPrevious: CustomCategory = {
+      ...(existing || patch),
+      name,
+      hidden: true,
+    };
+    const categoriesWithoutPrevious = state.customCategories.filter((category) => category.name !== name);
+
+    write({
+      ...state,
+      customCategories: rename
+        ? [...categoriesWithoutPrevious, hiddenPrevious, nextCategory]
+        : existing
+          ? state.customCategories.map((category) =>
+              category.name === name ? nextCategory : category,
+            )
+          : [...state.customCategories, nextCategory],
+      transactions: rename
+        ? state.transactions.map((transaction) =>
+            transaction.category === name ? { ...transaction, category: nextName } : transaction,
+          )
+        : state.transactions,
+      budgets: rename
+        ? state.budgets.map((budget) =>
+            budget.category === name ? { ...budget, category: nextName } : budget,
+          )
+        : state.budgets,
+      bills: rename
+        ? state.bills.map((bill) => (bill.category === name ? { ...bill, category: nextName } : bill))
+        : state.bills,
+      events: rename
+        ? state.events.map((event) => ({
+            ...event,
+            expenses: event.expenses.map((expense) =>
+              expense.category === name ? { ...expense, category: nextName } : expense,
+            ),
+          }))
+        : state.events,
+      settings: {
+        ...state.settings,
+        categoryOrder: {
+          expense: (categoryOrder.expense || []).map((item) => (item === name ? nextName : item)),
+          income: (categoryOrder.income || []).map((item) => (item === name ? nextName : item)),
         },
       },
     });

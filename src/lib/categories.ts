@@ -206,13 +206,36 @@ export const baseCategories: Category[] = [
 ];
 
 export function allCategories(custom: CustomCategory[] = []): Category[] {
-  const customMapped: Category[] = custom.map((c) => ({
-    name: c.name,
-    icon: iconRegistry[c.icon] || Sparkles,
-    color: c.color,
-    type: c.type,
-  }));
-  return [...baseCategories, ...customMapped];
+  const hidden = new Set(
+    custom.filter((c) => c.hidden).map((c) => c.name.toLowerCase()),
+  );
+  const overrides = new Map(
+    custom
+      .filter((c) => !c.hidden)
+      .map((c) => [c.name.toLowerCase(), c]),
+  );
+  const mergedBase = baseCategories
+    .filter((category) => !hidden.has(category.name.toLowerCase()))
+    .map((category) => {
+      const override = overrides.get(category.name.toLowerCase());
+      if (!override) return category;
+      return {
+        name: override.name,
+        icon: iconRegistry[override.icon] || Sparkles,
+        color: override.color,
+        type: override.type,
+      };
+    });
+  const baseNames = new Set(baseCategories.map((category) => category.name.toLowerCase()));
+  const customMapped: Category[] = custom
+    .filter((c) => !c.hidden && !baseNames.has(c.name.toLowerCase()))
+    .map((c) => ({
+      name: c.name,
+      icon: iconRegistry[c.icon] || Sparkles,
+      color: c.color,
+      type: c.type,
+    }));
+  return [...mergedBase, ...customMapped];
 }
 
 export function getCategory(name: string, custom: CustomCategory[] = []): Category {

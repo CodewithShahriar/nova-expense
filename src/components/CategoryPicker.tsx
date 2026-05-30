@@ -1,5 +1,5 @@
 import { useEffect, useState, type DragEvent } from "react";
-import { X, Search, Plus, Check, GripVertical } from "lucide-react";
+import { X, Search, Plus, Check, GripVertical, Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { allCategories, pickerIcons, pickerColors, iconRegistry } from "@/lib/categories";
 import { store, useStore, type CustomCategory } from "@/lib/storage";
@@ -24,6 +24,8 @@ export function CategoryPicker({
   const [newName, setNewName] = useState("");
   const [newIcon, setNewIcon] = useState(pickerIcons[0]);
   const [newColor, setNewColor] = useState(pickerColors[0]);
+  const [editingName, setEditingName] = useState<string | null>(null);
+  const [managing, setManaging] = useState(false);
   const [draggingName, setDraggingName] = useState<string | null>(null);
 
   useEffect(() => {
@@ -31,6 +33,8 @@ export function CategoryPicker({
       setQuery("");
       setCreating(false);
       setNewName("");
+      setEditingName(null);
+      setManaging(false);
     }
   }, [open]);
 
@@ -39,17 +43,40 @@ export function CategoryPicker({
     categoryOrder,
   );
   const filtered = list.filter((c) => c.name.toLowerCase().includes(query.toLowerCase()));
-  const canReorder = !query.trim();
+  const canReorder = !query.trim() && !managing;
+  const formMode = editingName ? "edit" : "create";
 
   function saveCustom() {
     const name = newName.trim();
     if (!name) return;
     const c: CustomCategory = { name, icon: newIcon, color: newColor, type };
-    store.addCustomCategory(c);
-    onChange(name);
+
+    if (editingName) {
+      store.updateCustomCategory(editingName, c);
+      onChange(name);
+    } else {
+      store.addCustomCategory(c);
+      onChange(name);
+    }
+
     setCreating(false);
     setNewName("");
+    setEditingName(null);
     onClose();
+  }
+
+  function startEdit(category: CustomCategory) {
+    setEditingName(category.name);
+    setNewName(category.name);
+    setNewIcon(category.icon);
+    setNewColor(category.color);
+    setCreating(true);
+  }
+
+  function deleteCustom(name: string) {
+    if (!window.confirm(`Delete ${name} category? Existing transactions keep the category name.`)) return;
+    store.deleteCustomCategory(name);
+    if (value === name) onChange(list.find((category) => category.name !== name)?.name || "");
   }
 
   function dragStart(event: DragEvent<HTMLButtonElement>, name: string) {
@@ -93,15 +120,29 @@ export function CategoryPicker({
       >
         <div className="mb-4 flex shrink-0 items-center justify-between">
           <h2 className="font-display text-lg min-[380px]:text-xl font-bold">
-            {creating ? "New category" : "Choose category"}
+            {creating ? (formMode === "edit" ? "Edit category" : "New category") : "Choose category"}
           </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="size-9 rounded-full glass flex items-center justify-center"
-          >
-            <X className="size-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            {!creating && (
+              <button
+                type="button"
+                onClick={() => setManaging((value) => !value)}
+                className={cn(
+                  "h-9 rounded-full px-3 text-xs font-semibold",
+                  managing ? "gradient-primary text-primary-foreground" : "glass",
+                )}
+              >
+                {managing ? "Done" : "Manage"}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="size-9 rounded-full glass flex items-center justify-center"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
         </div>
 
         {!creating ? (
@@ -120,6 +161,14 @@ export function CategoryPicker({
               {filtered.map((c) => {
                 const Icon = c.icon;
                 const active = value === c.name;
+                const editableCategory: CustomCategory =
+                  custom.find((category) => !category.hidden && category.name === c.name) ||
+                  {
+                    name: c.name,
+                    icon: iconNameFor(c.icon),
+                    color: c.color,
+                    type: c.type,
+                  };
                 return (
                   <button
                     key={c.name}
@@ -137,6 +186,7 @@ export function CategoryPicker({
                       dropOn(c.name);
                     }}
                     onClick={() => {
+                      if (managing) return;
                       onChange(c.name);
                       onClose();
                     }}
@@ -150,6 +200,46 @@ export function CategoryPicker({
                   >
                     {canReorder && (
                       <GripVertical className="absolute right-1.5 top-1.5 size-3.5 text-muted-foreground/55" />
+                    )}
+                    {managing && (
+                      <span className="absolute left-1.5 top-1.5 flex gap-1">
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            startEdit(editableCategory);
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key !== "Enter" && event.key !== " ") return;
+                            event.preventDefault();
+                            event.stopPropagation();
+                            startEdit(editableCategory);
+                          }}
+                          className="flex size-6 items-center justify-center rounded-lg bg-background/60 text-muted-foreground backdrop-blur"
+                          aria-label={`Edit ${c.name}`}
+                        >
+                          <Pencil className="size-3" />
+                        </span>
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            deleteCustom(c.name);
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key !== "Enter" && event.key !== " ") return;
+                            event.preventDefault();
+                            event.stopPropagation();
+                            deleteCustom(c.name);
+                          }}
+                          className="flex size-6 items-center justify-center rounded-lg bg-background/60 text-muted-foreground backdrop-blur hover:text-destructive"
+                          aria-label={`Delete ${c.name}`}
+                        >
+                          <Trash2 className="size-3" />
+                        </span>
+                      </span>
                     )}
                     <div
                       className="size-9 min-[380px]:size-10 rounded-xl flex items-center justify-center"
@@ -165,7 +255,14 @@ export function CategoryPicker({
               })}
               <button
                 type="button"
-                onClick={() => setCreating(true)}
+                onClick={() => {
+                  setEditingName(null);
+                  setManaging(false);
+                  setNewName("");
+                  setNewIcon(pickerIcons[0]);
+                  setNewColor(pickerColors[0]);
+                  setCreating(true);
+                }}
                 className="flex min-h-[5.5rem] flex-col items-center justify-center gap-2 rounded-2xl p-2 min-[380px]:p-3 glass border-dashed border border-primary/40"
               >
                 <div className="size-9 min-[380px]:size-10 rounded-xl gradient-primary flex items-center justify-center">
@@ -231,7 +328,14 @@ export function CategoryPicker({
             <div className="flex gap-2 pt-2">
               <button
                 type="button"
-                onClick={() => setCreating(false)}
+                onClick={() => {
+                  setCreating(false);
+                  setEditingName(null);
+                  setManaging(false);
+                  setNewName("");
+                  setNewIcon(pickerIcons[0]);
+                  setNewColor(pickerColors[0]);
+                }}
                 className="flex-1 h-12 rounded-2xl glass font-medium text-sm"
               >
                 Cancel
@@ -242,7 +346,7 @@ export function CategoryPicker({
                 disabled={!newName.trim()}
                 className="flex-1 h-12 rounded-2xl gradient-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-40"
               >
-                <Check className="size-4" /> Save
+                <Check className="size-4" /> {formMode === "edit" ? "Update" : "Save"}
               </button>
             </div>
           </div>
@@ -264,6 +368,12 @@ function orderCategories<T extends { name: string }>(categories: T[], order: str
     if (bIndex === undefined) return -1;
     return aIndex - bIndex;
   });
+}
+
+function iconNameFor(icon: (typeof iconRegistry)[string]) {
+  return (
+    Object.entries(iconRegistry).find(([, Icon]) => Icon === icon)?.[0] || pickerIcons[0]
+  );
 }
 
 function categoryOrderForType(
