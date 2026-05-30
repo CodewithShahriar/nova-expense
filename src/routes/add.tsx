@@ -144,17 +144,24 @@ function AddTransaction() {
       };
       if (editing) store.updateTransaction(editing.id, payload);
       else {
-        store.addTransaction(payload);
-        suggestRecurringBill({
-          current: payload,
-          transactions,
-          bills,
-        });
-        alertUnusualTransaction({
-          current: payload,
-          transactions,
-          currency,
-        });
+        const duplicate = findDuplicateTransaction(payload, transactions);
+        if (duplicate) {
+          toast.warning("Possible duplicate", {
+            description: `A similar ${category} transaction already exists on ${new Date(duplicate.date).toLocaleDateString(undefined, {
+              day: "numeric",
+              month: "short",
+            })}.`,
+            action: {
+              label: "Save anyway",
+              onClick: () => {
+                saveNewTransaction(payload, transactions, bills, currency);
+                navigate({ to: "/" });
+              },
+            },
+          });
+          return;
+        }
+        saveNewTransaction(payload, transactions, bills, currency);
       }
     }
     navigate({ to: editing ? "/transactions" : "/" });
@@ -523,6 +530,55 @@ function normalizeNote(value: string) {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
+function saveNewTransaction(
+  payload: Omit<Transaction, "id">,
+  transactions: Transaction[],
+  bills: Bill[],
+  currency: string,
+) {
+  store.addTransaction(payload);
+  suggestRecurringBill({
+    current: payload,
+    transactions,
+    bills,
+  });
+  alertUnusualTransaction({
+    current: payload,
+    transactions,
+    currency,
+  });
+  showSavingOpportunity({
+    current: payload,
+    transactions,
+    currency,
+  });
+}
+
+function findDuplicateTransaction(current: Omit<Transaction, "id">, transactions: Transaction[]) {
+  const currentDay = dayKey(current.date);
+  const currentNote = normalizeNote(current.note || "");
+
+  return transactions.find((transaction) => {
+    if (transaction.type !== current.type) return false;
+    if (transaction.category !== current.category) return false;
+    if (dayKey(transaction.date) !== currentDay) return false;
+    if (Math.abs(transaction.amount - current.amount) > Math.max(5, current.amount * 0.01)) {
+      return false;
+    }
+
+    if (current.type === "transfer") {
+      return (
+        transaction.fromAccountId === current.fromAccountId &&
+        transaction.toAccountId === current.toAccountId
+      );
+    }
+
+    const transactionNote = normalizeNote(transaction.note || "");
+    const notesMatch = !currentNote || !transactionNote || transactionNote === currentNote;
+    return transaction.accountId === current.accountId && notesMatch;
+  });
+}
+
 function suggestRecurringBill({
   current,
   transactions,
@@ -625,6 +681,44 @@ function nextRecurringDate(date: Date, repeat: Extract<Bill["repeat"], "weekly" 
   return next;
 }
 
+function showSavingOpportunity({
+  current,
+  transactions,
+  currency,
+}: {
+  current: Omit<Transaction, "id">;
+  transactions: Transaction[];
+  currency: string;
+}) {
+  if (current.type !== "expense") return;
+
+  const month = monthKey(current.date);
+  const categoryMonthTransactions = transactions.filter(
+    (transaction) =>
+      transaction.type === "expense" &&
+      transaction.category === current.category &&
+      monthKey(transaction.date) === month,
+  );
+  const monthTotal =
+    current.amount +
+    categoryMonthTransactions.reduce((sum, transaction) => sum + transaction.amount, 0);
+
+  if (categoryMonthTransactions.length < 2 || monthTotal < 1500) return;
+
+  const previousCategoryMonths = monthlyCategoryTotals(transactions, current.category, month);
+  const usualMonthlySpend = previousCategoryMonths.length ? median(previousCategoryMonths) : 0;
+  const highVsHistory = usualMonthlySpend > 0 && monthTotal >= usualMonthlySpend * 1.25;
+  const highWithoutHistory = !usualMonthlySpend && monthTotal >= 3000;
+  if (!highVsHistory && !highWithoutHistory) return;
+
+  const potentialSaving = Math.round(monthTotal * 0.2);
+  if (potentialSaving < 300) return;
+
+  toast.info("Saving opportunity", {
+    description: `You spent ${formatMoney(monthTotal, currency)} on ${current.category} this month. Cutting 20% could save about ${formatMoney(potentialSaving, currency)}.`,
+  });
+}
+
 function alertUnusualTransaction({
   current,
   transactions,
@@ -663,4 +757,23 @@ function median(values: number[]) {
   return sorted.length % 2 === 0
     ? (sorted[middle - 1] + sorted[middle]) / 2
     : sorted[middle];
+}
+
+function dayKey(value: string) {
+  return new Date(value).toISOString().slice(0, 10);
+}
+
+function monthKey(value: string) {
+  return new Date(value).toISOString().slice(0, 7);
+}
+
+function monthlyCategoryTotals(transactions: Transaction[], category: string, exceptMonth: string) {
+  const totals = new Map<string, number>();
+  transactions.forEach((transaction) => {
+    if (transaction.type !== "expense" || transaction.category !== category) return;
+    const month = monthKey(transaction.date);
+    if (month === exceptMonth) return;
+    totals.set(month, (totals.get(month) || 0) + transaction.amount);
+  });
+  return Array.from(totals.values()).filter((total) => total > 0);
 }
