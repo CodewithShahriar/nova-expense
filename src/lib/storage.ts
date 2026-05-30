@@ -749,11 +749,6 @@ export const currencySymbols: Record<string, string> = {
 export function formatMoney(amount: number, currency = "BDT", compact = false) {
   const sym = currencySymbols[currency] || currency + " ";
   const abs = Math.abs(amount);
-  if (compact && abs >= 1000) {
-    if (abs >= 100000)
-      return `${amount < 0 ? "-" : ""}${sym}${(abs / 100000).toFixed(abs >= 1000000 ? 0 : 1)}L`;
-    return `${amount < 0 ? "-" : ""}${sym}${(abs / 1000).toFixed(abs >= 10000 ? 0 : 1)}k`;
-  }
 
   const locale = ["INR", "BDT", "PKR"].includes(currency) ? "en-IN" : "en-US";
   return `${amount < 0 ? "-" : ""}${sym}${abs.toLocaleString(locale, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
