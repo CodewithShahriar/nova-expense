@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState, type ReactNode, type WheelEvent } from "react";
+import { useState, type ReactNode, type WheelEvent } from "react";
 import {
   Briefcase,
   Building2,
@@ -77,29 +77,6 @@ function EventsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(events[0]?.id || null);
   const selected = events.find((event) => event.id === selectedId) || events[0];
 
-  const totals = useMemo(() => {
-    const cost = events.reduce(
-      (sum, event) =>
-        sum +
-        event.expenses.reduce(
-          (inner, entry) => inner + (entry.type === "income" ? 0 : entry.amount),
-          0,
-        ),
-      0,
-    );
-    const income = events.reduce(
-      (sum, event) =>
-        sum +
-        event.expenses.reduce(
-          (inner, entry) => inner + (entry.type === "income" ? entry.amount : 0),
-          0,
-        ),
-      0,
-    );
-    const active = events.filter((event) => event.expenses.length > 0).length;
-    return { cost, income, active };
-  }, [events]);
-
   return (
     <div className="px-4 min-[380px]:px-5 pt-[calc(env(safe-area-inset-top)+1rem)] animate-fade-in">
       <div className="flex items-start justify-between gap-3">
@@ -120,26 +97,6 @@ function EventsPage() {
           )}
         </button>
       </div>
-
-      <GlassCard className="mt-5 overflow-hidden p-5">
-        <div className="flex items-center gap-3">
-          <div className="flex size-11 items-center justify-center rounded-2xl bg-primary/15">
-            <PartyPopper className="size-5 text-primary" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs uppercase tracking-widest text-muted-foreground">Event ledger</p>
-            <p className="mt-1 truncate font-semibold">
-              {events.length} events, {totals.active} with expenses
-            </p>
-          </div>
-          <div className="shrink-0 text-right">
-            <p className="font-display text-lg font-bold tabular">
-              {formatMoney(totals.income - totals.cost, currency, true)}
-            </p>
-            <p className="text-[11px] text-muted-foreground">net</p>
-          </div>
-        </div>
-      </GlassCard>
 
       {adding && (
         <EventForm
@@ -211,8 +168,10 @@ function EventChip({
       type="button"
       onClick={onClick}
       className={cn(
-        "min-h-[6.5rem] w-[9.25rem] shrink-0 rounded-2xl p-3 text-left transition active:scale-[0.98]",
-        selected ? "glass-strong ring-1 ring-primary/45" : "glass",
+        "min-h-[6.5rem] w-[9.25rem] shrink-0 rounded-2xl p-3 text-left transition active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
+        selected
+          ? "glass-strong border-primary/55 shadow-[inset_0_0_0_1px_color-mix(in_oklch,var(--primary)_72%,transparent),0_10px_30px_-18px_var(--primary)]"
+          : "glass",
       )}
     >
       <div

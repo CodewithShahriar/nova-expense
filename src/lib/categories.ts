@@ -50,6 +50,7 @@ import {
   Wrench,
   Paintbrush,
   Scissors,
+  Cigarette,
   type LucideIcon,
 } from "lucide-react";
 import type { CustomCategory } from "./storage";
@@ -113,6 +114,7 @@ export const iconRegistry: Record<string, LucideIcon> = {
   Wrench,
   Paintbrush,
   Scissors,
+  Cigarette,
 };
 
 export const pickerIcons: string[] = [
@@ -162,6 +164,7 @@ export const pickerIcons: string[] = [
   "Wrench",
   "Paintbrush",
   "Scissors",
+  "Cigarette",
   "Briefcase",
   "TrendingUp",
   "Banknote",
@@ -194,6 +197,7 @@ export const baseCategories: Category[] = [
   { name: "Travel", icon: Plane, color: "oklch(0.75 0.17 210)", type: "expense" },
   { name: "Education", icon: GraduationCap, color: "oklch(0.75 0.17 260)", type: "expense" },
   { name: "Gifts", icon: Gift, color: "oklch(0.75 0.19 350)", type: "expense" },
+  { name: "Smoke", icon: Cigarette, color: "oklch(0.68 0.08 70)", type: "expense" },
   { name: "Other", icon: Sparkles, color: "oklch(0.7 0.05 240)", type: "both" },
   { name: "Salary", icon: Briefcase, color: "oklch(0.78 0.17 162)", type: "income" },
   { name: "Freelance", icon: TrendingUp, color: "oklch(0.78 0.15 180)", type: "income" },
