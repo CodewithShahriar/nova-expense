@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import { ArrowLeft, Check, ImagePlus, ScanLine, Trash2 } from "lucide-react";
-import { store, useStore, type Transaction, type TxType } from "@/lib/storage";
+import { store, useStore, type Bill, type Transaction, type TxType } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import { getCategory } from "@/lib/categories";
 import { CategoryPicker } from "@/components/CategoryPicker";
@@ -30,6 +30,7 @@ function AddTransaction() {
   const accounts = useStore((s) => s.accounts);
   const custom = useStore((s) => s.customCategories);
   const transactions = useStore((s) => s.transactions);
+  const bills = useStore((s) => s.bills);
   const editing = search.edit ? transactions.find((t) => t.id === search.edit) : undefined;
 
   const initialType = (editing?.type || search.type || "expense") as TxType;
@@ -135,7 +136,14 @@ function AddTransaction() {
         receiptImage,
       };
       if (editing) store.updateTransaction(editing.id, payload);
-      else store.addTransaction(payload);
+      else {
+        store.addTransaction(payload);
+        suggestRecurringBill({
+          current: payload,
+          transactions,
+          bills,
+        });
+      }
     }
     navigate({ to: editing ? "/transactions" : "/" });
   }
@@ -474,4 +482,106 @@ function suggestNotes(
 
 function normalizeNote(value: string) {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function suggestRecurringBill({
+  current,
+  transactions,
+  bills,
+}: {
+  current: Omit<Transaction, "id">;
+  transactions: Transaction[];
+  bills: Bill[];
+}) {
+  if (current.type !== "expense" || !current.accountId) return;
+
+  const currentName = billNameFromTransaction(current);
+  const currentKey = normalizeNote(currentName);
+  if (!currentKey) return;
+
+  const amountTolerance = Math.max(50, current.amount * 0.08);
+  const matches = transactions
+    .filter((transaction) => {
+      if (transaction.type !== "expense") return false;
+      if (transaction.category !== current.category) return false;
+      if (Math.abs(transaction.amount - current.amount) > amountTolerance) return false;
+      return normalizeNote(billNameFromTransaction(transaction)) === currentKey;
+    })
+    .map((transaction) => transaction.date);
+
+  if (matches.length < 2) return;
+
+  const dates = [...matches, current.date]
+    .map((date) => new Date(date))
+    .filter((date) => Number.isFinite(date.getTime()))
+    .sort((a, b) => a.getTime() - b.getTime());
+  const repeat = detectRepeat(dates);
+  if (!repeat) return;
+
+  const duplicate = bills.some((bill) => {
+    const active = !bill.history && bill.repeat !== "none";
+    return (
+      active &&
+      bill.category === current.category &&
+      bill.repeat === repeat &&
+      normalizeNote(bill.name) === currentKey
+    );
+  });
+  if (duplicate) return;
+
+  const nextDate = nextRecurringDate(new Date(current.date), repeat);
+
+  toast.info("Looks recurring", {
+    description: `${currentName} seems ${repeat}. Add it as a bill?`,
+    action: {
+      label: "Add bill",
+      onClick: () => {
+        store.addBill({
+          name: currentName,
+          amount: current.amount,
+          dueDate: nextDate.toISOString(),
+          nextDueDate: nextDate.toISOString(),
+          repeat,
+          accountId: current.accountId,
+          category: current.category,
+          notes: current.note,
+        });
+        toast.success("Bill reminder created", {
+          description: `${currentName} is now on your bill calendar.`,
+        });
+      },
+    },
+  });
+}
+
+function billNameFromTransaction(transaction: Pick<Transaction, "category" | "note">) {
+  return transaction.note?.trim() || transaction.category;
+}
+
+function detectRepeat(dates: Date[]): Extract<Bill["repeat"], "weekly" | "monthly"> | null {
+  if (dates.length < 3) return null;
+
+  const gaps = dates.slice(1).map((date, index) => daysBetween(dates[index], date));
+  const recentGaps = gaps.slice(-3);
+  const average = recentGaps.reduce((sum, gap) => sum + gap, 0) / recentGaps.length;
+
+  if (average >= 5 && average <= 9 && recentGaps.every((gap) => gap >= 4 && gap <= 10)) {
+    return "weekly";
+  }
+  if (average >= 25 && average <= 35 && recentGaps.every((gap) => gap >= 21 && gap <= 40)) {
+    return "monthly";
+  }
+
+  return null;
+}
+
+function daysBetween(a: Date, b: Date) {
+  return Math.round((b.getTime() - a.getTime()) / 86400000);
+}
+
+function nextRecurringDate(date: Date, repeat: Extract<Bill["repeat"], "weekly" | "monthly">) {
+  const next = new Date(date);
+  if (repeat === "weekly") next.setDate(next.getDate() + 7);
+  else next.setMonth(next.getMonth() + 1);
+  return next;
 }
