@@ -440,41 +440,68 @@ function suggestNotes(
   if (type === "transfer") return [];
 
   const normalizedQuery = normalizeNote(query);
-  const notes = new Map<string, { note: string; count: number; lastSeen: number }>();
+  const suggestions = new Map<
+    string,
+    {
+      note: string;
+      count: number;
+      categoryMatches: number;
+      merchantMatches: number;
+      bestScore: number;
+      lastSeen: number;
+    }
+  >();
 
   transactions.forEach((transaction, index) => {
-    const note = transaction.note?.trim();
-    if (
-      !note ||
-      transaction.id === editingId ||
-      transaction.type !== type ||
-      transaction.category !== category
-    ) {
-      return;
-    }
+    if (transaction.id === editingId || transaction.type !== type) return;
 
-    const key = normalizeNote(note);
+    const note = transaction.note?.trim();
+    const merchant = transaction.merchant?.trim();
+    const suggestion = note || merchant;
+    if (!suggestion) return;
+
+    const key = normalizeNote(suggestion);
     if (!key || key === normalizedQuery) return;
 
-    const current = notes.get(key);
-    notes.set(key, {
-      note: current?.note || note,
+    const categoryKey = normalizeNote(transaction.category);
+    const merchantKey = normalizeNote(merchant || "");
+    const sameCategory = transaction.category === category;
+    const queryHitsNote = Boolean(normalizedQuery && key.includes(normalizedQuery));
+    const queryHitsMerchant = Boolean(normalizedQuery && merchantKey.includes(normalizedQuery));
+    const queryHitsCategory = Boolean(normalizedQuery && categoryKey.includes(normalizedQuery));
+
+    if (!sameCategory && (!normalizedQuery || (!queryHitsNote && !queryHitsMerchant))) return;
+
+    const current = suggestions.get(key);
+    const startsNote = normalizedQuery && key.startsWith(normalizedQuery);
+    const startsMerchant = normalizedQuery && merchantKey.startsWith(normalizedQuery);
+    const score =
+      (sameCategory ? 80 : 0) +
+      (startsNote ? 45 : queryHitsNote ? 28 : 0) +
+      (startsMerchant ? 38 : queryHitsMerchant ? 24 : 0) +
+      (queryHitsCategory ? 10 : 0) +
+      (merchant ? 6 : 0) +
+      Math.max(0, 12 - index);
+
+    suggestions.set(key, {
+      note: current?.note || suggestion,
       count: (current?.count || 0) + 1,
+      categoryMatches: (current?.categoryMatches || 0) + (sameCategory ? 1 : 0),
+      merchantMatches: (current?.merchantMatches || 0) + (queryHitsMerchant ? 1 : 0),
+      bestScore: Math.max(current?.bestScore || 0, score),
       lastSeen: current ? Math.min(current.lastSeen, index) : index,
     });
   });
 
-  return Array.from(notes.values())
-    .filter(({ note }) => {
-      if (!normalizedQuery) return true;
-      return normalizeNote(note).includes(normalizedQuery);
-    })
+  return Array.from(suggestions.values())
     .sort((a, b) => {
-      const aNote = normalizeNote(a.note);
-      const bNote = normalizeNote(b.note);
-      const aStarts = normalizedQuery && aNote.startsWith(normalizedQuery) ? 1 : 0;
-      const bStarts = normalizedQuery && bNote.startsWith(normalizedQuery) ? 1 : 0;
-      return bStarts - aStarts || b.count - a.count || a.lastSeen - b.lastSeen;
+      return (
+        b.bestScore - a.bestScore ||
+        b.categoryMatches - a.categoryMatches ||
+        b.merchantMatches - a.merchantMatches ||
+        b.count - a.count ||
+        a.lastSeen - b.lastSeen
+      );
     })
     .slice(0, 5)
     .map(({ note }) => note);
