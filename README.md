@@ -7,10 +7,12 @@ Nova Expense is a premium mobile-first expense tracking web app built with React
 - Mobile-first dashboard with account cards, weekly spending, savings rate, smart insight, bill reminders, and recent activity
 - Account management with editable account name, account type, brand, number, balance, and card color
 - Transaction flow for expenses, income, and transfers
+- Smart transaction assistance with category/merchant-based note suggestions, duplicate warnings, recurring expense detection, unusual spend alerts, and saving opportunity insights
 - Receipt scanner with camera/upload support and OCR-assisted detail extraction
-- Category picker with built-in and custom categories
+- Category picker with built-in and custom categories, draggable category ordering, and expanded icon choices
 - Budget tracking with category progress views
 - Bills section with due-date reminders and status handling
+- Events section for separate event income/cost ledgers
 - Reports with category breakdowns and income/expense charts
 - Settings for appearance, currency, avatar, and app preferences
 - Bottom navigation designed for fast mobile use
@@ -50,6 +52,7 @@ Nova Expense is a premium mobile-first expense tracking web app built with React
 /transactions    Transaction history
 /budgets         Budget tracking
 /bills           Bill reminders
+/events          Event ledgers
 /reports         Reports and charts
 /settings        App settings
 ```
