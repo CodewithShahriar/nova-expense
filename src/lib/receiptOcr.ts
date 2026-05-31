@@ -16,9 +16,14 @@ export interface ReceiptItem {
   total?: number;
 }
 
-export async function resizeReceiptImage(file: File, maxWidth = 1800): Promise<string> {
-  const dataUrl = await fileToDataUrl(file);
-  const image = await loadImage(dataUrl);
+export interface ReceiptImageVariants {
+  preview: string;
+  scan: string;
+}
+
+export async function prepareReceiptImages(file: File, maxWidth = 1800): Promise<ReceiptImageVariants> {
+  const preview = await fileToDataUrl(file);
+  const image = await loadImage(preview);
   const scale = Math.min(1, maxWidth / image.width);
   const width = Math.round(image.width * scale);
   const height = Math.round(image.height * scale);
@@ -28,7 +33,15 @@ export async function resizeReceiptImage(file: File, maxWidth = 1800): Promise<s
   const ctx = canvas.getContext("2d")!;
   ctx.drawImage(image, 0, 0, width, height);
   enhanceReceiptCanvas(ctx, width, height);
-  return canvas.toDataURL("image/jpeg", 0.92);
+
+  return {
+    preview,
+    scan: canvas.toDataURL("image/jpeg", 0.92),
+  };
+}
+
+export async function resizeReceiptImage(file: File, maxWidth = 1800): Promise<string> {
+  return prepareReceiptImages(file, maxWidth).then((images) => images.scan);
 }
 
 export async function scanReceiptImage(imageDataUrl: string): Promise<ReceiptOcrResult> {

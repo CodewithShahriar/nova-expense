@@ -16,7 +16,7 @@ import { AccountSelect } from "@/components/AccountSelect";
 import { DatePicker } from "@/components/DatePicker";
 import { allCategories } from "@/lib/categories";
 import {
-  resizeReceiptImage,
+  prepareReceiptImages,
   scanReceiptImage,
   scanReceiptImageWithAi,
   type ReceiptOcrResult,
@@ -65,13 +65,13 @@ export function ReceiptScanner({
     setReviewWarning(null);
 
     try {
-      const resized = await resizeReceiptImage(file);
-      setPreview(resized);
-      const localResult = await scanReceiptImage(resized);
+      const images = await prepareReceiptImages(file);
+      setPreview(images.preview);
+      const localResult = await scanReceiptImage(images.scan);
       applyResult(localResult);
 
       setScanStatus("Improving receipt details with AI...");
-      const aiResult = await scanWithAi(resized, localResult.rawText, false);
+      const aiResult = await scanWithAi(images.preview, localResult.rawText, false);
       if (aiResult) applyResult(aiResult);
 
       setDone(true);
@@ -356,7 +356,7 @@ export function ReceiptScanner({
           {preview && !scanning && (
             <button
               type="button"
-              onClick={() => scanWithAi()}
+              onClick={() => scanWithAi(preview, rawText)}
               className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-primary/10 text-sm font-semibold text-primary"
             >
               <Sparkles className="size-4" />
