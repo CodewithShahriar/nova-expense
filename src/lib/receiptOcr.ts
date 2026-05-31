@@ -135,37 +135,27 @@ function parseMerchant(lines: string[]) {
     /phone|mobile|bin|invoice|date|time|paid|bill|receipt|cash memo|vat|total|amount|guest|payment|returned|wifi|password|counter|thank|powered/i;
 
   const headerLines = lines.slice(0, Math.max(3, firstReceiptBodyIndex(lines)));
-
-  return headerLines
+  const candidates = headerLines
+    .flatMap((line) => merchantLineCandidates(line))
     .map(cleanMerchantLine)
-    .find(
+    .filter(
       (line) =>
         line.length >= 3 &&
         line.length <= 48 &&
         /[a-z]/i.test(line) &&
         !ignored.test(line) &&
-        !/\d{5,}/.test(line),
-    );
+        !/\d{5,}/.test(line) &&
+        !hasTooManyTinyWords(line),
+    )
+    .map((line) => ({ line, score: merchantScore(line) }))
+    .sort((a, b) => b.score - a.score);
+
+  return candidates[0]?.line;
 }
 
 function parseNote(lines: string[]) {
   const itemLines = itemSectionLines(lines)
-    .map(cleanReceiptLine)
-    .filter(
-      (line) =>
-        line.length >= 3 &&
-        !isIgnoredNoteLine(line) &&
-        /[a-z]/i.test(line) &&
-        !/^\(?[a-z\s]+\)?\s+\d+(?:\.\d{1,2})?\s+\d+(?:\.\d{1,2})?-?$/i.test(line),
-    )
-    .map((line) =>
-      line
-        .replace(/^-?\d+\s+/, "")
-        .replace(/\s+\d+(?:\.\d{1,2})?\s+\d+(?:\.\d{1,2})?-?$/, "")
-        .replace(/\bprice\b.*$/i, "")
-        .replace(/^[^\w]+|[^\w]+$/g, "")
-        .trim(),
-    )
+    .map(cleanItemLine)
     .filter((line) => line.length >= 3 && /[a-z]{3,}/i.test(line))
     .slice(0, 3);
 
@@ -267,7 +257,9 @@ function cleanMerchantLine(line: string) {
     .replace(/[=_*~|]+/g, " ")
     .replace(/\s+/g, " ")
     .trim()
-    .replace(/^[^\w]+|[^\w]+$/g, "");
+    .replace(/^[^\w]+|[^\w]+$/g, "")
+    .replace(/^(?:[a-z]\s+){1,3}(?=[A-Z][a-z])/i, "")
+    .trim();
 }
 
 function cleanReceiptLine(line: string) {
@@ -275,6 +267,51 @@ function cleanReceiptLine(line: string) {
     .replace(/[–—]/g, "-")
     .replace(/[•·]/g, " ")
     .replace(/\s+/g, " ")
+    .trim();
+}
+
+function merchantLineCandidates(line: string) {
+  const spacedSegments = line
+    .split(/\s{2,}/)
+    .map((segment) => segment.trim())
+    .filter(Boolean);
+
+  return spacedSegments.length > 1 ? spacedSegments : [line];
+}
+
+function merchantScore(line: string) {
+  const words = line.split(/\s+/).filter(Boolean);
+  const titleWords = words.filter((word) => /^[A-Z][a-z]+$/.test(word)).length;
+  const tinyWords = words.filter((word) => word.length <= 2).length;
+
+  return (
+    titleWords * 12 +
+    (words.length >= 2 && words.length <= 4 ? 18 : 0) +
+    (/[,&:#]/.test(line) ? -8 : 0) +
+    tinyWords * -10 +
+    Math.max(0, 24 - line.length)
+  );
+}
+
+function hasTooManyTinyWords(line: string) {
+  const words = line.split(/\s+/).filter(Boolean);
+  return words.length >= 4 && words.filter((word) => word.length <= 2).length >= 3;
+}
+
+function cleanItemLine(line: string) {
+  const cleaned = cleanReceiptLine(line);
+  if (isIgnoredNoteLine(cleaned) || isIgnoredAmountLine(cleaned)) return "";
+
+  const quantityMatch = cleaned.match(/-?\d+\s+[A-Za-z(][A-Za-z0-9\s()&'/-]*/);
+  if (!quantityMatch) return "";
+
+  return quantityMatch[0]
+    .replace(/^-?\d+\s+/, "")
+    .replace(/\b\d+(?:\.\d{1,2})?\b.*$/g, "")
+    .replace(/\b(?:ea|ee|a|cw)\b$/i, "")
+    .replace(/\bi50ml\b/i, "150ml")
+    .replace(/\s+/g, " ")
+    .replace(/^[^\w(]+|[^\w)]+$/g, "")
     .trim();
 }
 
