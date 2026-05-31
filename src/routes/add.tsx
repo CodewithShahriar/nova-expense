@@ -59,9 +59,9 @@ function AddTransaction() {
   const [catOpen, setCatOpen] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [amountFocused, setAmountFocused] = useState(false);
   const [noteFocused, setNoteFocused] = useState(false);
   const [keyboardInset, setKeyboardInset] = useState(0);
+  const formRef = useRef<HTMLFormElement>(null);
   const noteRef = useRef<HTMLInputElement>(null);
   const receiptRef = useRef<HTMLInputElement>(null);
 
@@ -85,6 +85,14 @@ function AddTransaction() {
     function syncKeyboardInset() {
       const inset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
       setKeyboardInset(Math.round(inset));
+
+      if (inset < 20) {
+        requestAnimationFrame(() => {
+          const form = formRef.current;
+          if (!form) return;
+          form.scrollTop = Math.max(0, form.scrollTop);
+        });
+      }
     }
 
     syncKeyboardInset();
@@ -272,10 +280,11 @@ function AddTransaction() {
 
       <form
         id="transaction-form"
+        ref={formRef}
         onSubmit={submit}
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 min-[380px]:px-5 mt-4 min-[380px]:mt-5 scroll-pb-24"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 min-[380px]:px-5 mt-4 min-[380px]:mt-5 scroll-pb-36"
         style={{
-          paddingBottom: `calc(env(safe-area-inset-bottom) + ${keyboardInset > 80 ? keyboardInset : 16}px)`,
+          paddingBottom: "calc(env(safe-area-inset-bottom) + 7rem)",
         }}
       >
         {/* Amount */}
@@ -291,8 +300,6 @@ function AddTransaction() {
                 setAmount(e.target.value.replace(/[^0-9.]/g, ""));
                 setError(null);
               }}
-              onFocus={() => setAmountFocused(true)}
-              onBlur={() => setAmountFocused(false)}
               placeholder="0"
               autoFocus
               enterKeyHint="done"
@@ -453,7 +460,12 @@ function AddTransaction() {
         <div aria-hidden className="h-4" />
       </form>
 
-      <div className="shrink-0 px-4 min-[380px]:px-5 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] bg-background/95">
+      <div
+        className="fixed inset-x-0 z-50 px-4 min-[380px]:px-5 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] bg-background/95 transition-transform duration-200"
+        style={{
+          transform: keyboardInset > 80 ? `translateY(-${keyboardInset}px)` : "translateY(0)",
+        }}
+      >
         <button
           type="submit"
           form="transaction-form"
