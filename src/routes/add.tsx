@@ -417,9 +417,11 @@ function AddTransaction() {
           />
         </div>
 
+        <div aria-hidden className="h-20" />
+
         <button
           type="submit"
-          className="sticky bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-20 mt-6 min-h-14 rounded-2xl gradient-primary text-primary-foreground font-semibold shadow-glow flex w-full items-center justify-center gap-2 active:scale-[0.98] transition"
+          className="sticky bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-20 min-h-14 rounded-2xl gradient-primary text-primary-foreground font-semibold shadow-glow flex w-full items-center justify-center gap-2 active:scale-[0.98] transition"
         >
           <Check className="size-5" />
           {editing ? "Save changes" : "Save transaction"}
