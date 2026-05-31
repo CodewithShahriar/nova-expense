@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Check, ImagePlus, ScanLine, Trash2 } from "lucide-react";
 import {
   formatMoney,
@@ -60,6 +60,7 @@ function AddTransaction() {
   const [scannerOpen, setScannerOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [noteFocused, setNoteFocused] = useState(false);
+  const [keyboardInset, setKeyboardInset] = useState(0);
   const noteRef = useRef<HTMLInputElement>(null);
   const receiptRef = useRef<HTMLInputElement>(null);
 
@@ -75,6 +76,24 @@ function AddTransaction() {
     [transactions, category, type, note, editing?.id],
   );
   const showNoteSuggestions = noteFocused && type !== "transfer" && noteSuggestions.length > 0;
+
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+
+    function syncKeyboardInset() {
+      const inset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
+      setKeyboardInset(Math.round(inset));
+    }
+
+    syncKeyboardInset();
+    viewport.addEventListener("resize", syncKeyboardInset);
+    viewport.addEventListener("scroll", syncKeyboardInset);
+    return () => {
+      viewport.removeEventListener("resize", syncKeyboardInset);
+      viewport.removeEventListener("scroll", syncKeyboardInset);
+    };
+  }, []);
 
   async function attachReceipt(file?: File) {
     if (!file) return;
@@ -246,6 +265,9 @@ function AddTransaction() {
       <form
         onSubmit={submit}
         className="flex-1 overflow-y-auto overscroll-contain px-4 min-[380px]:px-5 mt-4 min-[380px]:mt-5 scroll-pb-48 pb-[calc(env(safe-area-inset-bottom)+6rem)]"
+        style={{
+          paddingBottom: `calc(env(safe-area-inset-bottom) + ${keyboardInset + 96}px)`,
+        }}
       >
         {/* Amount */}
         <div className="text-center py-3 min-[380px]:py-4">
