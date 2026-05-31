@@ -245,7 +245,7 @@ function AddTransaction() {
 
       <form
         onSubmit={submit}
-        className="flex-1 overflow-y-auto overscroll-contain px-4 min-[380px]:px-5 mt-4 min-[380px]:mt-5 scroll-pb-36 pb-[calc(env(safe-area-inset-bottom)+1rem)]"
+        className="flex-1 overflow-y-auto overscroll-contain px-4 min-[380px]:px-5 mt-4 min-[380px]:mt-5 scroll-pb-48 pb-[calc(env(safe-area-inset-bottom)+6rem)]"
       >
         {/* Amount */}
         <div className="text-center py-3 min-[380px]:py-4">
@@ -328,7 +328,7 @@ function AddTransaction() {
         )}
 
         {/* Note */}
-        <label className="mt-4 block scroll-mb-36">
+        <label className="mt-4 block scroll-mb-48">
           <span className="text-xs uppercase tracking-widest text-muted-foreground">
             Note (optional)
           </span>
@@ -419,7 +419,7 @@ function AddTransaction() {
 
         <button
           type="submit"
-          className="sticky bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] mt-6 min-h-14 rounded-2xl gradient-primary text-primary-foreground font-semibold shadow-glow flex w-full items-center justify-center gap-2 active:scale-[0.98] transition"
+          className="sticky bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-20 mt-6 min-h-14 rounded-2xl gradient-primary text-primary-foreground font-semibold shadow-glow flex w-full items-center justify-center gap-2 active:scale-[0.98] transition"
         >
           <Check className="size-5" />
           {editing ? "Save changes" : "Save transaction"}
