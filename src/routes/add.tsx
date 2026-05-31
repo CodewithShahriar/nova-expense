@@ -275,9 +275,9 @@ function AddTransaction() {
       <form
         id="transaction-form"
         onSubmit={submit}
-        className="flex-1 overflow-y-auto overscroll-contain px-4 min-[380px]:px-5 mt-4 min-[380px]:mt-5 scroll-pb-48 pb-[calc(env(safe-area-inset-bottom)+6rem)]"
+        className="flex-1 overflow-y-auto overscroll-contain px-4 min-[380px]:px-5 mt-4 min-[380px]:mt-5 scroll-pb-48"
         style={{
-          paddingBottom: `calc(env(safe-area-inset-bottom) + ${keyboardInset + 96}px)`,
+          paddingBottom: `calc(env(safe-area-inset-bottom) + ${keyboardInset + 128}px)`,
         }}
       >
         {/* Amount */}
@@ -452,34 +452,23 @@ function AddTransaction() {
           />
         </div>
 
-        <div aria-hidden className="h-20" />
+        <div aria-hidden className="h-8" />
+      </form>
 
+      <div
+        className={cn(
+          "fixed inset-x-0 z-50 px-4 min-[380px]:px-5 transition-transform",
+          noteKeyboardOpen ? "bottom-3" : "bottom-[calc(env(safe-area-inset-bottom)+0.75rem)]",
+        )}
+      >
         <button
           type="submit"
-          className={cn(
-            "z-20 min-h-14 rounded-2xl gradient-primary text-primary-foreground font-semibold shadow-glow flex w-full items-center justify-center gap-2 active:scale-[0.98] transition",
-            amountKeyboardOpen
-              ? "relative"
-              : noteKeyboardOpen
-                ? "invisible pointer-events-none"
-              : "sticky bottom-[calc(env(safe-area-inset-bottom)+0.75rem)]",
-          )}
+          form="transaction-form"
+          className="mx-auto flex min-h-14 w-full max-w-lg items-center justify-center gap-2 rounded-2xl gradient-primary font-semibold text-primary-foreground shadow-glow active:scale-[0.98] transition"
         >
           {saveButtonContent}
         </button>
-      </form>
-
-      {noteKeyboardOpen && (
-        <div className="fixed inset-x-0 bottom-3 z-50 px-4 min-[380px]:px-5">
-          <button
-            type="submit"
-            form="transaction-form"
-            className="mx-auto flex min-h-14 w-full max-w-lg items-center justify-center gap-2 rounded-2xl gradient-primary font-semibold text-primary-foreground shadow-glow active:scale-[0.98] transition"
-          >
-            {saveButtonContent}
-          </button>
-        </div>
-      )}
+      </div>
 
       <CategoryPicker
         open={catOpen}
