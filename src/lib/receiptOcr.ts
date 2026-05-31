@@ -3,9 +3,10 @@ export interface ReceiptOcrResult {
   amount?: number;
   date?: string;
   merchant?: string;
+  note?: string;
 }
 
-export async function resizeReceiptImage(file: File, maxWidth = 1200): Promise<string> {
+export async function resizeReceiptImage(file: File, maxWidth = 1800): Promise<string> {
   const dataUrl = await fileToDataUrl(file);
   const image = await loadImage(dataUrl);
   const scale = Math.min(1, maxWidth / image.width);
@@ -16,7 +17,8 @@ export async function resizeReceiptImage(file: File, maxWidth = 1200): Promise<s
   canvas.height = height;
   const ctx = canvas.getContext("2d")!;
   ctx.drawImage(image, 0, 0, width, height);
-  return canvas.toDataURL("image/jpeg", 0.78);
+  enhanceReceiptCanvas(ctx, width, height);
+  return canvas.toDataURL("image/jpeg", 0.92);
 }
 
 export async function scanReceiptImage(imageDataUrl: string): Promise<ReceiptOcrResult> {
@@ -24,6 +26,12 @@ export async function scanReceiptImage(imageDataUrl: string): Promise<ReceiptOcr
   const worker = await createWorker("eng");
 
   try {
+    await worker.setParameters({
+      tessedit_pageseg_mode: "6",
+      tessedit_char_whitelist:
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789৳TkBDT.,:/#-()&' ",
+      preserve_interword_spaces: "1",
+    });
     const {
       data: { text },
     } = await worker.recognize(imageDataUrl);
@@ -44,6 +52,7 @@ export function parseReceiptText(rawText: string): ReceiptOcrResult {
     amount: parseAmount(lines),
     date: parseDate(lines),
     merchant: parseMerchant(lines),
+    note: parseNote(lines),
   };
 }
 
@@ -58,7 +67,7 @@ function parseAmount(lines: string[]) {
   const prioritized: Array<{ value: number; priority: number }> = [];
   const fallback: number[] = [];
 
-  lines.forEach((line) => {
+  lines.forEach((line, index) => {
     if (isIgnoredAmountLine(line)) return;
 
     const values = moneyValuesFromLine(line);
@@ -66,18 +75,32 @@ function parseAmount(lines: string[]) {
 
     const priority = priorityMatchers.findIndex((matcher) => matcher.test(line));
     if (priority >= 0) {
-      prioritized.push({ value: Math.max(...values), priority });
+      prioritized.push({ value: bestTotalCandidate(values), priority });
       return;
     }
 
     fallback.push(...values);
+
+    const previousLine = lines[index - 1] || "";
+    const previousPriority = priorityMatchers.findIndex((matcher) => matcher.test(previousLine));
+    if (previousPriority >= 0) {
+      prioritized.push({ value: bestTotalCandidate(values), priority: previousPriority });
+    }
   });
 
   if (prioritized.length) {
-    return prioritized.sort((a, b) => a.priority - b.priority || b.value - a.value)[0]?.value;
+    const bestPriority = prioritized.sort((a, b) => a.priority - b.priority || b.value - a.value)[0]
+      ?.value;
+    const itemSum = parseItemTotalSum(lines);
+
+    if (itemSum && bestPriority && Math.abs(bestPriority - itemSum) > Math.max(5, itemSum * 0.08)) {
+      return itemSum;
+    }
+
+    return bestPriority;
   }
 
-  return fallback.sort((a, b) => b - a)[0];
+  return parseItemTotalSum(lines) || fallback.sort((a, b) => b - a)[0];
 }
 
 function parseDate(lines: string[]) {
@@ -109,9 +132,11 @@ function parseDate(lines: string[]) {
 
 function parseMerchant(lines: string[]) {
   const ignored =
-    /phone|mobile|bin|invoice|date|time|paid|bill|receipt|cash memo|vat|total|amount|guest|payment|returned/i;
+    /phone|mobile|bin|invoice|date|time|paid|bill|receipt|cash memo|vat|total|amount|guest|payment|returned|wifi|password|counter|thank|powered/i;
 
-  return lines
+  const headerLines = lines.slice(0, Math.max(3, firstReceiptBodyIndex(lines)));
+
+  return headerLines
     .map(cleanMerchantLine)
     .find(
       (line) =>
@@ -121,6 +146,30 @@ function parseMerchant(lines: string[]) {
         !ignored.test(line) &&
         !/\d{5,}/.test(line),
     );
+}
+
+function parseNote(lines: string[]) {
+  const itemLines = itemSectionLines(lines)
+    .map(cleanReceiptLine)
+    .filter(
+      (line) =>
+        line.length >= 3 &&
+        !isIgnoredNoteLine(line) &&
+        /[a-z]/i.test(line) &&
+        !/^\(?[a-z\s]+\)?\s+\d+(?:\.\d{1,2})?\s+\d+(?:\.\d{1,2})?-?$/i.test(line),
+    )
+    .map((line) =>
+      line
+        .replace(/^-?\d+\s+/, "")
+        .replace(/\s+\d+(?:\.\d{1,2})?\s+\d+(?:\.\d{1,2})?-?$/, "")
+        .replace(/\bprice\b.*$/i, "")
+        .replace(/^[^\w]+|[^\w]+$/g, "")
+        .trim(),
+    )
+    .filter((line) => line.length >= 3 && /[a-z]{3,}/i.test(line))
+    .slice(0, 3);
+
+  return itemLines.length ? itemLines.join(", ") : undefined;
 }
 
 function isIgnoredAmountLine(line: string) {
@@ -142,6 +191,41 @@ function moneyValuesFromLine(line: string) {
       return Number.isFinite(value) && value > 0 ? value : undefined;
     })
     .filter((value): value is number => typeof value === "number");
+}
+
+function bestTotalCandidate(values: number[]) {
+  const realisticValues = values.filter((value) => value >= 1 && value < 1_000_000);
+  return Math.max(...(realisticValues.length ? realisticValues : values));
+}
+
+function parseItemTotalSum(lines: string[]) {
+  const itemTotals = itemSectionLines(lines)
+    .filter((line) => !isIgnoredAmountLine(line) && !isIgnoredNoteLine(line))
+    .map((line) => moneyValuesFromLine(line))
+    .filter((values) => values.length >= 2)
+    .map((values) => values[values.length - 1])
+    .filter((value) => value > 0 && value < 100_000);
+
+  if (!itemTotals.length) return undefined;
+
+  const sum = itemTotals.reduce((total, value) => total + value, 0);
+  return Number(sum.toFixed(2));
+}
+
+function itemSectionLines(lines: string[]) {
+  const start = lines.findIndex((line) => /item\s*name|qty|quantity/i.test(line));
+  const end = lines.findIndex((line, index) => index > start && /gross|subtotal|total|payment/i.test(line));
+
+  if (start >= 0) {
+    return lines.slice(start + 1, end > start ? end : undefined);
+  }
+
+  return lines.filter((line) => /^-?\d+\s+/.test(cleanReceiptLine(line)));
+}
+
+function firstReceiptBodyIndex(lines: string[]) {
+  const index = lines.findIndex((line) => /date|time|paid|bill|invoice|qty|item\s*name/i.test(line));
+  return index > 0 ? index : 5;
 }
 
 function monthFromName(month: string) {
@@ -179,11 +263,42 @@ function toIsoDate(year: number, month: number | undefined, day: number) {
 }
 
 function cleanMerchantLine(line: string) {
-  return line
+  return cleanReceiptLine(line)
     .replace(/[=_*~|]+/g, " ")
     .replace(/\s+/g, " ")
     .trim()
     .replace(/^[^\w]+|[^\w]+$/g, "");
+}
+
+function cleanReceiptLine(line: string) {
+  return line
+    .replace(/[–—]/g, "-")
+    .replace(/[•·]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isIgnoredNoteLine(line: string) {
+  return /phone|mobile|bin|invoice|date|time|paid|bill|receipt|vat|gross|total|payment|cash|returned|guest|thank|powered|wifi|password|counter/i.test(
+    line,
+  );
+}
+
+function enhanceReceiptCanvas(ctx: CanvasRenderingContext2D, width: number, height: number) {
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const data = imageData.data;
+
+  for (let index = 0; index < data.length; index += 4) {
+    const gray = data[index] * 0.299 + data[index + 1] * 0.587 + data[index + 2] * 0.114;
+    const contrasted = Math.max(0, Math.min(255, (gray - 128) * 1.45 + 142));
+    const sharpened = contrasted > 184 ? 255 : contrasted < 92 ? 0 : contrasted;
+
+    data[index] = sharpened;
+    data[index + 1] = sharpened;
+    data[index + 2] = sharpened;
+  }
+
+  ctx.putImageData(imageData, 0, 0);
 }
 
 function fileToDataUrl(file: File) {

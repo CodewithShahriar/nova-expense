@@ -82,7 +82,9 @@ export function ReceiptScanner({
     if (result.date) setDate(result.date);
     if (result.merchant) {
       setMerchant(result.merchant);
-      setNote(result.merchant);
+      setNote(result.note || result.merchant);
+    } else if (result.note) {
+      setNote(result.note);
     }
 
     const missing = [
