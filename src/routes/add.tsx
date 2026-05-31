@@ -61,6 +61,7 @@ function AddTransaction() {
   const [error, setError] = useState<string | null>(null);
   const [noteFocused, setNoteFocused] = useState(false);
   const [keyboardInset, setKeyboardInset] = useState(0);
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const noteRef = useRef<HTMLInputElement>(null);
   const receiptRef = useRef<HTMLInputElement>(null);
@@ -85,6 +86,7 @@ function AddTransaction() {
     function syncKeyboardInset() {
       const inset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
       setKeyboardInset(Math.round(inset));
+      setViewportHeight(Math.round(viewport.height));
 
       if (inset < 20) {
         requestAnimationFrame(() => {
@@ -119,7 +121,14 @@ function AddTransaction() {
 
   function keepNoteVisible() {
     window.setTimeout(() => {
-      noteRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+      const form = formRef.current;
+      const note = noteRef.current;
+      if (!form || !note) return;
+
+      const formRect = form.getBoundingClientRect();
+      const noteRect = note.getBoundingClientRect();
+      const offset = noteRect.top - formRect.top - form.clientHeight * 0.36;
+      form.scrollTo({ top: form.scrollTop + offset, behavior: "smooth" });
     }, 120);
   }
 
@@ -210,7 +219,10 @@ function AddTransaction() {
   );
 
   return (
-    <div className="flex h-[100dvh] min-h-[100svh] flex-col overflow-hidden animate-slide-up">
+    <div
+      className="flex min-h-[100svh] flex-col overflow-hidden animate-slide-up"
+      style={{ height: viewportHeight ? `${viewportHeight}px` : "100dvh" }}
+    >
       <div className="shrink-0 flex items-center justify-between px-4 min-[380px]:px-5 pt-[calc(env(safe-area-inset-top)+1rem)] pb-3 min-[380px]:pb-4">
         <button
           onClick={() => navigate({ to: "/" })}
@@ -284,7 +296,7 @@ function AddTransaction() {
         onSubmit={submit}
         className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 min-[380px]:px-5 mt-4 min-[380px]:mt-5 scroll-pb-36"
         style={{
-          paddingBottom: "calc(env(safe-area-inset-bottom) + 7rem)",
+          paddingBottom: keyboardInset > 80 ? "0.75rem" : "calc(env(safe-area-inset-bottom) + 7rem)",
         }}
       >
         {/* Amount */}
@@ -460,12 +472,7 @@ function AddTransaction() {
         <div aria-hidden className="h-4" />
       </form>
 
-      <div
-        className="fixed inset-x-0 z-50 px-4 min-[380px]:px-5 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] bg-background/95 transition-transform duration-200"
-        style={{
-          transform: keyboardInset > 80 ? `translateY(-${keyboardInset}px)` : "translateY(0)",
-        }}
-      >
+      <div className="shrink-0 px-4 min-[380px]:px-5 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] bg-background/95">
         <button
           type="submit"
           form="transaction-form"
