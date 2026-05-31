@@ -443,7 +443,12 @@ function AddTransaction() {
 
         <button
           type="submit"
-          className="sticky bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-20 min-h-14 rounded-2xl gradient-primary text-primary-foreground font-semibold shadow-glow flex w-full items-center justify-center gap-2 active:scale-[0.98] transition"
+          className={cn(
+            "z-20 min-h-14 rounded-2xl gradient-primary text-primary-foreground font-semibold shadow-glow flex w-full items-center justify-center gap-2 active:scale-[0.98] transition",
+            keyboardInset > 80
+              ? "relative"
+              : "sticky bottom-[calc(env(safe-area-inset-bottom)+0.75rem)]",
+          )}
         >
           <Check className="size-5" />
           {editing ? "Save changes" : "Save transaction"}
