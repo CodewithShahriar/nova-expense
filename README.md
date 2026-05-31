@@ -9,6 +9,7 @@ Nova Expense is a premium mobile-first expense tracking web app built with React
 - Transaction flow for expenses, income, and transfers
 - Smart transaction assistance with category/merchant-based note suggestions, duplicate warnings, recurring expense detection, unusual spend alerts, and saving opportunity insights
 - Receipt scanner with camera/upload support and OCR-assisted detail extraction
+- AI receipt scan fallback through a server-side `/api/scan-receipt` endpoint when `OPENAI_API_KEY` is configured
 - Category picker with built-in and custom categories, draggable category ordering, and expanded icon choices
 - Budget tracking with category progress views
 - Bills section with due-date reminders and status handling
@@ -142,3 +143,16 @@ Nova Expense uses a dark glassmorphism interface with rounded cards, gradient ac
 ## Build And Deployment
 
 Vite powers local development and production builds. The app is ready for static hosting and includes SPA fallback configuration through `public/_redirects` plus Vercel configuration in `vercel.json`.
+
+## AI Receipt Scan
+
+The receipt scanner runs local browser OCR first. If a server-side OpenAI key is configured, it then refines the receipt with AI vision and structured JSON extraction.
+
+Set these server environment variables in your hosting provider:
+
+```bash
+OPENAI_API_KEY="sk-..."
+OPENAI_RECEIPT_MODEL="gpt-4.1-mini"
+```
+
+Do not prefix the key with `VITE_`; it must stay server-only. On Vercel, the `/api/scan-receipt` function is available after deployment or when running with Vercel's local dev server.

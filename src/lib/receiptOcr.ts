@@ -4,6 +4,16 @@ export interface ReceiptOcrResult {
   date?: string;
   merchant?: string;
   note?: string;
+  source?: "local" | "ai";
+  confidence?: Partial<Record<"merchant" | "date" | "amount" | "items", number>>;
+  items?: ReceiptItem[];
+}
+
+export interface ReceiptItem {
+  name: string;
+  quantity?: number;
+  unitPrice?: number;
+  total?: number;
 }
 
 export async function resizeReceiptImage(file: File, maxWidth = 1800): Promise<string> {
@@ -41,6 +51,27 @@ export async function scanReceiptImage(imageDataUrl: string): Promise<ReceiptOcr
   }
 }
 
+export async function scanReceiptImageWithAi(
+  imageDataUrl: string,
+  rawText?: string,
+): Promise<ReceiptOcrResult> {
+  const response = await fetch("/api/scan-receipt", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ imageDataUrl, ocrText: rawText }),
+  });
+
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(payload?.error || "AI receipt scan failed.");
+  }
+  if (!payload || typeof payload !== "object") {
+    throw new Error("AI receipt scan endpoint is not available in this dev server.");
+  }
+
+  return normalizeAiReceipt(payload, rawText);
+}
+
 export function parseReceiptText(rawText: string): ReceiptOcrResult {
   const lines = rawText
     .split(/\r?\n/)
@@ -49,11 +80,76 @@ export function parseReceiptText(rawText: string): ReceiptOcrResult {
 
   return {
     rawText,
+    source: "local",
     amount: parseAmount(lines),
     date: parseDate(lines),
     merchant: parseMerchant(lines),
     note: parseNote(lines),
   };
+}
+
+function normalizeAiReceipt(
+  payload: {
+    merchant?: string | null;
+    date?: string | null;
+    total?: number | null;
+    note?: string | null;
+    items?: Array<{
+      name?: string;
+      quantity?: number | null;
+      unit_price?: number | null;
+      total?: number | null;
+    }>;
+    confidence?: {
+      merchant?: number;
+      date?: number;
+      total?: number;
+      items?: number;
+    };
+  },
+  rawText?: string,
+): ReceiptOcrResult {
+  const items = (payload.items || [])
+    .filter((item) => item.name?.trim())
+    .map((item) => ({
+      name: item.name!.trim(),
+      quantity: numberOrUndefined(item.quantity),
+      unitPrice: numberOrUndefined(item.unit_price),
+      total: numberOrUndefined(item.total),
+    }));
+
+  const note =
+    payload.note?.trim() ||
+    items
+      .map((item) => item.name)
+      .slice(0, 3)
+      .join(", ");
+
+  return {
+    rawText: rawText || "",
+    source: "ai",
+    amount: numberOrUndefined(payload.total),
+    date: payload.date ? toIsoDateFromAi(payload.date) : undefined,
+    merchant: payload.merchant?.trim() || undefined,
+    note: note || undefined,
+    items,
+    confidence: {
+      merchant: payload.confidence?.merchant,
+      date: payload.confidence?.date,
+      amount: payload.confidence?.total,
+      items: payload.confidence?.items,
+    },
+  };
+}
+
+function numberOrUndefined(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function toIsoDateFromAi(value: string) {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return undefined;
+  return toIsoDate(Number(match[1]), Number(match[2]), Number(match[3]));
 }
 
 function parseAmount(lines: string[]) {

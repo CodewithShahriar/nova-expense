@@ -15,7 +15,12 @@ import { toast } from "sonner";
 import { AccountSelect } from "@/components/AccountSelect";
 import { DatePicker } from "@/components/DatePicker";
 import { allCategories } from "@/lib/categories";
-import { resizeReceiptImage, scanReceiptImage, type ReceiptOcrResult } from "@/lib/receiptOcr";
+import {
+  resizeReceiptImage,
+  scanReceiptImage,
+  scanReceiptImageWithAi,
+  type ReceiptOcrResult,
+} from "@/lib/receiptOcr";
 import { formatMoney, store, type Account, type CustomCategory } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 
@@ -40,7 +45,9 @@ export function ReceiptScanner({
   const [preview, setPreview] = useState<string | null>(null);
   const [rawText, setRawText] = useState("");
   const [scanning, setScanning] = useState(false);
+  const [scanStatus, setScanStatus] = useState("");
   const [done, setDone] = useState(false);
+  const [scanSource, setScanSource] = useState<ReceiptOcrResult["source"]>();
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(() => new Date().toISOString());
   const [merchant, setMerchant] = useState("");
@@ -52,6 +59,7 @@ export function ReceiptScanner({
   async function processFile(file?: File) {
     if (!file) return;
     setScanning(true);
+    setScanStatus("Optimizing image and reading text...");
     setDone(false);
     setRawText("");
     setReviewWarning(null);
@@ -59,12 +67,17 @@ export function ReceiptScanner({
     try {
       const resized = await resizeReceiptImage(file);
       setPreview(resized);
-      const result = await scanReceiptImage(resized);
-      applyResult(result);
+      const localResult = await scanReceiptImage(resized);
+      applyResult(localResult);
+
+      setScanStatus("Improving receipt details with AI...");
+      const aiResult = await scanWithAi(resized, localResult.rawText, false);
+      if (aiResult) applyResult(aiResult);
+
       setDone(true);
       toast.success("Receipt scanned", {
-        description: result.amount
-          ? `Detected ${formatMoney(result.amount, currency)}. Review before saving.`
+        description: (aiResult || localResult).amount
+          ? `Detected ${formatMoney((aiResult || localResult).amount!, currency)}. Review before saving.`
           : "Review the extracted details before saving.",
       });
     } catch {
@@ -73,11 +86,40 @@ export function ReceiptScanner({
       });
     } finally {
       setScanning(false);
+      setScanStatus("");
+    }
+  }
+
+  async function scanWithAi(imageDataUrl = preview, text = rawText, showToast = true) {
+    if (!imageDataUrl) return null;
+
+    try {
+      const result = await scanReceiptImageWithAi(imageDataUrl, text);
+      if (showToast) {
+        applyResult(result);
+        toast.success("AI scan improved", {
+          description: result.amount
+            ? `Detected ${formatMoney(result.amount, currency)} with AI.`
+            : "AI filled the receipt details it could verify.",
+        });
+      }
+      return result;
+    } catch (error) {
+      if (showToast) {
+        toast.error("AI scan unavailable", {
+          description:
+            error instanceof Error
+              ? error.message
+              : "Check your server API key and try again.",
+        });
+      }
+      return null;
     }
   }
 
   function applyResult(result: ReceiptOcrResult) {
     setRawText(result.rawText);
+    setScanSource(result.source);
     if (result.amount) setAmount(String(result.amount));
     if (result.date) setDate(result.date);
     if (result.merchant) {
@@ -214,9 +256,7 @@ export function ReceiptScanner({
               <Loader2 className="size-5 animate-spin" />
               <p className="text-sm font-semibold">Scanning receipt...</p>
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Optimizing image and reading text in the browser.
-            </p>
+            <p className="mt-1 text-xs text-muted-foreground">{scanStatus}</p>
           </div>
         )}
 
@@ -224,7 +264,9 @@ export function ReceiptScanner({
           <div className="mt-4 rounded-2xl bg-primary/10 p-4">
             <div className="flex items-center gap-3 text-primary">
               <Sparkles className="size-5" />
-              <p className="text-sm font-semibold">Details extracted</p>
+              <p className="text-sm font-semibold">
+                Details extracted{scanSource === "ai" ? " with AI" : ""}
+              </p>
             </div>
           </div>
         )}
@@ -309,6 +351,17 @@ export function ReceiptScanner({
                 {rawText}
               </pre>
             </details>
+          )}
+
+          {preview && !scanning && (
+            <button
+              type="button"
+              onClick={() => scanWithAi()}
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-primary/10 text-sm font-semibold text-primary"
+            >
+              <Sparkles className="size-4" />
+              Improve with AI
+            </button>
           )}
 
           <button
