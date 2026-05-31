@@ -85,10 +85,11 @@ function AddTransaction() {
 
     function syncKeyboardInset() {
       const inset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
-      setKeyboardInset(Math.round(inset));
-      setViewportHeight(Math.round(viewport.height));
+      const keyboardOpen = inset > 80;
+      setKeyboardInset(keyboardOpen ? Math.round(inset) : 0);
+      setViewportHeight(keyboardOpen ? Math.round(viewport.height) : null);
 
-      if (inset < 20) {
+      if (!keyboardOpen) {
         requestAnimationFrame(() => {
           const form = formRef.current;
           if (!form) return;
@@ -97,12 +98,19 @@ function AddTransaction() {
       }
     }
 
+    function syncAfterKeyboardClose() {
+      window.setTimeout(syncKeyboardInset, 80);
+      window.setTimeout(syncKeyboardInset, 240);
+    }
+
     syncKeyboardInset();
     viewport.addEventListener("resize", syncKeyboardInset);
     viewport.addEventListener("scroll", syncKeyboardInset);
+    window.addEventListener("focusout", syncAfterKeyboardClose);
     return () => {
       viewport.removeEventListener("resize", syncKeyboardInset);
       viewport.removeEventListener("scroll", syncKeyboardInset);
+      window.removeEventListener("focusout", syncAfterKeyboardClose);
     };
   }, []);
 
