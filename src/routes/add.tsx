@@ -59,6 +59,7 @@ function AddTransaction() {
   const [catOpen, setCatOpen] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [amountFocused, setAmountFocused] = useState(false);
   const [noteFocused, setNoteFocused] = useState(false);
   const [keyboardInset, setKeyboardInset] = useState(0);
   const noteRef = useRef<HTMLInputElement>(null);
@@ -282,6 +283,8 @@ function AddTransaction() {
                 setAmount(e.target.value.replace(/[^0-9.]/g, ""));
                 setError(null);
               }}
+              onFocus={() => setAmountFocused(true)}
+              onBlur={() => setAmountFocused(false)}
               placeholder="0"
               autoFocus
               enterKeyHint="done"
@@ -445,7 +448,7 @@ function AddTransaction() {
           type="submit"
           className={cn(
             "z-20 min-h-14 rounded-2xl gradient-primary text-primary-foreground font-semibold shadow-glow flex w-full items-center justify-center gap-2 active:scale-[0.98] transition",
-            keyboardInset > 80
+            keyboardInset > 80 && amountFocused && !noteFocused
               ? "relative"
               : "sticky bottom-[calc(env(safe-area-inset-bottom)+0.75rem)]",
           )}
