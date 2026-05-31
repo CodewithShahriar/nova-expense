@@ -5,13 +5,14 @@ import {
   ArrowLeft,
   ArrowUp,
   Check,
+  CreditCard,
   GripVertical,
   Pencil,
   Plus,
   Trash2,
   X,
 } from "lucide-react";
-import { store, useStore, formatMoney, type AccountType } from "@/lib/storage";
+import { store, useStore, formatMoney, type Account, type AccountType } from "@/lib/storage";
 import { GlassCard } from "@/components/GlassCard";
 import { AccountCard } from "@/components/AccountCard";
 import { cn } from "@/lib/utils";
@@ -42,8 +43,10 @@ function AccountsPage() {
   const [editing, setEditing] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [reordering, setReordering] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const total = accounts.reduce((a, b) => a + b.balance, 0);
+  const selected = accounts.find((account) => account.id === selectedId) || accounts[0];
 
   function moveAccount(id: string, direction: -1 | 1) {
     const index = accounts.findIndex((account) => account.id === id);
@@ -74,6 +77,54 @@ function AccountsPage() {
       </div>
       <p className="font-display text-3xl font-bold tabular">{formatMoney(total, currency)}</p>
 
+      {accounts.length > 0 && !reordering && (
+        <div className="mt-6">
+          <WalletStack
+            accounts={accounts}
+            currency={currency}
+            total={total}
+            selectedId={selected?.id}
+            onSelect={(id) => {
+              setSelectedId(id);
+              setEditing(null);
+            }}
+          />
+          {selected && (
+            <div className="mt-5 animate-slide-up">
+              <Link to="/accounts/$id" params={{ id: selected.id }} className="block">
+                <AccountCard account={selected} currency={currency} />
+              </Link>
+              <div className="mt-2 flex gap-2">
+                <button
+                  onClick={() => setEditing(selected.id)}
+                  className="flex-1 h-10 rounded-xl glass flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground"
+                >
+                  <Pencil className="size-3.5" /> Edit
+                </button>
+                <button
+                  onClick={() => {
+                    if (
+                      confirm(
+                        `Delete ${selected.name}? Transactions tied to this account will also be removed.`,
+                      )
+                    )
+                      store.deleteAccount(selected.id);
+                  }}
+                  className="flex-1 h-10 rounded-xl glass flex items-center justify-center gap-2 text-xs font-medium text-destructive"
+                >
+                  <Trash2 className="size-3.5" /> Delete
+                </button>
+              </div>
+              {editing === selected.id && (
+                <div className="mt-2">
+                  <EditAccountForm id={selected.id} onClose={() => setEditing(null)} />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {accounts.length > 1 && (
         <button
           onClick={() => {
@@ -90,7 +141,7 @@ function AccountsPage() {
         </button>
       )}
 
-      <div className="mt-6 space-y-4">
+      <div className={cn("mt-6 space-y-4", !reordering && accounts.length > 0 && "hidden")}>
         {accounts.map((a, index) => (
           <div key={a.id} className="space-y-2">
             {reordering ? (
@@ -159,6 +210,69 @@ function AccountsPage() {
           <Plus className="size-4" /> Add new account
         </button>
       )}
+    </div>
+  );
+}
+
+function WalletStack({
+  accounts,
+  currency,
+  total,
+  selectedId,
+  onSelect,
+}: {
+  accounts: Account[];
+  currency: string;
+  total: number;
+  selectedId?: string;
+  onSelect: (id: string) => void;
+}) {
+  const visible = accounts.slice(0, 4);
+
+  return (
+    <div className="relative mx-auto h-[18.5rem] max-w-[22rem] overflow-hidden rounded-[2rem] bg-muted/35 px-4 pt-7 shadow-card">
+      <div className="absolute inset-x-8 top-5 h-28 rounded-[1.75rem] bg-black/10 blur-2xl" />
+      {visible.map((account, index) => {
+        const selected = account.id === selectedId;
+        const top = 0.7 + index * 2.05;
+        const width = 84 + index * 4;
+
+        return (
+          <button
+            key={account.id}
+            type="button"
+            onClick={() => onSelect(account.id)}
+            className={cn(
+              "absolute left-1/2 h-24 rounded-[1.35rem] px-4 text-left text-white shadow-elegant transition-all duration-300 active:scale-[0.98]",
+            )}
+            style={{
+              top: `${top}rem`,
+              width: `${Math.min(width, 96)}%`,
+              transform: `translateX(-50%) ${selected ? "translateY(-0.75rem)" : ""}`,
+              zIndex: 10 + index,
+              background: account.gradient,
+            }}
+            aria-label={`Select ${account.name}`}
+          >
+            <div className="flex items-center justify-between text-white/85">
+              <span className="flex size-7 items-center justify-center rounded-full bg-white/18">
+                <CreditCard className="size-3.5" />
+              </span>
+              <span className="font-display text-sm font-semibold tabular">
+                {formatMoney(account.balance, currency, true)}
+              </span>
+            </div>
+            <p className="mt-3 truncate text-xs font-semibold text-white/80">{account.name}</p>
+          </button>
+        );
+      })}
+
+      <div className="absolute inset-x-4 bottom-5 z-30 rounded-[1.6rem] border border-white/10 bg-[oklch(0.2_0.04_220)] px-4 py-5 text-center text-white shadow-elegant">
+        <p className="font-display text-4xl font-semibold tabular leading-none">
+          {formatMoney(total, currency, true)}
+        </p>
+        <p className="mt-2 text-sm font-medium text-sky-300">Total Balance</p>
+      </div>
     </div>
   );
 }
