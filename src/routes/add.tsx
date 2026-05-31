@@ -193,8 +193,6 @@ function AddTransaction() {
       : type === "income"
         ? "text-primary"
         : "text-foreground";
-  const amountKeyboardOpen = keyboardInset > 80 && amountFocused && !noteFocused;
-  const noteKeyboardOpen = keyboardInset > 80 && noteFocused;
 
   const saveButtonContent = (
     <>
@@ -275,9 +273,9 @@ function AddTransaction() {
       <form
         id="transaction-form"
         onSubmit={submit}
-        className="flex-1 overflow-y-auto overscroll-contain px-4 min-[380px]:px-5 mt-4 min-[380px]:mt-5 scroll-pb-48"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 min-[380px]:px-5 mt-4 min-[380px]:mt-5 scroll-pb-24"
         style={{
-          paddingBottom: `calc(env(safe-area-inset-bottom) + ${keyboardInset + 128}px)`,
+          paddingBottom: `calc(env(safe-area-inset-bottom) + ${keyboardInset > 80 ? keyboardInset : 16}px)`,
         }}
       >
         {/* Amount */}
@@ -452,15 +450,10 @@ function AddTransaction() {
           />
         </div>
 
-        <div aria-hidden className="h-8" />
+        <div aria-hidden className="h-4" />
       </form>
 
-      <div
-        className={cn(
-          "fixed inset-x-0 z-50 px-4 min-[380px]:px-5 transition-transform",
-          noteKeyboardOpen ? "bottom-3" : "bottom-[calc(env(safe-area-inset-bottom)+0.75rem)]",
-        )}
-      >
+      <div className="shrink-0 px-4 min-[380px]:px-5 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] bg-background/95">
         <button
           type="submit"
           form="transaction-form"
