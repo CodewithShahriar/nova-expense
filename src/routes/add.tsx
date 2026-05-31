@@ -470,10 +470,7 @@ function AddTransaction() {
       </form>
 
       {noteKeyboardOpen && (
-        <div
-          className="fixed inset-x-0 z-50 px-4 min-[380px]:px-5"
-          style={{ bottom: `${keyboardInset + 12}px` }}
-        >
+        <div className="fixed inset-x-0 bottom-3 z-50 px-4 min-[380px]:px-5">
           <button
             type="submit"
             form="transaction-form"
