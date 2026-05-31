@@ -193,6 +193,15 @@ function AddTransaction() {
       : type === "income"
         ? "text-primary"
         : "text-foreground";
+  const amountKeyboardOpen = keyboardInset > 80 && amountFocused && !noteFocused;
+  const noteKeyboardOpen = keyboardInset > 80 && noteFocused;
+
+  const saveButtonContent = (
+    <>
+      <Check className="size-5" />
+      {editing ? "Save changes" : "Save transaction"}
+    </>
+  );
 
   return (
     <div className="flex h-[100dvh] min-h-[100svh] flex-col overflow-hidden animate-slide-up">
@@ -264,6 +273,7 @@ function AddTransaction() {
       </div>
 
       <form
+        id="transaction-form"
         onSubmit={submit}
         className="flex-1 overflow-y-auto overscroll-contain px-4 min-[380px]:px-5 mt-4 min-[380px]:mt-5 scroll-pb-48 pb-[calc(env(safe-area-inset-bottom)+6rem)]"
         style={{
@@ -448,15 +458,31 @@ function AddTransaction() {
           type="submit"
           className={cn(
             "z-20 min-h-14 rounded-2xl gradient-primary text-primary-foreground font-semibold shadow-glow flex w-full items-center justify-center gap-2 active:scale-[0.98] transition",
-            keyboardInset > 80 && amountFocused && !noteFocused
+            amountKeyboardOpen
               ? "relative"
+              : noteKeyboardOpen
+                ? "invisible pointer-events-none"
               : "sticky bottom-[calc(env(safe-area-inset-bottom)+0.75rem)]",
           )}
         >
-          <Check className="size-5" />
-          {editing ? "Save changes" : "Save transaction"}
+          {saveButtonContent}
         </button>
       </form>
+
+      {noteKeyboardOpen && (
+        <div
+          className="fixed inset-x-0 z-50 px-4 min-[380px]:px-5"
+          style={{ bottom: `${keyboardInset + 12}px` }}
+        >
+          <button
+            type="submit"
+            form="transaction-form"
+            className="mx-auto flex min-h-14 w-full max-w-lg items-center justify-center gap-2 rounded-2xl gradient-primary font-semibold text-primary-foreground shadow-glow active:scale-[0.98] transition"
+          >
+            {saveButtonContent}
+          </button>
+        </div>
+      )}
 
       <CategoryPicker
         open={catOpen}
