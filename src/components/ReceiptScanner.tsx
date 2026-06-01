@@ -21,7 +21,13 @@ import {
   scanReceiptImageWithAi,
   type ReceiptOcrResult,
 } from "@/lib/receiptOcr";
-import { formatMoney, store, type Account, type CustomCategory } from "@/lib/storage";
+import {
+  defaultTransactionAccountId,
+  formatMoney,
+  store,
+  type Account,
+  type CustomCategory,
+} from "@/lib/storage";
 import { cn } from "@/lib/utils";
 
 export function ReceiptScanner({
@@ -52,7 +58,7 @@ export function ReceiptScanner({
   const [date, setDate] = useState(() => new Date().toISOString());
   const [merchant, setMerchant] = useState("");
   const [category, setCategory] = useState("Food");
-  const [accountId, setAccountId] = useState(accounts[0]?.id || "");
+  const [accountId, setAccountId] = useState(defaultTransactionAccountId(accounts));
   const [note, setNote] = useState("");
   const [reviewWarning, setReviewWarning] = useState<string | null>(null);
 

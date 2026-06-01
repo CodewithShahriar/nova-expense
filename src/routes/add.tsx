@@ -5,6 +5,7 @@ import {
   formatMoney,
   store,
   useStore,
+  defaultTransactionAccountId,
   type Bill,
   type Transaction,
   type TxType,
@@ -50,8 +51,12 @@ function AddTransaction() {
   const [category, setCategory] = useState<string>(initialCategory);
   const [note, setNote] = useState(editing?.note || "");
   const [date, setDate] = useState(() => editing?.date || new Date().toISOString());
-  const [accountId, setAccountId] = useState<string>(editing?.accountId || accounts[0]?.id || "");
-  const [fromId, setFromId] = useState<string>(editing?.fromAccountId || accounts[0]?.id || "");
+  const [accountId, setAccountId] = useState<string>(
+    editing?.accountId || defaultTransactionAccountId(accounts),
+  );
+  const [fromId, setFromId] = useState<string>(
+    editing?.fromAccountId || defaultTransactionAccountId(accounts),
+  );
   const [toId, setToId] = useState<string>(
     editing?.toAccountId || accounts[1]?.id || accounts[0]?.id || "",
   );

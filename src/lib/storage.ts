@@ -832,3 +832,13 @@ export function formatMoney(amount: number, currency = "BDT", compact = false) {
 export function accountById(accounts: Account[], id?: string) {
   return accounts.find((a) => a.id === id);
 }
+
+export function defaultTransactionAccountId(accounts: Array<Pick<Account, "id" | "name" | "type">>) {
+  return (
+    accounts.find((account) => account.id === "acc-cash")?.id ||
+    accounts.find((account) => account.name.toLowerCase() === "cash wallet")?.id ||
+    accounts.find((account) => account.type === "cash")?.id ||
+    accounts[0]?.id ||
+    ""
+  );
+}
