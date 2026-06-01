@@ -300,7 +300,7 @@ function attachRemoteListeners(db: Firestore, user: User, initialState: AppState
       (snapshot) => {
         cached.transactions = snapshot.docs
           .map((d) => transactionFromDoc(d.data(), d.id))
-          .sort((a, b) => +new Date(b.date) - +new Date(a.date));
+          .sort(compareTransactionsByActivityOrder);
         apply();
       },
       syncError,
@@ -353,7 +353,7 @@ function mergeStates(local: AppState, remote: Partial<AppState>): AppState {
     ...remote,
     accounts: mergeById(local.accounts, remote.accounts || []),
     transactions: mergeById(local.transactions, remote.transactions || []).sort(
-      (a, b) => +new Date(b.date) - +new Date(a.date),
+      compareTransactionsByActivityOrder,
     ),
     budgets: mergeByKey(local.budgets, remote.budgets || [], (b) => b.category),
     bills: mergeById(local.bills, remote.bills || []),
@@ -405,10 +405,15 @@ function transactionFromDoc(data: DocumentData, id: string): Transaction {
     merchant: data.merchant,
     receiptImage: data.receiptImage,
     date: data.date || new Date().toISOString(),
+    createdAt: data.createdAt || data.date || new Date().toISOString(),
     accountId: data.accountId,
     fromAccountId: data.fromAccountId,
     toAccountId: data.toAccountId,
   };
+}
+
+function compareTransactionsByActivityOrder(a: Transaction, b: Transaction) {
+  return +new Date(b.createdAt || b.date) - +new Date(a.createdAt || a.date);
 }
 
 function budgetFromDoc(data: DocumentData): Budget {

@@ -25,6 +25,7 @@ export interface Transaction {
   merchant?: string;
   receiptImage?: string;
   date: string; // ISO
+  createdAt?: string; // ISO timestamp for activity ordering
   accountId?: string; // for expense/income
   fromAccountId?: string; // for transfer
   toAccountId?: string; // for transfer
@@ -368,7 +369,7 @@ export const store = {
   },
 
   addTransaction: (tx: Omit<Transaction, "id">) => {
-    const t: Transaction = { ...tx, id: crypto.randomUUID() };
+    const t: Transaction = { ...tx, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
     const accounts = applyTxBalance(state.accounts, t, 1);
     write({ ...state, accounts, transactions: [t, ...state.transactions] });
   },
@@ -476,6 +477,7 @@ export const store = {
       category: bill.category || "Bills",
       note: bill.notes || bill.name,
       date: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
       accountId: bill.accountId,
     };
     const accounts = applyTxBalance(state.accounts, tx, 1);

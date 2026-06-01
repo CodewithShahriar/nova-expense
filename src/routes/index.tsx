@@ -50,7 +50,13 @@ function Dashboard() {
     return { weekSpent, monthIncome, monthExpense };
   }, [transactions]);
 
-  const recent = transactions.slice(0, 5);
+  const recent = useMemo(
+    () =>
+      [...transactions]
+        .sort((a, b) => +new Date(b.createdAt || b.date) - +new Date(a.createdAt || a.date))
+        .slice(0, 5),
+    [transactions],
+  );
   const reminderBills = useMemo(
     () =>
       bills

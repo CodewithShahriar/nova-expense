@@ -71,12 +71,15 @@ function TransactionsPage() {
 
   const grouped = useMemo(() => {
     const groups: Record<string, typeof filtered> = {};
-    for (const t of filtered) {
+    const ordered = [...filtered].sort(compareTransactionsByActivityOrder);
+    for (const t of ordered) {
       const d = new Date(t.date);
       const key = d.toDateString();
       (groups[key] ||= []).push(t);
     }
-    return Object.entries(groups).sort((a, b) => +new Date(b[0]) - +new Date(a[0]));
+    return Object.entries(groups).sort(
+      (a, b) => transactionActivityTime(b[1][0]) - transactionActivityTime(a[1][0]),
+    );
   }, [filtered]);
 
   const dailySummaries = useMemo(() => {
@@ -443,6 +446,14 @@ function addAccountEffect(
 ) {
   if (!accountId || !balances.has(accountId)) return;
   balances.set(accountId, (balances.get(accountId) || 0) + amount);
+}
+
+function compareTransactionsByActivityOrder(a: Transaction, b: Transaction) {
+  return transactionActivityTime(b) - transactionActivityTime(a);
+}
+
+function transactionActivityTime(transaction: Transaction) {
+  return +new Date(transaction.createdAt || transaction.date);
 }
 
 function formatDayLabel(dateStr: string) {
