@@ -290,6 +290,7 @@ function Dashboard() {
                 ? "text-primary"
                 : "text-destructive";
             const sign = isTransfer ? "" : t.type === "income" ? "+" : "−";
+            const account = accounts.find((a) => a.id === t.accountId);
             return (
               <GlassCard key={t.id} className="flex items-center gap-3 p-3">
                 <div
@@ -301,7 +302,7 @@ function Dashboard() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{t.note || t.category}</p>
                   <p className="text-xs text-muted-foreground">
-                    {t.category} ·{" "}
+                    {t.category} · {account?.name ? `${account.name} · ` : ""}
                     {new Date(t.date).toLocaleDateString(undefined, {
                       day: "numeric",
                       month: "short",
