@@ -39,7 +39,7 @@ export function BottomNav() {
       </Link>
 
       <nav
-        className="fixed bottom-0 inset-x-0 z-40 pt-2 px-2 min-[380px]:px-3 pb-[calc(env(safe-area-inset-bottom)+0.25rem)]"
+        className="fixed bottom-0 inset-x-0 z-40 bg-background/80 backdrop-blur-sm pt-2 px-2 min-[380px]:px-3 pb-[calc(env(safe-area-inset-bottom)+0.25rem)] border-t border-border/40"
       >
         <div className="glass-strong rounded-[1.5rem] min-[380px]:rounded-3xl shadow-elegant mx-auto w-full max-w-lg md:max-w-3xl xl:max-w-4xl grid grid-cols-7 items-center h-[3.75rem] min-[380px]:h-16 md:h-[4.25rem] px-1 md:px-2">
           {items.map((it) => (
