@@ -33,7 +33,7 @@ export function BottomNav() {
         to="/add"
         search={{ type: undefined, scan: undefined, edit: undefined }}
         aria-label="Add transaction"
-        className="fixed left-1/2 -translate-x-1/2 bottom-[calc(env(safe-area-inset-bottom)+3.55rem)] z-50 size-[3.25rem] min-[380px]:size-14 rounded-full gradient-primary shadow-glow flex items-center justify-center active:scale-95 transition-transform"
+        className="fixed left-1/2 -translate-x-1/2 bottom-[calc(env(safe-area-inset-bottom)+4.25rem)] z-50 size-[3.25rem] min-[380px]:size-14 rounded-full gradient-primary shadow-glow flex items-center justify-center active:scale-95 transition-transform"
       >
         <Plus className="size-5 min-[380px]:size-6 text-primary-foreground" strokeWidth={2.75} />
       </Link>
