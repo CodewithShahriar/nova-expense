@@ -133,9 +133,11 @@ function AccountsPage() {
             {reordering ? (
               <AccountCard account={a} currency={currency} />
             ) : (
-              <Link to="/accounts/$id" params={{ id: a.id }} className="block">
-                <AccountCard account={a} currency={currency} />
-              </Link>
+              <AccountCard
+                account={a}
+                currency={currency}
+                onClick={() => navigate({ to: "/accounts/$id", params: { id: a.id } })}
+              />
             )}
             {recentTxs.length > 0 ? (
               <div className="space-y-2 px-1">
