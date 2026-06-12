@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Plus, Pencil, Check, X } from "lucide-react";
+import { Plus, Pencil, Check, X, Trash2 } from "lucide-react";
 import { store, useStore, formatMoney } from "@/lib/storage";
 import { getCategory, allCategories } from "@/lib/categories";
 import { GlassCard } from "@/components/GlassCard";
@@ -120,16 +120,29 @@ function BudgetsPage() {
                     </button>
                   </>
                 ) : (
-                  <button
-                    onClick={() => {
-                      setEditing(b.category);
-                      setValue(String(b.limit));
-                    }}
-                    className="size-9 rounded-xl glass flex items-center justify-center text-muted-foreground"
-                    aria-label="Edit"
-                  >
-                    <Pencil className="size-4" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        setEditing(b.category);
+                        setValue(String(b.limit));
+                      }}
+                      className="size-9 rounded-xl glass flex items-center justify-center text-muted-foreground"
+                      aria-label="Edit"
+                    >
+                      <Pencil className="size-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm(`Delete budget for ${b.category}?`)) {
+                          store.deleteBudget(b.category);
+                        }
+                      }}
+                      className="size-9 rounded-xl glass flex items-center justify-center text-destructive"
+                      aria-label="Delete budget"
+                    >
+                      <Trash2 className="size-4" />
+                    </button>
+                  </div>
                 )}
               </div>
               <div className="mt-3 h-2 rounded-full bg-muted overflow-hidden">
