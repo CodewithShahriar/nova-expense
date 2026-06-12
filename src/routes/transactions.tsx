@@ -449,10 +449,15 @@ function addAccountEffect(
 }
 
 function compareTransactionsByActivityOrder(a: Transaction, b: Transaction) {
-  return transactionActivityTime(b) - transactionActivityTime(a);
+  const aDate = +new Date(a.date);
+  const bDate = +new Date(b.date);
+  if (aDate !== bDate) return bDate - aDate;
+  return +new Date(b.createdAt || b.date) - +new Date(a.createdAt || a.date);
 }
 
 function transactionActivityTime(transaction: Transaction) {
+  const date = +new Date(transaction.date);
+  if (!Number.isNaN(date)) return date;
   return +new Date(transaction.createdAt || transaction.date);
 }
 
