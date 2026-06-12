@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ArrowDown,
   ArrowLeft,
+  ArrowLeftRight,
   ArrowUp,
   Check,
   GripVertical,
@@ -11,7 +12,8 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { store, useStore, formatMoney, type AccountType } from "@/lib/storage";
+import { store, useStore, formatMoney, type AccountType, type Transaction } from "@/lib/storage";
+import { getCategory } from "@/lib/categories";
 import { GlassCard } from "@/components/GlassCard";
 import { AccountCard } from "@/components/AccountCard";
 import { cn } from "@/lib/utils";
@@ -39,14 +41,31 @@ const types: { id: AccountType; label: string }[] = [
 function AccountsPage() {
   const accounts = useStore((s) => s.accounts);
   const currency = useStore((s) => s.settings.currency);
+  const custom = useStore((s) => s.customCategories);
   const [editing, setEditing] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [reordering, setReordering] = useState(false);
   const [activeTab, setActiveTab] = useState<string | "all">("all");
 
   const total = accounts.reduce((a, b) => a + b.balance, 0);
+  const transactions = useStore((s) => s.transactions);
   const visibleAccounts =
     activeTab === "all" ? accounts : accounts.filter((account) => account.id === activeTab);
+
+  const recentTransactionsByAccount = useMemo(() => {
+    const grouped = new Map<string, Transaction[]>();
+    const ordered = [...transactions].sort(
+      (a, b) => +new Date(b.createdAt || b.date) - +new Date(a.createdAt || a.date),
+    );
+    for (const tx of ordered) {
+      const ids = [tx.accountId, tx.fromAccountId, tx.toAccountId].filter(Boolean) as string[];
+      for (const id of ids) {
+        const list = grouped.get(id) || [];
+        if (list.length < 3) grouped.set(id, [...list, tx]);
+      }
+    }
+    return grouped;
+  }, [transactions]);
 
   function moveAccount(id: string, direction: -1 | 1) {
     const index = accounts.findIndex((account) => account.id === id);
@@ -107,6 +126,7 @@ function AccountsPage() {
       <div className="mt-6 space-y-4">
         {visibleAccounts.map((a) => {
           const index = accounts.findIndex((account) => account.id === a.id);
+          const recentTxs = recentTransactionsByAccount.get(a.id) || [];
           return (
           <div key={a.id} className="space-y-2">
             {reordering ? (
@@ -115,6 +135,56 @@ function AccountsPage() {
               <Link to="/accounts/$id" params={{ id: a.id }} className="block">
                 <AccountCard account={a} currency={currency} />
               </Link>
+            )}
+            {recentTxs.length > 0 ? (
+              <div className="space-y-2 px-1">
+                <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                  Recent activity
+                </p>
+                {recentTxs.map((tx) => {
+                  const isTransfer = tx.type === "transfer";
+                  const isOutgoing = tx.type === "expense" || (isTransfer && tx.fromAccountId === a.id);
+                  const cat = getCategory(tx.category, custom);
+                  const Icon = isTransfer ? ArrowLeftRight : cat.icon;
+                  const color = isTransfer
+                    ? "text-muted-foreground"
+                    : isOutgoing
+                      ? "text-destructive"
+                      : "text-primary";
+                  const sign = isOutgoing ? "−" : "+";
+                  const subtitle = isTransfer
+                    ? `${accounts.find((account) => account.id === tx.fromAccountId)?.name || ""} → ${
+                        accounts.find((account) => account.id === tx.toAccountId)?.name || ""
+                      }`
+                    : `${tx.category}`;
+                  return (
+                    <GlassCard key={tx.id} className="flex items-center gap-3 p-3">
+                      <div
+                        className="size-10 rounded-2xl flex items-center justify-center shrink-0"
+                        style={{ background: `color-mix(in oklch, ${cat.color} 18%, transparent)` }}
+                      >
+                        <Icon className="size-4" style={{ color: cat.color }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {tx.note || (isTransfer ? "Transfer" : tx.category)}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground truncate">{subtitle}</p>
+                      </div>
+                      <p className={cn("font-display text-sm font-semibold tabular", color)}>
+                        {sign}
+                        {formatMoney(tx.amount, currency).replace("-", "")}
+                      </p>
+                    </GlassCard>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="px-1">
+                <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                  No recent activity
+                </p>
+              </div>
             )}
             <div className="flex gap-2">
               {reordering ? (
@@ -209,7 +279,7 @@ function AccountTabs({
           type="button"
           onClick={() => onSelect(account.id)}
           className={cn(
-            "flex h-10 max-w-[11rem] shrink-0 items-center gap-2 rounded-full px-3 text-xs font-semibold transition",
+            "flex h-10 max-w-44 shrink-0 items-center gap-2 rounded-full px-3 text-xs font-semibold transition",
             activeId === account.id
               ? "gradient-primary text-primary-foreground shadow-glow"
               : "glass text-muted-foreground",
