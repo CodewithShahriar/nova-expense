@@ -53,7 +53,10 @@ function Dashboard() {
   const recent = useMemo(
     () =>
       [...transactions]
-        .sort((a, b) => +new Date(b.createdAt || b.date) - +new Date(a.createdAt || a.date))
+        .sort((a, b) => {
+          const dateDiff = +new Date(b.date) - +new Date(a.date);
+          return dateDiff || +new Date(b.createdAt || b.date) - +new Date(a.createdAt || a.date);
+        })
         .slice(0, 5),
     [transactions],
   );
