@@ -186,6 +186,15 @@ function AccountsPage() {
                 </p>
               </div>
             )}
+            {!reordering && (
+              <Link
+                to="/accounts/$id"
+                params={{ id: a.id }}
+                className="mt-2 inline-flex w-full items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-primary transition hover:bg-white/10"
+              >
+                View all activity
+              </Link>
+            )}
             <div className="flex gap-2">
               {reordering ? (
                 <>
