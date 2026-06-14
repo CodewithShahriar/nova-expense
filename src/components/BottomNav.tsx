@@ -78,7 +78,7 @@ function NavItem({
       to={to}
       className={cn(
         "flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl py-1.5 transition-colors",
-        active ? "text-primary" : "text-muted-foreground",
+        active ? "text-primary" : "text-muted-foreground/85 hover:text-foreground",
       )}
     >
       <Icon

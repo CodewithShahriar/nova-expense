@@ -161,7 +161,7 @@ function SettingsPage() {
                 type="text"
                 value={settings.name}
                 onChange={(e) => store.updateSettings({ name: e.target.value })}
-                className="mt-1 w-full bg-transparent font-display text-2xl font-bold outline-none placeholder:text-primary-foreground/55"
+                className="mt-1 w-full bg-transparent font-display text-2xl font-bold outline-none placeholder:text-primary-foreground/75"
                 placeholder="Your name"
                 maxLength={40}
               />

@@ -117,7 +117,7 @@
   --secondary-foreground: oklch(0.98 0.005 240);
 
   --muted: oklch(0.24 0.012 240);
-  --muted-foreground: oklch(0.68 0.015 240);
+  --muted-foreground: oklch(0.76 0.01 240);
 
   --accent: oklch(0.28 0.014 240);
   --accent-foreground: oklch(0.98 0.005 240);
@@ -158,7 +158,7 @@
   --shadow-card: 0 8px 24px -12px oklch(0 0 0 / 50%);
 
   --glass-bg: oklch(0.22 0.014 240 / 60%);
-  --glass-border: oklch(1 0 0 / 8%);
+  --glass-border: oklch(1 0 0 / 14%);
 }
 
 .light {
@@ -181,7 +181,7 @@
   --secondary-foreground: oklch(0.22 0.08 160);
 
   --muted: oklch(0.96 0.006 240);
-  --muted-foreground: oklch(0.48 0.015 240);
+  --muted-foreground: oklch(0.40 0.015 240);
 
   --accent: oklch(0.88 0.065 150);
   --accent-foreground: oklch(0.22 0.08 160);
