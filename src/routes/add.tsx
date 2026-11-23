@@ -338,14 +338,16 @@ function AddTransaction() {
         <button
           type="button"
           onClick={() => setScannerOpen(true)}
-          className="flex min-h-16 w-full items-center gap-3 rounded-3xl border border-primary/15 bg-primary/10 px-4 text-left shadow-sm active:scale-[0.99] transition"
+          className="flex min-h-14 min-[380px]:min-h-16 w-full items-center gap-3 rounded-2xl min-[380px]:rounded-3xl border border-primary/20 bg-primary/10 p-3 min-[380px]:px-4 text-left shadow-sm active:scale-[0.99] transition"
         >
           <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl gradient-primary shadow-glow">
             <ScanLine className="size-5 text-primary-foreground" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-sm font-bold text-foreground">Scan receipt</span>
-            <span className="block text-xs text-muted-foreground">
+            <span className="block text-xs min-[380px]:text-sm font-bold text-foreground">
+              Scan receipt
+            </span>
+            <span className="block text-[11px] min-[380px]:text-xs text-muted-foreground truncate">
               Upload a receipt and review the extracted details.
             </span>
           </span>

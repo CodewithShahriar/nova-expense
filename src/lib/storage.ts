@@ -115,7 +115,7 @@ const demoAccounts: Account[] = [
   {
     id: "acc-visa",
     order: 0,
-    name: "Sajibur's Visa",
+    name: "Shahriar's Visa",
     type: "card",
     brand: "VISA",
     number: "•••• •••• 5466",
@@ -169,7 +169,7 @@ const defaultState: AppState = {
   events: [],
   goals: [],
   customCategories: [],
-  settings: { currency: "USD", theme: "dark", name: "Sajibur Rahman" },
+  settings: { currency: "BDT", theme: "dark", name: "Shahriar" },
 };
 
 function read(): AppState {
@@ -178,17 +178,36 @@ function read(): AppState {
     const raw = localStorage.getItem(KEY);
     if (!raw) return defaultState;
     const parsed = JSON.parse(raw);
+    const parsedSettings = { ...parsed.settings };
+
+    // Migrate defaults if user had legacy Sajibur or USD default
+    if (parsedSettings.name === "Sajibur Rahman" || !parsedSettings.name) {
+      parsedSettings.name = "Shahriar";
+    }
+    if (!parsedSettings.currency || parsedSettings.currency === "USD") {
+      parsedSettings.currency = "BDT";
+    }
+
+    const rawAccounts = (parsed.accounts?.length ? parsed.accounts : defaultAccounts).map(
+      (a: Account) => {
+        if (a.name === "Sajibur's Visa") {
+          return { ...a, name: "Shahriar's Visa" };
+        }
+        return a;
+      },
+    );
+
     return {
       ...defaultState,
       ...parsed,
-      accounts: normalizeAccounts(parsed.accounts?.length ? parsed.accounts : defaultAccounts),
+      accounts: normalizeAccounts(rawAccounts),
       transactions: parsed.transactions || [],
       budgets: parsed.budgets || defaultState.budgets,
       bills: normalizeBills(parsed.bills || []),
       events: normalizeEvents(parsed.events || []),
       goals: parsed.goals || [],
       customCategories: parsed.customCategories || [],
-      settings: { ...defaultState.settings, ...parsed.settings },
+      settings: { ...defaultState.settings, ...parsedSettings },
     };
   } catch {
     return defaultState;

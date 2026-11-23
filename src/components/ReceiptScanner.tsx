@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -61,6 +61,40 @@ export function ReceiptScanner({
   const [accountId, setAccountId] = useState(defaultTransactionAccountId(accounts));
   const [note, setNote] = useState("");
   const [reviewWarning, setReviewWarning] = useState<string | null>(null);
+
+  useEffect(() => {
+    const scrollY = window.scrollY;
+    const previousOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    const previousPosition = document.body.style.position;
+    const previousTop = document.body.style.top;
+    const previousWidth = document.body.style.width;
+
+    document.documentElement.dataset.scrollLock = "true";
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = "100%";
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      delete document.documentElement.dataset.scrollLock;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+      document.body.style.overflow = previousOverflow;
+      document.body.style.position = previousPosition;
+      document.body.style.top = previousTop;
+      document.body.style.width = previousWidth;
+      window.scrollTo(0, scrollY);
+    };
+  }, [onClose]);
 
   async function processFile(file?: File) {
     if (!file) return;
@@ -175,32 +209,34 @@ export function ReceiptScanner({
   }
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/65 backdrop-blur-sm animate-fade-in">
-      <div className="glass-strong max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-t-[2rem] p-4 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] shadow-elegant">
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="flex size-11 items-center justify-center rounded-2xl gradient-primary shadow-glow">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-md animate-fade-in"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="glass-strong max-h-[92dvh] sm:max-h-[88dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-[2rem] sm:rounded-[2rem] p-4 min-[380px]:p-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] shadow-elegant no-scrollbar"
+      >
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex size-10 min-[380px]:size-11 shrink-0 items-center justify-center rounded-2xl gradient-primary shadow-glow">
               <ScanLine className="size-5 text-primary-foreground" />
             </div>
-            <div>
-              <p className="font-display text-xl font-bold">Scan receipt</p>
-              <p className="text-xs text-muted-foreground">Extract amount, date, and merchant</p>
+            <div className="min-w-0">
+              <p className="font-display text-base min-[380px]:text-xl font-bold truncate">
+                Scan receipt
+              </p>
+              <p className="text-[11px] min-[380px]:text-xs text-muted-foreground truncate">
+                Extract amount, date, and merchant
+              </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="hidden h-9 items-center gap-2 rounded-full glass px-3 text-xs font-semibold text-muted-foreground min-[380px]:flex"
-            >
-              <ArrowLeft className="size-4" />
-              Back
-            </button>
+          <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={onClose}
               aria-label="Back to transaction form"
-              className="flex size-9 items-center justify-center rounded-full glass"
+              className="flex size-9 items-center justify-center rounded-full glass hover:bg-white/10 active:scale-95 transition"
             >
               <X className="size-4" />
             </button>
@@ -211,7 +247,7 @@ export function ReceiptScanner({
           <button
             type="button"
             onClick={() => cameraRef.current?.click()}
-            className="flex h-12 items-center justify-center gap-2 rounded-2xl gradient-primary text-sm font-semibold text-primary-foreground"
+            className="flex h-11 min-[380px]:h-12 items-center justify-center gap-2 rounded-2xl gradient-primary text-xs min-[380px]:text-sm font-semibold text-primary-foreground active:scale-95 transition"
           >
             <Camera className="size-4" />
             Camera
@@ -219,7 +255,7 @@ export function ReceiptScanner({
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
-            className="flex h-12 items-center justify-center gap-2 rounded-2xl glass text-sm font-semibold"
+            className="flex h-11 min-[380px]:h-12 items-center justify-center gap-2 rounded-2xl glass text-xs min-[380px]:text-sm font-semibold active:scale-95 transition"
           >
             <Upload className="size-4" />
             Upload
@@ -241,13 +277,27 @@ export function ReceiptScanner({
           className="hidden"
         />
 
-        <div className="mt-4 overflow-hidden rounded-3xl bg-muted/45">
+        <div className="mt-3.5 overflow-hidden rounded-2xl min-[380px]:rounded-3xl bg-muted/45 border border-white/10">
           {preview ? (
-            <img src={preview} alt="Receipt preview" className="max-h-72 w-full object-cover" />
+            <div className="relative">
+              <img
+                src={preview}
+                alt="Receipt preview"
+                className="max-h-48 min-[380px]:max-h-60 w-full object-contain bg-black/50"
+              />
+              <button
+                type="button"
+                onClick={() => setPreview(null)}
+                className="absolute top-2 right-2 size-7 rounded-full bg-black/60 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/80 active:scale-95 transition"
+                title="Remove photo"
+              >
+                <X className="size-3.5" />
+              </button>
+            </div>
           ) : (
-            <div className="flex min-h-48 flex-col items-center justify-center gap-3 p-8 text-center">
-              <FileImage className="size-10 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">
+            <div className="flex min-h-32 min-[380px]:min-h-40 flex-col items-center justify-center gap-2 p-5 text-center">
+              <FileImage className="size-8 min-[380px]:size-10 text-muted-foreground/70" />
+              <p className="text-xs min-[380px]:text-sm text-muted-foreground">
                 Capture or upload a clear receipt image.
               </p>
             </div>
@@ -289,52 +339,59 @@ export function ReceiptScanner({
         )}
 
         <div className="mt-4 space-y-3">
-          <div className="grid grid-cols-2 gap-2">
-            <Field label="Amount">
+          <div className="grid grid-cols-1 min-[360px]:grid-cols-2 gap-2">
+            <Field label="Amount (৳)">
               <input
                 value={amount}
                 onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
                 inputMode="decimal"
                 placeholder="0"
-                className="w-full bg-transparent text-sm outline-none"
+                className="w-full bg-transparent text-sm font-semibold outline-none tabular"
               />
             </Field>
             <Field label="Merchant">
               <input
                 value={merchant}
                 onChange={(e) => setMerchant(e.target.value)}
-                placeholder="Store name"
+                placeholder="Store / Shop name"
                 className="w-full bg-transparent text-sm outline-none"
               />
             </Field>
           </div>
 
           <div>
-            <p className="mb-2 text-xs uppercase tracking-widest text-muted-foreground">Date</p>
+            <p className="mb-1.5 text-xs uppercase tracking-widest text-muted-foreground">Date</p>
             <DatePicker value={date} onChange={setDate} />
           </div>
 
           <div>
-            <p className="mb-2 text-xs uppercase tracking-widest text-muted-foreground">Account</p>
+            <p className="mb-1.5 text-xs uppercase tracking-widest text-muted-foreground">
+              Account
+            </p>
             <AccountSelect accounts={accounts} value={accountId} onChange={setAccountId} />
           </div>
 
-          <div className="flex gap-2 overflow-x-auto no-scrollbar">
-            {categories.slice(0, 12).map((item) => (
-              <button
-                key={item.name}
-                type="button"
-                onClick={() => setCategory(item.name)}
-                className={cn(
-                  "h-9 shrink-0 rounded-full px-3 text-xs font-semibold",
-                  category === item.name
-                    ? "gradient-primary text-primary-foreground"
-                    : "glass text-muted-foreground",
-                )}
-              >
-                {item.name}
-              </button>
-            ))}
+          <div>
+            <p className="mb-1.5 text-xs uppercase tracking-widest text-muted-foreground">
+              Category
+            </p>
+            <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
+              {categories.slice(0, 12).map((item) => (
+                <button
+                  key={item.name}
+                  type="button"
+                  onClick={() => setCategory(item.name)}
+                  className={cn(
+                    "h-8 min-[380px]:h-9 shrink-0 rounded-full px-3 text-xs font-semibold active:scale-95 transition",
+                    category === item.name
+                      ? "gradient-primary text-primary-foreground shadow-glow"
+                      : "glass text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {item.name}
+                </button>
+              ))}
+            </div>
           </div>
 
           <Field label="Note">
@@ -351,7 +408,7 @@ export function ReceiptScanner({
               <summary className="cursor-pointer font-semibold text-foreground">
                 Raw OCR text
               </summary>
-              <pre className="mt-2 max-h-36 overflow-auto whitespace-pre-wrap font-mono">
+              <pre className="mt-2 max-h-32 overflow-auto whitespace-pre-wrap font-mono text-[11px]">
                 {rawText}
               </pre>
             </details>
@@ -361,7 +418,7 @@ export function ReceiptScanner({
             <button
               type="button"
               onClick={() => scanWithAi(preview, rawText)}
-              className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-primary/10 text-sm font-semibold text-primary"
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-primary/10 text-xs min-[380px]:text-sm font-semibold text-primary active:scale-95 transition"
             >
               <Sparkles className="size-4" />
               Improve with AI
@@ -372,7 +429,7 @@ export function ReceiptScanner({
             type="button"
             onClick={save}
             disabled={scanning}
-            className="flex h-13 min-h-13 w-full items-center justify-center gap-2 rounded-2xl gradient-primary text-sm font-semibold text-primary-foreground shadow-glow disabled:opacity-50"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl gradient-primary text-sm font-semibold text-primary-foreground shadow-glow disabled:opacity-50 active:scale-95 transition"
           >
             <Check className="size-4" />
             Save expense
@@ -380,7 +437,7 @@ export function ReceiptScanner({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl glass text-sm font-semibold text-muted-foreground"
+            className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl glass text-xs min-[380px]:text-sm font-semibold text-muted-foreground active:scale-95 transition"
           >
             <ArrowLeft className="size-4" />
             Back to transaction form

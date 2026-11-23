@@ -255,7 +255,7 @@ const fallbackAccounts: Account[] = [
   {
     id: "acc-visa",
     order: 0,
-    name: "Sajibur's Visa",
+    name: "Shahriar's Visa",
     type: "card",
     brand: "VISA",
     number: "•••• •••• •••• 5466",

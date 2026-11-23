@@ -138,7 +138,7 @@ function Dashboard() {
       .slice(0, 6);
   }, [transactions]);
 
-  const initials = (settings.name || "Sajibur Rahman")
+  const initials = (settings.name || "Shahriar")
     .split(" ")
     .map((s) => s[0])
     .slice(0, 2)
@@ -185,7 +185,7 @@ function Dashboard() {
               {greeting}
             </p>
             <p className="font-display text-base font-bold text-foreground mt-0.5 truncate max-w-[190px]">
-              {settings.name || "Sajibur Rahman"}
+              {settings.name || "Shahriar"}
             </p>
           </div>
         </Link>
