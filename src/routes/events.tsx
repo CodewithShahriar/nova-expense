@@ -174,11 +174,8 @@ function EventChip({
           : "glass",
       )}
     >
-      <div
-        className="flex size-10 items-center justify-center rounded-2xl"
-        style={{ background: `color-mix(in oklch, ${event.color} 18%, transparent)` }}
-      >
-        <Icon className="size-5" style={{ color: event.color }} />
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl glass border border-white/10 text-foreground shadow-xs">
+        <Icon className="size-5 stroke-[2.2]" />
       </div>
       <p className="mt-3 truncate text-sm font-semibold">{event.title}</p>
       <p className="mt-1 truncate text-xs text-muted-foreground tabular">
@@ -219,11 +216,8 @@ function EventDetail({
     <div className="mt-4 space-y-3">
       <GlassCard className="overflow-hidden p-5">
         <div className="flex items-start gap-3">
-          <div
-            className="flex size-12 shrink-0 items-center justify-center rounded-2xl"
-            style={{ background: `color-mix(in oklch, ${event.color} 20%, transparent)` }}
-          >
-            <Icon className="size-6" style={{ color: event.color }} />
+          <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl glass border border-white/10 text-foreground shadow-xs">
+            <Icon className="size-6 stroke-[2.2]" />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
@@ -448,7 +442,9 @@ function EventForm({
               onClick={() => setIcon(name)}
               className={cn(
                 "flex size-10 shrink-0 items-center justify-center rounded-2xl",
-                icon === name ? "gradient-primary text-primary-foreground" : "glass",
+                icon === name
+                  ? "gradient-primary text-primary-foreground shadow-glow"
+                  : "glass text-zinc-300",
               )}
               aria-label={name}
             >
@@ -656,11 +652,8 @@ function ExpenseRow({
 
   return (
     <GlassCard className="flex items-center gap-3 p-3">
-      <div
-        className="flex size-11 shrink-0 items-center justify-center rounded-2xl"
-        style={{ background: `color-mix(in oklch, ${cat.color} 18%, transparent)` }}
-      >
-        <Icon className="size-5" style={{ color: cat.color }} />
+      <div className="flex size-11 shrink-0 items-center justify-center rounded-full glass border border-white/15 text-foreground shadow-xs">
+        <Icon className="size-5 stroke-[2.2]" />
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{expense.title}</p>

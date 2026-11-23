@@ -1,14 +1,6 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Cell,
-} from "recharts";
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from "recharts";
 import { useStore, formatMoney } from "@/lib/storage";
 import { GlassCard } from "@/components/GlassCard";
 import {
@@ -99,7 +91,7 @@ function ReportsPage() {
         <button
           type="button"
           onClick={() => router.history.back()}
-          className="size-11 rounded-full glass border border-white/10 flex items-center justify-center text-white hover:text-primary active:scale-95 transition shadow-card"
+          className="size-11 rounded-full glass border border-white/10 flex items-center justify-center text-foreground hover:text-primary active:scale-95 transition shadow-card"
           aria-label="Back"
         >
           <ChevronLeft className="size-5 stroke-[2.4]" />
@@ -109,7 +101,7 @@ function ReportsPage() {
 
         <button
           type="button"
-          className="size-11 rounded-full glass border border-white/10 flex items-center justify-center text-white hover:text-primary active:scale-95 transition shadow-card"
+          className="size-11 rounded-full glass border border-white/10 flex items-center justify-center text-foreground hover:text-primary active:scale-95 transition shadow-card"
           aria-label="Options"
         >
           <MoreVertical className="size-4.5 stroke-[2.4]" />
@@ -128,7 +120,7 @@ function ReportsPage() {
               className={cn(
                 "py-2.5 rounded-xl font-display text-xs min-[380px]:text-sm font-bold transition-all duration-200 select-none",
                 isActive
-                  ? "bg-primary text-zinc-950 shadow-glow"
+                  ? "bg-primary text-primary-foreground shadow-glow"
                   : "text-muted-foreground hover:text-foreground hover:bg-white/5",
               )}
             >
@@ -152,7 +144,7 @@ function ReportsPage() {
           </div>
 
           {/* Clean dark glass trend button matching reference image */}
-          <div className="size-10 rounded-full glass border border-white/15 flex items-center justify-center text-white shadow-xs">
+          <div className="size-10 rounded-full glass border border-white/15 flex items-center justify-center text-foreground shadow-xs">
             <ArrowUpRight className="size-5 stroke-[2.4]" />
           </div>
         </div>
@@ -170,7 +162,7 @@ function ReportsPage() {
                   "size-8 rounded-full font-display text-xs font-bold transition-all flex items-center justify-center select-none",
                   isActive
                     ? "bg-primary text-zinc-950 shadow-glow"
-                    : "glass border border-white/10 text-muted-foreground hover:text-white",
+                    : "glass border border-white/10 text-muted-foreground hover:text-foreground",
                 )}
               >
                 {range}
@@ -227,11 +219,11 @@ function ReportsPage() {
         </div>
       </GlassCard>
 
-      {/* 4. 2x2 Grid Summary Cards (ALL icons strictly monochromatic white on glass matching reference image) */}
+      {/* 4. 2x2 Grid Summary Cards (Monochrome frosted glass icons) */}
       <div className="grid grid-cols-2 gap-3 mt-4">
         {/* Card 1: Total Withdrawal */}
         <GlassCard className="p-4 border border-white/10 shadow-card flex flex-col justify-between">
-          <div className="flex size-10 items-center justify-center rounded-xl glass border border-white/15 text-white mb-3 shadow-xs">
+          <div className="flex size-10 items-center justify-center rounded-xl glass border border-white/15 text-foreground mb-3 shadow-xs">
             <ArrowUp className="size-5 stroke-[2.4]" />
           </div>
           <div>
@@ -246,7 +238,7 @@ function ReportsPage() {
 
         {/* Card 2: Total Deposit */}
         <GlassCard className="p-4 border border-white/10 shadow-card flex flex-col justify-between">
-          <div className="flex size-10 items-center justify-center rounded-xl glass border border-white/15 text-white mb-3 shadow-xs">
+          <div className="flex size-10 items-center justify-center rounded-xl glass border border-white/15 text-foreground mb-3 shadow-xs">
             <ArrowDown className="size-5 stroke-[2.4]" />
           </div>
           <div>
@@ -261,7 +253,7 @@ function ReportsPage() {
 
         {/* Card 3: Group / Transfer icon */}
         <GlassCard className="p-4 border border-white/10 shadow-card flex flex-col justify-between">
-          <div className="flex size-10 items-center justify-center rounded-xl glass border border-white/15 text-white mb-3 shadow-xs">
+          <div className="flex size-10 items-center justify-center rounded-xl glass border border-white/15 text-foreground mb-3 shadow-xs">
             <Users className="size-5 stroke-[2.4]" />
           </div>
           <div>
@@ -276,7 +268,7 @@ function ReportsPage() {
 
         {/* Card 4: Wallet icon */}
         <GlassCard className="p-4 border border-white/10 shadow-card flex flex-col justify-between">
-          <div className="flex size-10 items-center justify-center rounded-xl glass border border-white/15 text-white mb-3 shadow-xs">
+          <div className="flex size-10 items-center justify-center rounded-xl glass border border-white/15 text-foreground mb-3 shadow-xs">
             <Wallet className="size-5 stroke-[2.4]" />
           </div>
           <div>

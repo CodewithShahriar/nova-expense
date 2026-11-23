@@ -14,13 +14,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 export function BottomNav() {
   const location = useLocation();
@@ -96,7 +90,7 @@ export function BottomNav() {
               to="/add"
               search={{ type: undefined, scan: undefined, edit: undefined }}
               aria-label="Add transaction"
-              className="size-13 rounded-full bg-primary text-zinc-950 shadow-glow flex items-center justify-center active:scale-95 transition-all hover:scale-105 border-4 border-[#0B0E14]"
+              className="size-13 rounded-full bg-primary text-primary-foreground shadow-glow flex items-center justify-center active:scale-95 transition-all hover:scale-105 border-4 border-background"
             >
               <Plus className="size-6 stroke-[3]" />
             </Link>
@@ -169,10 +163,10 @@ export function BottomNav() {
                   onClick={() => setMenuOpen(false)}
                   className="glass rounded-2xl p-3.5 flex flex-col items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition text-center border border-white/10"
                 >
-                  <div className="size-10 rounded-full glass border border-white/10 flex items-center justify-center text-white">
+                  <div className="size-10 rounded-full glass border border-white/10 flex items-center justify-center text-foreground">
                     <List className="size-5" />
                   </div>
-                  <span className="text-xs font-semibold text-zinc-200">Activity</span>
+                  <span className="text-xs font-semibold text-foreground">Activity</span>
                 </Link>
 
                 <Link
@@ -180,10 +174,10 @@ export function BottomNav() {
                   onClick={() => setMenuOpen(false)}
                   className="glass rounded-2xl p-3.5 flex flex-col items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition text-center border border-white/10"
                 >
-                  <div className="size-10 rounded-full glass border border-white/10 flex items-center justify-center text-white">
+                  <div className="size-10 rounded-full glass border border-white/10 flex items-center justify-center text-foreground">
                     <CreditCard className="size-5" />
                   </div>
-                  <span className="text-xs font-semibold text-zinc-200">Accounts</span>
+                  <span className="text-xs font-semibold text-foreground">Accounts</span>
                 </Link>
 
                 <Link
@@ -191,10 +185,10 @@ export function BottomNav() {
                   onClick={() => setMenuOpen(false)}
                   className="glass rounded-2xl p-3.5 flex flex-col items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition text-center border border-white/10"
                 >
-                  <div className="size-10 rounded-full glass border border-white/10 flex items-center justify-center text-white">
+                  <div className="size-10 rounded-full glass border border-white/10 flex items-center justify-center text-foreground">
                     <Receipt className="size-5" />
                   </div>
-                  <span className="text-xs font-semibold text-zinc-200">Bills</span>
+                  <span className="text-xs font-semibold text-foreground">Bills</span>
                 </Link>
 
                 <Link
@@ -202,10 +196,10 @@ export function BottomNav() {
                   onClick={() => setMenuOpen(false)}
                   className="glass rounded-2xl p-3.5 flex flex-col items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition text-center border border-white/10"
                 >
-                  <div className="size-10 rounded-full glass border border-white/10 flex items-center justify-center text-white">
+                  <div className="size-10 rounded-full glass border border-white/10 flex items-center justify-center text-foreground">
                     <CalendarDays className="size-5" />
                   </div>
-                  <span className="text-xs font-semibold text-zinc-200">Events</span>
+                  <span className="text-xs font-semibold text-foreground">Events</span>
                 </Link>
 
                 <Link
@@ -213,10 +207,10 @@ export function BottomNav() {
                   onClick={() => setMenuOpen(false)}
                   className="glass rounded-2xl p-3.5 flex flex-col items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition text-center border border-white/10"
                 >
-                  <div className="size-10 rounded-full glass border border-white/10 flex items-center justify-center text-white">
+                  <div className="size-10 rounded-full glass border border-white/10 flex items-center justify-center text-foreground">
                     <Sparkles className="size-5" />
                   </div>
-                  <span className="text-xs font-semibold text-zinc-200">Review</span>
+                  <span className="text-xs font-semibold text-foreground">Review</span>
                 </Link>
 
                 <Link
@@ -224,10 +218,10 @@ export function BottomNav() {
                   onClick={() => setMenuOpen(false)}
                   className="glass rounded-2xl p-3.5 flex flex-col items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition text-center border border-white/10"
                 >
-                  <div className="size-10 rounded-full glass border border-white/10 flex items-center justify-center text-white">
+                  <div className="size-10 rounded-full glass border border-white/10 flex items-center justify-center text-foreground">
                     <SettingsIcon className="size-5" />
                   </div>
-                  <span className="text-xs font-semibold text-zinc-200">Settings</span>
+                  <span className="text-xs font-semibold text-foreground">Settings</span>
                 </Link>
               </div>
             </SheetContent>

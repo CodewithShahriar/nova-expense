@@ -332,11 +332,8 @@ function BillCard({
   return (
     <GlassCard className="p-4">
       <div className="flex items-start gap-3">
-        <div
-          className="flex size-11 shrink-0 items-center justify-center rounded-2xl"
-          style={{ background: `color-mix(in oklch, ${cat.color} 18%, transparent)` }}
-        >
-          <Icon className="size-5" style={{ color: cat.color }} />
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-full glass border border-white/15 text-foreground shadow-xs">
+          <Icon className="size-5 stroke-[2.2]" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">

@@ -11,8 +11,17 @@ export function AppShell() {
 
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === "light") root.classList.add("light");
-    else root.classList.remove("light");
+    if (theme === "light") {
+      root.classList.add("light");
+      root.classList.remove("dark");
+    } else {
+      root.classList.remove("light");
+      root.classList.add("dark");
+    }
+    const metaTheme = document.querySelector('meta[name="theme-color"]');
+    if (metaTheme) {
+      metaTheme.setAttribute("content", theme === "light" ? "#f8fafc" : "#0b0e14");
+    }
   }, [theme]);
 
   const hideNav = location.pathname === "/add";

@@ -206,14 +206,8 @@ export const baseCategories: Category[] = [
 ];
 
 export function allCategories(custom: CustomCategory[] = []): Category[] {
-  const hidden = new Set(
-    custom.filter((c) => c.hidden).map((c) => c.name.toLowerCase()),
-  );
-  const overrides = new Map(
-    custom
-      .filter((c) => !c.hidden)
-      .map((c) => [c.name.toLowerCase(), c]),
-  );
+  const hidden = new Set(custom.filter((c) => c.hidden).map((c) => c.name.toLowerCase()));
+  const overrides = new Map(custom.filter((c) => !c.hidden).map((c) => [c.name.toLowerCase(), c]));
   const mergedBase = baseCategories
     .filter((category) => !hidden.has(category.name.toLowerCase()))
     .map((category) => {

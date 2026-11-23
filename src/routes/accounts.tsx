@@ -129,121 +129,119 @@ function AccountsPage() {
           const index = accounts.findIndex((account) => account.id === a.id);
           const recentTxs = recentTransactionsByAccount.get(a.id) || [];
           return (
-          <div key={a.id} className="space-y-2">
-            {reordering ? (
-              <AccountCard account={a} currency={currency} />
-            ) : (
-              <AccountCard
-                account={a}
-                currency={currency}
-                onClick={() => navigate({ to: "/accounts/$id", params: { id: a.id } })}
-              />
-            )}
-            {recentTxs.length > 0 ? (
-              <div className="space-y-2 px-1">
-                <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-                  Recent activity
-                </p>
-                {recentTxs.map((tx) => {
-                  const isTransfer = tx.type === "transfer";
-                  const isOutgoing = tx.type === "expense" || (isTransfer && tx.fromAccountId === a.id);
-                  const cat = getCategory(tx.category, custom);
-                  const Icon = isTransfer ? ArrowLeftRight : cat.icon;
-                  const color = isTransfer
-                    ? "text-muted-foreground"
-                    : isOutgoing
-                      ? "text-destructive"
-                      : "text-primary";
-                  const sign = isOutgoing ? "−" : "+";
-                  const subtitle = isTransfer
-                    ? `${accounts.find((account) => account.id === tx.fromAccountId)?.name || ""} → ${
-                        accounts.find((account) => account.id === tx.toAccountId)?.name || ""
-                      }`
-                    : `${tx.category}`;
-                  return (
-                    <GlassCard key={tx.id} className="flex items-center gap-3 p-3">
-                      <div
-                        className="size-10 rounded-2xl flex items-center justify-center shrink-0"
-                        style={{ background: `color-mix(in oklch, ${cat.color} 18%, transparent)` }}
-                      >
-                        <Icon className="size-4" style={{ color: cat.color }} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">
-                          {tx.note || (isTransfer ? "Transfer" : tx.category)}
-                        </p>
-                        <p className="text-[11px] text-muted-foreground truncate">{subtitle}</p>
-                      </div>
-                      <p className={cn("font-display text-sm font-semibold tabular", color)}>
-                        {sign}
-                        {formatMoney(tx.amount, currency).replace("-", "")}
-                      </p>
-                    </GlassCard>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="px-1">
-                <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-                  No recent activity
-                </p>
-              </div>
-            )}
-            {!reordering && (
-              <button
-                onClick={() => navigate({ to: "/accounts/$id", params: { id: a.id } })}
-                className="mt-2 inline-flex w-full items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-primary transition hover:bg-white/10"
-              >
-                View all activity
-              </button>
-            )}
-            <div className="flex gap-2">
+            <div key={a.id} className="space-y-2">
               {reordering ? (
-                <>
-                  <button
-                    onClick={() => moveAccount(a.id, -1)}
-                    disabled={index === 0}
-                    className="flex-1 h-10 rounded-xl glass flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground disabled:opacity-35"
-                  >
-                    <ArrowUp className="size-3.5" /> Up
-                  </button>
-                  <button
-                    onClick={() => moveAccount(a.id, 1)}
-                    disabled={index === accounts.length - 1}
-                    className="flex-1 h-10 rounded-xl glass flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground disabled:opacity-35"
-                  >
-                    <ArrowDown className="size-3.5" /> Down
-                  </button>
-                </>
+                <AccountCard account={a} currency={currency} />
               ) : (
-                <>
-                  <button
-                    onClick={() => setEditing(a.id)}
-                    className="flex-1 h-10 rounded-xl glass flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground"
-                  >
-                    <Pencil className="size-3.5" /> Edit
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (
-                        confirm(
-                          `Delete ${a.name}? Transactions tied to this account will also be removed.`,
+                <AccountCard
+                  account={a}
+                  currency={currency}
+                  onClick={() => navigate({ to: "/accounts/$id", params: { id: a.id } })}
+                />
+              )}
+              {recentTxs.length > 0 ? (
+                <div className="space-y-2 px-1">
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                    Recent activity
+                  </p>
+                  {recentTxs.map((tx) => {
+                    const isTransfer = tx.type === "transfer";
+                    const isOutgoing =
+                      tx.type === "expense" || (isTransfer && tx.fromAccountId === a.id);
+                    const cat = getCategory(tx.category, custom);
+                    const Icon = isTransfer ? ArrowLeftRight : cat.icon;
+                    const color = isTransfer
+                      ? "text-muted-foreground"
+                      : isOutgoing
+                        ? "text-destructive"
+                        : "text-primary";
+                    const sign = isOutgoing ? "−" : "+";
+                    const subtitle = isTransfer
+                      ? `${accounts.find((account) => account.id === tx.fromAccountId)?.name || ""} → ${
+                          accounts.find((account) => account.id === tx.toAccountId)?.name || ""
+                        }`
+                      : `${tx.category}`;
+                    return (
+                      <GlassCard key={tx.id} className="flex items-center gap-3 p-3">
+                        <div className="size-10 rounded-full glass border border-white/15 flex items-center justify-center shrink-0 text-foreground shadow-xs">
+                          <Icon className="size-4 stroke-[2.2]" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {tx.note || (isTransfer ? "Transfer" : tx.category)}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground truncate">{subtitle}</p>
+                        </div>
+                        <p className={cn("font-display text-sm font-semibold tabular", color)}>
+                          {sign}
+                          {formatMoney(tx.amount, currency).replace("-", "")}
+                        </p>
+                      </GlassCard>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="px-1">
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                    No recent activity
+                  </p>
+                </div>
+              )}
+              {!reordering && (
+                <button
+                  onClick={() => navigate({ to: "/accounts/$id", params: { id: a.id } })}
+                  className="mt-2 inline-flex w-full items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-primary transition hover:bg-white/10"
+                >
+                  View all activity
+                </button>
+              )}
+              <div className="flex gap-2">
+                {reordering ? (
+                  <>
+                    <button
+                      onClick={() => moveAccount(a.id, -1)}
+                      disabled={index === 0}
+                      className="flex-1 h-10 rounded-xl glass flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground disabled:opacity-35"
+                    >
+                      <ArrowUp className="size-3.5" /> Up
+                    </button>
+                    <button
+                      onClick={() => moveAccount(a.id, 1)}
+                      disabled={index === accounts.length - 1}
+                      className="flex-1 h-10 rounded-xl glass flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground disabled:opacity-35"
+                    >
+                      <ArrowDown className="size-3.5" /> Down
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => setEditing(a.id)}
+                      className="flex-1 h-10 rounded-xl glass flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground"
+                    >
+                      <Pencil className="size-3.5" /> Edit
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (
+                          confirm(
+                            `Delete ${a.name}? Transactions tied to this account will also be removed.`,
+                          )
                         )
-                      )
-                        store.deleteAccount(a.id);
-                    }}
-                    className="flex-1 h-10 rounded-xl glass flex items-center justify-center gap-2 text-xs font-medium text-destructive"
-                  >
-                    <Trash2 className="size-3.5" /> Delete
-                  </button>
-                </>
+                          store.deleteAccount(a.id);
+                      }}
+                      className="flex-1 h-10 rounded-xl glass flex items-center justify-center gap-2 text-xs font-medium text-destructive"
+                    >
+                      <Trash2 className="size-3.5" /> Delete
+                    </button>
+                  </>
+                )}
+              </div>
+              {!reordering && editing === a.id && (
+                <EditAccountForm id={a.id} onClose={() => setEditing(null)} />
               )}
             </div>
-            {!reordering && editing === a.id && (
-              <EditAccountForm id={a.id} onClose={() => setEditing(null)} />
-            )}
-          </div>
-        );
+          );
         })}
       </div>
 

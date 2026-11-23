@@ -74,7 +74,8 @@ export function CategoryPicker({
   }
 
   function deleteCustom(name: string) {
-    if (!window.confirm(`Delete ${name} category? Existing transactions keep the category name.`)) return;
+    if (!window.confirm(`Delete ${name} category? Existing transactions keep the category name.`))
+      return;
     store.deleteCustomCategory(name);
     if (value === name) onChange(list.find((category) => category.name !== name)?.name || "");
   }
@@ -102,7 +103,10 @@ export function CategoryPicker({
     const next = [...list];
     const [moved] = next.splice(from, 1);
     next.splice(to, 0, moved);
-    store.reorderCategories(type, next.map((category) => category.name));
+    store.reorderCategories(
+      type,
+      next.map((category) => category.name),
+    );
     setDraggingName(null);
   }
 
@@ -120,7 +124,11 @@ export function CategoryPicker({
       >
         <div className="mb-4 flex shrink-0 items-center justify-between">
           <h2 className="font-display text-lg min-[380px]:text-xl font-bold">
-            {creating ? (formMode === "edit" ? "Edit category" : "New category") : "Choose category"}
+            {creating
+              ? formMode === "edit"
+                ? "Edit category"
+                : "New category"
+              : "Choose category"}
           </h2>
           <div className="flex items-center gap-2">
             {!creating && (
@@ -161,14 +169,14 @@ export function CategoryPicker({
               {filtered.map((c) => {
                 const Icon = c.icon;
                 const active = value === c.name;
-                const editableCategory: CustomCategory =
-                  custom.find((category) => !category.hidden && category.name === c.name) ||
-                  {
-                    name: c.name,
-                    icon: iconNameFor(c.icon),
-                    color: c.color,
-                    type: c.type,
-                  };
+                const editableCategory: CustomCategory = custom.find(
+                  (category) => !category.hidden && category.name === c.name,
+                ) || {
+                  name: c.name,
+                  icon: iconNameFor(c.icon),
+                  color: c.color,
+                  type: c.type,
+                };
                 return (
                   <button
                     key={c.name}
@@ -241,11 +249,8 @@ export function CategoryPicker({
                         </span>
                       </span>
                     )}
-                    <div
-                      className="size-9 min-[380px]:size-10 rounded-xl flex items-center justify-center"
-                      style={{ background: `color-mix(in oklch, ${c.color} 22%, transparent)` }}
-                    >
-                      <Icon className="size-5" style={{ color: c.color }} />
+                    <div className="size-9 min-[380px]:size-10 rounded-full glass border border-white/15 flex items-center justify-center text-foreground shadow-xs">
+                      <Icon className="size-5 stroke-[2.2]" />
                     </div>
                     <span className="max-w-full truncate text-[11px] font-medium text-center leading-tight">
                       {c.name}
@@ -371,15 +376,10 @@ function orderCategories<T extends { name: string }>(categories: T[], order: str
 }
 
 function iconNameFor(icon: (typeof iconRegistry)[string]) {
-  return (
-    Object.entries(iconRegistry).find(([, Icon]) => Icon === icon)?.[0] || pickerIcons[0]
-  );
+  return Object.entries(iconRegistry).find(([, Icon]) => Icon === icon)?.[0] || pickerIcons[0];
 }
 
-function categoryOrderForType(
-  order: unknown,
-  type: "expense" | "income",
-): string[] {
+function categoryOrderForType(order: unknown, type: "expense" | "income"): string[] {
   if (Array.isArray(order)) return order.filter((item): item is string => typeof item === "string");
   if (!order || typeof order !== "object") return [];
 

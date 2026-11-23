@@ -76,7 +76,9 @@ export default async function handler(req, res) {
                   "Extract merchant, date, total, payment method, item list, and a short transaction note.",
                   "Use BDT/Taka amounts as plain numbers.",
                   "If OCR text conflicts with the image, trust the image.",
-                  ocrText ? `Browser OCR text for cross-check:\n${String(ocrText).slice(0, 5000)}` : "",
+                  ocrText
+                    ? `Browser OCR text for cross-check:\n${String(ocrText).slice(0, 5000)}`
+                    : "",
                 ].join("\n"),
               },
               {

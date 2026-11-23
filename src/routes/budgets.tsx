@@ -86,11 +86,8 @@ function BudgetsPage() {
           return (
             <GlassCard key={b.category} className="p-4">
               <div className="flex flex-wrap items-center gap-3">
-                <div
-                  className="size-10 rounded-2xl flex items-center justify-center shrink-0"
-                  style={{ background: `color-mix(in oklch, ${cat.color} 18%, transparent)` }}
-                >
-                  <Icon className="size-4" style={{ color: cat.color }} />
+                <div className="size-10 rounded-2xl glass border border-white/10 flex items-center justify-center shrink-0 text-foreground shadow-xs">
+                  <Icon className="size-5 stroke-[2.2]" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold">{b.category}</p>

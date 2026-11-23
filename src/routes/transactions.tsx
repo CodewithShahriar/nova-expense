@@ -217,9 +217,7 @@ function TransactionsPage() {
                 <div className="text-right">
                   <div className="flex items-center justify-end gap-2 text-[11px] font-semibold tabular">
                     {summary.income > 0 && (
-                      <span className="text-primary">
-                        +{formatMoney(summary.income, currency)}
-                      </span>
+                      <span className="text-primary">+{formatMoney(summary.income, currency)}</span>
                     )}
                     {summary.expense > 0 && (
                       <span className="text-destructive">
@@ -258,8 +256,8 @@ function TransactionsPage() {
                         className="flex cursor-pointer items-center gap-3 p-3"
                         onClick={() => t.receiptImage && setPreviewTx(t)}
                       >
-                        <div className="size-11 rounded-full glass border border-white/10 flex items-center justify-center shrink-0 text-white shadow-xs">
-                          <Icon className="size-5 stroke-[2.2] text-zinc-200" />
+                        <div className="size-11 rounded-full glass border border-white/10 flex items-center justify-center shrink-0 text-foreground shadow-xs">
+                          <Icon className="size-5 stroke-[2.2] text-foreground" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">

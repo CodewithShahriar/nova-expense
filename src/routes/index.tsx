@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   ArrowUp,
   ArrowDown,
@@ -17,12 +17,13 @@ import {
   Receipt,
   HeartPulse,
   Laptop,
-  Sparkles,
+  Bot,
   type LucideIcon,
 } from "lucide-react";
 import { useStore, store, formatMoney, type Transaction, type CustomCategory } from "@/lib/storage";
 import { StackedCardDeck } from "@/components/StackedCardDeck";
 import { GlassCard } from "@/components/GlassCard";
+import { SmartInsightModal } from "@/components/SmartInsightModal";
 import { getCategory } from "@/lib/categories";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -37,31 +38,62 @@ function getTransactionIcon(t: Transaction, custom: CustomCategory[]): LucideIco
   const merchant = (t.merchant || "").toLowerCase();
 
   // Smart matching for suitable, realistic icons
-  if (note.includes("coffee") || note.includes("cafe") || note.includes("starbucks") || note.includes("tea")) {
+  if (
+    note.includes("coffee") ||
+    note.includes("cafe") ||
+    note.includes("starbucks") ||
+    note.includes("tea")
+  ) {
     return Coffee;
   }
-  if (note.includes("uber") || note.includes("ride") || note.includes("taxi") || catName === "transport") {
+  if (
+    note.includes("uber") ||
+    note.includes("ride") ||
+    note.includes("taxi") ||
+    catName === "transport"
+  ) {
     return Car;
   }
-  if (note.includes("shoe") || note.includes("cloth") || note.includes("grocer") || catName === "shopping") {
+  if (
+    note.includes("shoe") ||
+    note.includes("cloth") ||
+    note.includes("grocer") ||
+    catName === "shopping"
+  ) {
     return ShoppingBag;
   }
   if (note.includes("salary") || catName === "salary") {
     return Briefcase;
   }
-  if (note.includes("dinner") || note.includes("lunch") || note.includes("food") || note.includes("snack") || catName === "food") {
+  if (
+    note.includes("dinner") ||
+    note.includes("lunch") ||
+    note.includes("food") ||
+    note.includes("snack") ||
+    catName === "food"
+  ) {
     return UtensilsCrossed;
   }
   if (note.includes("netflix") || note.includes("movie") || catName === "entertainment") {
     return Clapperboard;
   }
-  if (note.includes("bill") || note.includes("electric") || note.includes("server") || catName === "bills") {
+  if (
+    note.includes("bill") ||
+    note.includes("electric") ||
+    note.includes("server") ||
+    catName === "bills"
+  ) {
     return Receipt;
   }
   if (note.includes("pharmacy") || note.includes("doctor") || catName === "health") {
     return HeartPulse;
   }
-  if (note.includes("gig") || note.includes("freelance") || note.includes("tech") || catName === "freelance") {
+  if (
+    note.includes("gig") ||
+    note.includes("freelance") ||
+    note.includes("tech") ||
+    catName === "freelance"
+  ) {
     return Laptop;
   }
   if (t.type === "transfer" || catName === "transfer") {
@@ -83,6 +115,7 @@ function getTransactionIcon(t: Transaction, custom: CustomCategory[]): LucideIco
 
 function Dashboard() {
   const navigate = useNavigate();
+  const [insightOpen, setInsightOpen] = useState(false);
   const transactions = useStore((s) => s.transactions);
   const accounts = useStore((s) => s.accounts);
   const settings = useStore((s) => s.settings);
@@ -112,6 +145,12 @@ function Dashboard() {
     .join("")
     .toUpperCase();
 
+  const accountMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const a of accounts) map.set(a.id, a.name || a.brand || "Card");
+    return map;
+  }, [accounts]);
+
   function loadSampleData() {
     const loaded = store.seedDemo();
     if (loaded) {
@@ -135,7 +174,7 @@ function Dashboard() {
               className="size-11 rounded-full object-cover ring-2 ring-white/10 shadow-card"
             />
           ) : (
-            <div className="size-11 rounded-full glass border border-white/15 flex items-center justify-center text-white shadow-card">
+            <div className="size-11 rounded-full glass border border-white/15 flex items-center justify-center text-foreground shadow-card">
               <span className="font-display text-sm font-bold">
                 {initials || <User className="size-5" />}
               </span>
@@ -151,14 +190,16 @@ function Dashboard() {
           </div>
         </Link>
 
-        <Link
-          to="/settings"
-          aria-label="Notifications"
-          className="size-11 rounded-full glass flex items-center justify-center text-white hover:text-primary active:scale-95 transition relative shadow-card border border-white/10"
+        <button
+          type="button"
+          onClick={() => setInsightOpen(true)}
+          aria-label="Smart Financial Insight"
+          title="Smart Financial Insight"
+          className="size-11 rounded-full glass flex items-center justify-center text-foreground hover:text-primary active:scale-95 transition relative shadow-card border border-white/10 group"
         >
-          <Bell className="size-5 stroke-[2.2]" />
-          <span className="size-2 rounded-full bg-primary absolute top-2.5 right-2.5 shadow-glow" />
-        </Link>
+          <Bot className="size-5.5 stroke-[2.2] transition group-hover:scale-110 text-primary" />
+          <span className="size-2 rounded-full bg-primary absolute top-2 right-2 shadow-glow animate-pulse" />
+        </button>
       </div>
 
       {/* 2. "My Cards" Section Header */}
@@ -190,10 +231,10 @@ function Dashboard() {
           search={{ type: "income", scan: undefined, edit: undefined }}
           className="glass rounded-2xl p-3 flex flex-col items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition shadow-card border border-white/10 group"
         >
-          <div className="size-11 rounded-full glass flex items-center justify-center text-white border border-white/10 transition group-hover:scale-105">
+          <div className="size-11 rounded-full glass flex items-center justify-center text-foreground border border-white/10 transition group-hover:scale-105">
             <ArrowUp className="size-5 stroke-[2.4]" />
           </div>
-          <span className="text-[11px] font-semibold text-zinc-300 group-hover:text-white tracking-tight">
+          <span className="text-[11px] font-semibold text-muted-foreground group-hover:text-foreground tracking-tight">
             Deposit
           </span>
         </Link>
@@ -204,10 +245,10 @@ function Dashboard() {
           search={{ type: "expense", scan: undefined, edit: undefined }}
           className="glass rounded-2xl p-3 flex flex-col items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition shadow-card border border-white/10 group"
         >
-          <div className="size-11 rounded-full glass flex items-center justify-center text-white border border-white/10 transition group-hover:scale-105">
+          <div className="size-11 rounded-full glass flex items-center justify-center text-foreground border border-white/10 transition group-hover:scale-105">
             <ArrowDown className="size-5 stroke-[2.4]" />
           </div>
-          <span className="text-[11px] font-semibold text-zinc-300 group-hover:text-white tracking-tight">
+          <span className="text-[11px] font-semibold text-muted-foreground group-hover:text-foreground tracking-tight">
             Withdrawal
           </span>
         </Link>
@@ -218,10 +259,10 @@ function Dashboard() {
           search={{ type: "transfer", scan: undefined, edit: undefined }}
           className="glass rounded-2xl p-3 flex flex-col items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition shadow-card border border-white/10 group"
         >
-          <div className="size-11 rounded-full glass flex items-center justify-center text-white border border-white/10 transition group-hover:scale-105">
+          <div className="size-11 rounded-full glass flex items-center justify-center text-foreground border border-white/10 transition group-hover:scale-105">
             <ArrowLeftRight className="size-5 stroke-[2.4]" />
           </div>
-          <span className="text-[11px] font-semibold text-zinc-300 group-hover:text-white tracking-tight">
+          <span className="text-[11px] font-semibold text-muted-foreground group-hover:text-foreground tracking-tight">
             Transfer
           </span>
         </Link>
@@ -231,10 +272,10 @@ function Dashboard() {
           to="/accounts"
           className="glass rounded-2xl p-3 flex flex-col items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition shadow-card border border-white/10 group"
         >
-          <div className="size-11 rounded-full glass flex items-center justify-center text-white border border-white/10 transition group-hover:scale-105">
+          <div className="size-11 rounded-full glass flex items-center justify-center text-foreground border border-white/10 transition group-hover:scale-105">
             <CreditCard className="size-5 stroke-[2.4]" />
           </div>
-          <span className="text-[11px] font-semibold text-zinc-300 group-hover:text-white tracking-tight">
+          <span className="text-[11px] font-semibold text-muted-foreground group-hover:text-foreground tracking-tight">
             Cards
           </span>
         </Link>
@@ -272,43 +313,71 @@ function Dashboard() {
               const isTransfer = t.type === "transfer";
               const Icon = getTransactionIcon(t, custom);
 
+              const accountLabel = isTransfer
+                ? `${accountMap.get(t.fromAccountId || "") || "Card"} → ${accountMap.get(t.toAccountId || "") || "Account"}`
+                : accountMap.get(t.accountId || "") || accounts[0]?.name || "Visa";
+
+              const displayTitle =
+                t.merchant || t.note || t.category || (isTransfer ? "Transfer" : "Transaction");
+
+              const noteText =
+                displayTitle === t.merchant
+                  ? t.note
+                  : displayTitle === t.note
+                    ? t.category &&
+                      t.category !== displayTitle &&
+                      t.category !== "Expense" &&
+                      t.category !== "Other"
+                      ? t.category
+                      : undefined
+                    : t.note;
+
+              const timeStr = new Date(t.date).toLocaleTimeString(undefined, {
+                hour: "numeric",
+                minute: "2-digit",
+              });
+
               return (
                 <div
                   key={t.id}
                   className="glass rounded-2xl p-3.5 flex items-center gap-3.5 border border-white/10 transition hover:bg-white/[0.04]"
                 >
                   {/* Meaningful suitable icon in frosted glass circle */}
-                  <div className="size-11 rounded-full glass border border-white/15 flex items-center justify-center shrink-0 text-white shadow-xs">
-                    <Icon className="size-5 stroke-[2.2] text-zinc-200" />
+                  <div className="size-11 rounded-full glass border border-white/15 flex items-center justify-center shrink-0 text-foreground shadow-xs">
+                    <Icon className="size-5 stroke-[2.2] text-foreground" />
                   </div>
 
-                  {/* Merchant / Description & Timestamp */}
+                  {/* Merchant / Description & Subtitle (Note + Account + Time) */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold truncate text-foreground">
-                      {t.note || t.merchant || t.category}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
-                      {new Date(t.date).toLocaleTimeString(undefined, {
-                        hour: "numeric",
-                        minute: "2-digit",
-                      })}
+                    <p className="text-sm font-semibold truncate text-foreground">{displayTitle}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5 truncate flex items-center gap-1.5">
+                      {noteText && (
+                        <>
+                          <span className="text-foreground/90 font-medium truncate max-w-[120px]">
+                            {noteText}
+                          </span>
+                          <span className="text-muted-foreground/40 shrink-0">•</span>
+                        </>
+                      )}
+                      <span className="text-muted-foreground truncate max-w-[130px]">
+                        {accountLabel}
+                      </span>
+                      <span className="text-muted-foreground/40 shrink-0">•</span>
+                      <span className="shrink-0">{timeStr}</span>
                     </p>
                   </div>
 
-                  {/* Amount & Type Tag */}
+                  {/* Amount only (nothing below it) */}
                   <div className="text-right shrink-0">
                     <p
                       className={cn(
                         "font-display text-sm min-[380px]:text-base font-bold tabular",
-                        isIncome ? "text-white" : "text-zinc-200",
+                        isIncome ? "text-primary" : "text-foreground",
                       )}
                     >
                       {isIncome ? "+" : "−"}
                       {formatMoney(t.amount, currency).replace("-", "")}
                     </p>
-                    <span className="text-[10px] text-muted-foreground tracking-wider uppercase font-medium">
-                      {isIncome ? "Deposit" : isTransfer ? "Transfer" : "Withdrawal"}
-                    </span>
                   </div>
                 </div>
               );
@@ -316,6 +385,9 @@ function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* Top-Level Real-Time Smart Insight Engine & Voice Modal */}
+      <SmartInsightModal open={insightOpen} onClose={() => setInsightOpen(false)} />
     </div>
   );
 }

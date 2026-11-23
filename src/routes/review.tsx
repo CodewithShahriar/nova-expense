@@ -83,8 +83,16 @@ function MonthlyReviewPage() {
         </div>
 
         <div className="grid grid-cols-3 gap-2 p-3">
-          <SummaryMetric label="Income" value={formatMoney(review.income, currency)} tone="income" />
-          <SummaryMetric label="Expense" value={formatMoney(review.expense, currency)} tone="danger" />
+          <SummaryMetric
+            label="Income"
+            value={formatMoney(review.income, currency)}
+            tone="income"
+          />
+          <SummaryMetric
+            label="Expense"
+            value={formatMoney(review.expense, currency)}
+            tone="danger"
+          />
           <SummaryMetric
             label="Savings"
             value={`${Math.round(review.savingsRate)}%`}

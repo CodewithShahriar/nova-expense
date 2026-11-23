@@ -21,7 +21,10 @@ export interface ReceiptImageVariants {
   scan: string;
 }
 
-export async function prepareReceiptImages(file: File, maxWidth = 1800): Promise<ReceiptImageVariants> {
+export async function prepareReceiptImages(
+  file: File,
+  maxWidth = 1800,
+): Promise<ReceiptImageVariants> {
   const preview = await fileToDataUrl(file);
   const image = await loadImage(preview);
   const scale = Math.min(1, maxWidth / image.width);
@@ -313,7 +316,9 @@ function parseItemTotalSum(lines: string[]) {
 
 function itemSectionLines(lines: string[]) {
   const start = lines.findIndex((line) => /item\s*name|qty|quantity/i.test(line));
-  const end = lines.findIndex((line, index) => index > start && /gross|subtotal|total|payment/i.test(line));
+  const end = lines.findIndex(
+    (line, index) => index > start && /gross|subtotal|total|payment/i.test(line),
+  );
 
   if (start >= 0) {
     return lines.slice(start + 1, end > start ? end : undefined);
@@ -323,7 +328,9 @@ function itemSectionLines(lines: string[]) {
 }
 
 function firstReceiptBodyIndex(lines: string[]) {
-  const index = lines.findIndex((line) => /date|time|paid|bill|invoice|qty|item\s*name/i.test(line));
+  const index = lines.findIndex((line) =>
+    /date|time|paid|bill|invoice|qty|item\s*name/i.test(line),
+  );
   return index > 0 ? index : 5;
 }
 
@@ -372,11 +379,7 @@ function cleanMerchantLine(line: string) {
 }
 
 function cleanReceiptLine(line: string) {
-  return line
-    .replace(/[–—]/g, "-")
-    .replace(/[•·]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+  return line.replace(/[–—]/g, "-").replace(/[•·]/g, " ").replace(/\s+/g, " ").trim();
 }
 
 function merchantLineCandidates(line: string) {

@@ -139,7 +139,7 @@ const demoAccounts: Account[] = [
     type: "card",
     brand: "VISA",
     number: "•••• •••• 7845",
-    balance: 8182.80,
+    balance: 8182.8,
     gradient: "linear-gradient(135deg, #2D3444 0%, #171A24 100%)",
   },
   {
@@ -622,8 +622,7 @@ export const store = {
   updateCustomCategory: (name: string, patch: CustomCategory) => {
     const existing = state.customCategories.find((c) => c.name === name);
     const duplicate = state.customCategories.find(
-      (c) =>
-        c.name !== name && !c.hidden && c.name.toLowerCase() === patch.name.toLowerCase(),
+      (c) => c.name !== name && !c.hidden && c.name.toLowerCase() === patch.name.toLowerCase(),
     );
     if (duplicate) return;
 
@@ -637,7 +636,9 @@ export const store = {
       name,
       hidden: true,
     };
-    const categoriesWithoutPrevious = state.customCategories.filter((category) => category.name !== name);
+    const categoriesWithoutPrevious = state.customCategories.filter(
+      (category) => category.name !== name,
+    );
 
     write({
       ...state,
@@ -659,7 +660,9 @@ export const store = {
           )
         : state.budgets,
       bills: rename
-        ? state.bills.map((bill) => (bill.category === name ? { ...bill, category: nextName } : bill))
+        ? state.bills.map((bill) =>
+            bill.category === name ? { ...bill, category: nextName } : bill,
+          )
         : state.bills,
       events: rename
         ? state.events.map((event) => ({
@@ -831,7 +834,9 @@ export function accountById(accounts: Account[], id?: string) {
   return accounts.find((a) => a.id === id);
 }
 
-export function defaultTransactionAccountId(accounts: Array<Pick<Account, "id" | "name" | "type">>) {
+export function defaultTransactionAccountId(
+  accounts: Array<Pick<Account, "id" | "name" | "type">>,
+) {
   return (
     accounts.find((account) => account.id === "acc-cash")?.id ||
     accounts.find((account) => account.name.toLowerCase() === "cash wallet")?.id ||

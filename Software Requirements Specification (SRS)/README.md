@@ -14,9 +14,9 @@ Nova Expense is a modern mobile-first expense tracking web application designed 
 
 # Version History
 
-* **Version 1.0** – Initial Draft.
-* **Version 1.1** – Added dashboard, analytics, and receipt scanning requirements.
-* **Version 1.2** – Refined AI insights, budgeting system, and future scalability plans.
+- **Version 1.0** – Initial Draft.
+- **Version 1.1** – Added dashboard, analytics, and receipt scanning requirements.
+- **Version 1.2** – Refined AI insights, budgeting system, and future scalability plans.
 
 ---
 
@@ -36,9 +36,9 @@ The application is designed with a premium mobile-first interface to ensure seam
 
 This document follows the IEEE SRS standard, using:
 
-* **Must** – Indicates mandatory requirements.
-* **Should** – Indicates recommended functionality.
-* **May** – Indicates optional or future enhancements.
+- **Must** – Indicates mandatory requirements.
+- **Should** – Indicates recommended functionality.
+- **May** – Indicates optional or future enhancements.
 
 ---
 
@@ -66,28 +66,28 @@ For understanding product capabilities and future scalability.
 
 Nova Expense provides:
 
-* Smart expense and income tracking
-* Multi-account financial management
-* Budget planning and monitoring
-* AI-powered financial insights
-* Bill reminder system
-* OCR-based receipt scanning
-* Real-time analytics and reporting
-* Cloud synchronization
-* Secure authentication system
-* Responsive mobile-first UI/UX
-* Category management
-* Financial activity timeline
-* Savings tracking and spending analysis
+- Smart expense and income tracking
+- Multi-account financial management
+- Budget planning and monitoring
+- AI-powered financial insights
+- Bill reminder system
+- OCR-based receipt scanning
+- Real-time analytics and reporting
+- Cloud synchronization
+- Secure authentication system
+- Responsive mobile-first UI/UX
+- Category management
+- Financial activity timeline
+- Savings tracking and spending analysis
 
 ---
 
 ## References
 
-* IEEE Standard 830-1998 (Software Requirements Specification)
-* Personal Finance Application Research Documentation
-* UI/UX Design Specifications
-* System Architecture Documentation
+- IEEE Standard 830-1998 (Software Requirements Specification)
+- Personal Finance Application Research Documentation
+- UI/UX Design Specifications
+- System Architecture Documentation
 
 ---
 
@@ -97,11 +97,11 @@ Nova Expense provides:
 
 Nova Expense is a standalone cloud-based web application built with modern frontend technologies including:
 
-* React
-* TypeScript
-* Vite
-* Tailwind CSS
-* TanStack Router
+- React
+- TypeScript
+- Vite
+- Tailwind CSS
+- TanStack Router
 
 The application integrates cloud storage, OCR systems, and analytics modules to provide intelligent financial management features.
 
@@ -111,63 +111,63 @@ The application integrates cloud storage, OCR systems, and analytics modules to 
 
 ### Expense Tracking
 
-* Add, edit, delete, and categorize expenses.
-* Track expenses in real time.
-* View expense history and daily activity.
+- Add, edit, delete, and categorize expenses.
+- Track expenses in real time.
+- View expense history and daily activity.
 
 ### Income Management
 
-* Record salary, business income, and other earnings.
-* Calculate total monthly income automatically.
+- Record salary, business income, and other earnings.
+- Calculate total monthly income automatically.
 
 ### Account Management
 
-* Manage multiple financial accounts/cards.
-* Track balances and account activity.
-* Support custom card colors and account branding.
+- Manage multiple financial accounts/cards.
+- Track balances and account activity.
+- Support custom card colors and account branding.
 
 ### Budget Management
 
-* Create monthly or category-based budgets.
-* Monitor spending limits.
-* Receive alerts when budget limits are exceeded.
+- Create monthly or category-based budgets.
+- Monitor spending limits.
+- Receive alerts when budget limits are exceeded.
 
 ### Smart Financial Insights
 
-* AI-powered spending analysis.
-* Weekly and monthly financial summaries.
-* Spending pattern detection.
-* Personalized saving recommendations.
+- AI-powered spending analysis.
+- Weekly and monthly financial summaries.
+- Spending pattern detection.
+- Personalized saving recommendations.
 
 ### Bill Reminder System
 
-* Manage recurring bills and due dates.
-* Receive payment reminders and notifications.
+- Manage recurring bills and due dates.
+- Receive payment reminders and notifications.
 
 ### Receipt Scanner
 
-* Upload or capture receipt images.
-* OCR extracts merchant name, amount, and date.
-* Auto-fill transaction forms from receipts.
+- Upload or capture receipt images.
+- OCR extracts merchant name, amount, and date.
+- Auto-fill transaction forms from receipts.
 
 ### Analytics & Reports
 
-* Visual financial reports and charts.
-* Weekly spending analysis.
-* Savings rate tracking.
-* Expense category breakdown.
+- Visual financial reports and charts.
+- Weekly spending analysis.
+- Savings rate tracking.
+- Expense category breakdown.
 
 ### Cloud Synchronization
 
-* Sync user data across devices in real time.
-* Secure cloud-based data storage.
+- Sync user data across devices in real time.
+- Secure cloud-based data storage.
 
 ### Notification System
 
-* Budget alerts
-* Bill reminders
-* Financial warnings
-* Insight notifications
+- Budget alerts
+- Bill reminders
+- Financial warnings
+- Insight notifications
 
 ---
 
@@ -175,20 +175,20 @@ The application integrates cloud storage, OCR systems, and analytics modules to 
 
 ### Guest User
 
-* Can explore landing page.
-* Must register/login to access features.
+- Can explore landing page.
+- Must register/login to access features.
 
 ### Registered User
 
-* Manage expenses and budgets.
-* Access analytics and reports.
-* Use receipt scanner and smart insights.
+- Manage expenses and budgets.
+- Access analytics and reports.
+- Use receipt scanner and smart insights.
 
 ### Admin (Future Scope)
 
-* Monitor system performance.
-* Manage users and analytics.
-* Handle reports and system configurations.
+- Monitor system performance.
+- Manage users and analytics.
+- Handle reports and system configurations.
 
 ---
 
@@ -196,46 +196,46 @@ The application integrates cloud storage, OCR systems, and analytics modules to 
 
 ### Frontend
 
-* React + TypeScript
-* Tailwind CSS
-* Vite
+- React + TypeScript
+- Tailwind CSS
+- Vite
 
 ### Backend
 
-* Node.js (Future Expandable)
-* REST API / Cloud Services
+- Node.js (Future Expandable)
+- REST API / Cloud Services
 
 ### Database
 
-* Cloud-based NoSQL Database
+- Cloud-based NoSQL Database
 
 ### Platforms
 
-* Chrome
-* Firefox
-* Edge
-* Safari
-* Android browsers
-* iOS browsers
+- Chrome
+- Firefox
+- Edge
+- Safari
+- Android browsers
+- iOS browsers
 
 ---
 
 ## Design and Implementation Constraints
 
-* Mobile-first responsive design is mandatory.
-* Cloud synchronization must work in real time.
-* OCR processing accuracy depends on receipt quality.
-* Secure authentication and encrypted data handling required.
-* System should support scalable architecture.
+- Mobile-first responsive design is mandatory.
+- Cloud synchronization must work in real time.
+- OCR processing accuracy depends on receipt quality.
+- Secure authentication and encrypted data handling required.
+- System should support scalable architecture.
 
 ---
 
 ## Assumptions and Dependencies
 
-* Internet connection is required for synchronization.
-* OCR requires camera or image upload access.
-* Users must have authenticated accounts.
-* Future AI modules may require additional cloud services.
+- Internet connection is required for synchronization.
+- OCR requires camera or image upload access.
+- Users must have authenticated accounts.
+- Future AI modules may require additional cloud services.
 
 ---
 
@@ -247,187 +247,177 @@ The application integrates cloud storage, OCR systems, and analytics modules to 
 
 ## User Authentication
 
-* The system must allow users to register using email and password.
-* The system must support secure login and logout functionality.
-* The system must support password reset functionality.
-* The system must maintain authenticated user sessions.
-* The system must securely store user credentials.
+- The system must allow users to register using email and password.
+- The system must support secure login and logout functionality.
+- The system must support password reset functionality.
+- The system must maintain authenticated user sessions.
+- The system must securely store user credentials.
 
 ---
 
 ## Dashboard System
 
-* The dashboard must display:
+- The dashboard must display:
+  - Total balance
+  - Weekly spending
+  - Savings rate
+  - Smart insights
+  - Recent activity
+  - Upcoming bills
 
-  * Total balance
-  * Weekly spending
-  * Savings rate
-  * Smart insights
-  * Recent activity
-  * Upcoming bills
-
-* The dashboard must support responsive mobile layouts.
-* The dashboard should remain clean and minimal.
-* Smart insight cards may be expandable or collapsible.
+- The dashboard must support responsive mobile layouts.
+- The dashboard should remain clean and minimal.
+- Smart insight cards may be expandable or collapsible.
 
 ---
 
 ## Expense Management
 
-* Users must be able to:
+- Users must be able to:
+  - Add expenses
+  - Edit expenses
+  - Delete expenses
+  - Categorize expenses
 
-  * Add expenses
-  * Edit expenses
-  * Delete expenses
-  * Categorize expenses
+- Expenses must support:
+  - Amount
+  - Category
+  - Date
+  - Merchant name
+  - Notes
+  - Receipt image
 
-* Expenses must support:
-
-  * Amount
-  * Category
-  * Date
-  * Merchant name
-  * Notes
-  * Receipt image
-
-* The system must calculate total expenses automatically.
+- The system must calculate total expenses automatically.
 
 ---
 
 ## Income Management
 
-* Users must be able to add and manage income transactions.
-* Income entries must update account balances automatically.
-* The system must generate monthly income summaries.
+- Users must be able to add and manage income transactions.
+- Income entries must update account balances automatically.
+- The system must generate monthly income summaries.
 
 ---
 
 ## Transfer System
 
-* Users must be able to transfer balances between accounts.
-* Transfers must update both accounts automatically.
+- Users must be able to transfer balances between accounts.
+- Transfers must update both accounts automatically.
 
 ---
 
 ## Account Management
 
-* Users must be able to:
+- Users must be able to:
+  - Create accounts
+  - Edit accounts
+  - Delete accounts
 
-  * Create accounts
-  * Edit accounts
-  * Delete accounts
+- Each account must include:
+  - Account name
+  - Account type
+  - Balance
+  - Brand name
+  - Card color
+  - Account number
 
-* Each account must include:
-
-  * Account name
-  * Account type
-  * Balance
-  * Brand name
-  * Card color
-  * Account number
-
-* The system must calculate real-time balances.
+- The system must calculate real-time balances.
 
 ---
 
 ## Receipt Scanner
 
-* Users must be able to upload receipt images.
-* Users must be able to scan receipts using device cameras.
-* OCR should extract:
+- Users must be able to upload receipt images.
+- Users must be able to scan receipts using device cameras.
+- OCR should extract:
+  - Amount
+  - Merchant name
+  - Date
 
-  * Amount
-  * Merchant name
-  * Date
-
-* Users must be able to manually correct OCR data.
-* The system should improve OCR accuracy over time.
+- Users must be able to manually correct OCR data.
+- The system should improve OCR accuracy over time.
 
 ---
 
 ## Category Management
 
-* The system must provide built-in categories.
-* Users must be able to create custom categories.
-* Categories should support custom icons/colors.
+- The system must provide built-in categories.
+- Users must be able to create custom categories.
+- Categories should support custom icons/colors.
 
 ---
 
 ## Budget Management
 
-* Users must be able to create spending budgets.
-* Budgets may be monthly or category-based.
-* The system must track budget usage percentage.
-* The system must send alerts when budgets exceed limits.
+- Users must be able to create spending budgets.
+- Budgets may be monthly or category-based.
+- The system must track budget usage percentage.
+- The system must send alerts when budgets exceed limits.
 
 ---
 
 ## Smart Insights System
 
-* The system must analyze spending patterns.
-* The system should provide:
+- The system must analyze spending patterns.
+- The system should provide:
+  - Saving recommendations
+  - Spending alerts
+  - Monthly financial summaries
+  - Overspending warnings
+  - Spending trend analysis
 
-  * Saving recommendations
-  * Spending alerts
-  * Monthly financial summaries
-  * Overspending warnings
-  * Spending trend analysis
-
-* Insights should be dynamically updated.
+- Insights should be dynamically updated.
 
 ---
 
 ## Bill Reminder System
 
-* Users must be able to create bill reminders.
-* Bills must support recurring schedules.
-* The system must notify users before due dates.
+- Users must be able to create bill reminders.
+- Bills must support recurring schedules.
+- The system must notify users before due dates.
 
 ---
 
 ## Analytics & Reporting
 
-* Users must be able to view:
+- Users must be able to view:
+  - Spending trends
+  - Savings rate
+  - Expense categories
+  - Financial summaries
 
-  * Spending trends
-  * Savings rate
-  * Expense categories
-  * Financial summaries
+- Reports should support:
+  - Daily view
+  - Weekly view
+  - Monthly view
 
-* Reports should support:
-
-  * Daily view
-  * Weekly view
-  * Monthly view
-
-* Reports should be exportable in PDF and CSV formats.
+- Reports should be exportable in PDF and CSV formats.
 
 ---
 
 ## Activity Timeline
 
-* The system must display transaction history grouped by date.
-* Daily spending totals should be visible.
-* Remaining account balance should be shown alongside daily activity.
+- The system must display transaction history grouped by date.
+- Daily spending totals should be visible.
+- Remaining account balance should be shown alongside daily activity.
 
 ---
 
 ## Cloud Synchronization
 
-* User data must sync across devices.
-* Updates must reflect in real time.
-* Data synchronization must be secure.
+- User data must sync across devices.
+- Updates must reflect in real time.
+- Data synchronization must be secure.
 
 ---
 
 ## Notification System
 
-* The system must notify users about:
-
-  * Bill due dates
-  * Budget limits
-  * Smart financial insights
-  * Important account updates
+- The system must notify users about:
+  - Bill due dates
+  - Budget limits
+  - Smart financial insights
+  - Important account updates
 
 ---
 
@@ -437,98 +427,97 @@ The application integrates cloud storage, OCR systems, and analytics modules to 
 
 ## Performance Requirements
 
-* The system must support real-time updates.
-* Dashboard loading time should remain under 3 seconds.
-* OCR processing should complete within reasonable time.
-* System should support 1000+ concurrent users.
+- The system must support real-time updates.
+- Dashboard loading time should remain under 3 seconds.
+- OCR processing should complete within reasonable time.
+- System should support 1000+ concurrent users.
 
 ---
 
 ## Security Requirements
 
-* All user data must be encrypted.
-* Authentication tokens must be securely handled.
-* Sensitive financial information must remain protected.
-* The system must implement secure session handling.
+- All user data must be encrypted.
+- Authentication tokens must be securely handled.
+- Sensitive financial information must remain protected.
+- The system must implement secure session handling.
 
 ---
 
 ## Usability Requirements
 
-* The system must provide intuitive UI/UX.
-* Mobile-first experience is mandatory.
-* Navigation should remain simple and clean.
-* Accessibility standards should be maintained.
+- The system must provide intuitive UI/UX.
+- Mobile-first experience is mandatory.
+- Navigation should remain simple and clean.
+- Accessibility standards should be maintained.
 
 ---
 
 ## Reliability and Availability
 
-* System should maintain 99.9% uptime.
-* Backup systems must exist for recovery.
-* Cloud synchronization failures should retry automatically.
+- System should maintain 99.9% uptime.
+- Backup systems must exist for recovery.
+- Cloud synchronization failures should retry automatically.
 
 ---
 
 ## Maintainability
 
-* Codebase must remain modular and scalable.
-* Components should be reusable.
-* Logging and debugging systems must exist.
+- Codebase must remain modular and scalable.
+- Components should be reusable.
+- Logging and debugging systems must exist.
 
 ---
 
 ## Scalability
 
-* Architecture should support future mobile applications.
-* System should support additional AI features in future.
-* Infrastructure should scale based on user growth.
+- Architecture should support future mobile applications.
+- System should support additional AI features in future.
+- Infrastructure should scale based on user growth.
 
 ---
 
 ## Portability
 
-* The application must work across:
+- The application must work across:
+  - Windows
+  - macOS
+  - Linux
+  - Android
+  - iOS
 
-  * Windows
-  * macOS
-  * Linux
-  * Android
-  * iOS
-
-* Cloud deployment must be supported.
+- Cloud deployment must be supported.
 
 ---
 
 # 4. System Models
 
-> * **CONTEXT DIAGRAM**
-<img src="images/context-diagram.png">
+> - **CONTEXT DIAGRAM**
+>   <img src="images/context-diagram.png">
 
 ---
 
-> * **ACTIVITY DIAGRAM**
-<img src="images/activity-diagram.png">
+> - **ACTIVITY DIAGRAM**
+>   <img src="images/activity-diagram.png">
 
 ---
 
-> * **USE CASE DIAGRAM**
-<img src="images/use-case-diagram.png">
+> - **USE CASE DIAGRAM**
+>   <img src="images/use-case-diagram.png">
 
 ---
 
-> * **SEQUENCE DIAGRAM**
-<img src="images/sequence-diagram.png">
+> - **SEQUENCE DIAGRAM**
+>   <img src="images/sequence-diagram.png">
 
 ---
 
-> * **ENTITY RELATIONSHIP DIAGRAM**
-<img src="images/er-diagram.png">
+> - **ENTITY RELATIONSHIP DIAGRAM**
+>   <img src="images/er-diagram.png">
 
 ---
 
-> * **STATE DIAGRAM**
-<img src="images/state-diagram.png">
+> - **STATE DIAGRAM**
+>   <img src="images/state-diagram.png">
 
 ---
 
@@ -536,9 +525,9 @@ The application integrates cloud storage, OCR systems, and analytics modules to 
 
 ## Assumptions
 
-* AI-powered financial analysis will continue improving.
-* Future native mobile applications may be developed.
-* Additional cloud services may be integrated.
+- AI-powered financial analysis will continue improving.
+- Future native mobile applications may be developed.
+- Additional cloud services may be integrated.
 
 ---
 
@@ -546,26 +535,26 @@ The application integrates cloud storage, OCR systems, and analytics modules to 
 
 ### AI Integration
 
-* Smarter spending predictions
-* AI-based saving suggestions
-* Automated financial health scoring
+- Smarter spending predictions
+- AI-based saving suggestions
+- Automated financial health scoring
 
 ### Banking Integration
 
-* Bank account synchronization
-* Transaction auto-import
+- Bank account synchronization
+- Transaction auto-import
 
 ### Advanced Analytics
 
-* Investment tracking
-* Financial forecasting
-* Multi-currency support
+- Investment tracking
+- Financial forecasting
+- Multi-currency support
 
 ### Premium Features
 
-* Shared family budgeting
-* Team expense tracking
-* Subscription management
+- Shared family budgeting
+- Team expense tracking
+- Subscription management
 
 ---
 
@@ -573,9 +562,9 @@ The application integrates cloud storage, OCR systems, and analytics modules to 
 
 # Hardware Requirements
 
-* Cloud-based scalable hosting infrastructure
-* Backup storage systems
-* OCR-compatible image processing support
+- Cloud-based scalable hosting infrastructure
+- Backup storage systems
+- OCR-compatible image processing support
 
 ---
 
@@ -583,24 +572,24 @@ The application integrates cloud storage, OCR systems, and analytics modules to 
 
 ### Frontend
 
-* React
-* TypeScript
-* Tailwind CSS
-* Vite
+- React
+- TypeScript
+- Tailwind CSS
+- Vite
 
 ### Backend
 
-* Node.js / Cloud Functions
+- Node.js / Cloud Functions
 
 ### Database
 
-* Cloud NoSQL Database
+- Cloud NoSQL Database
 
 ### APIs & Services
 
-* OCR Processing Service
-* Cloud Storage Service
-* Notification Service
+- OCR Processing Service
+- Cloud Storage Service
+- Notification Service
 
 ---
 
@@ -608,26 +597,26 @@ The application integrates cloud storage, OCR systems, and analytics modules to 
 
 The database must support:
 
-* User authentication data
-* Transaction records
-* Budget records
-* Bill reminders
-* Account balances
-* Analytics data
-* Receipt image storage
-* Real-time synchronization
+- User authentication data
+- Transaction records
+- Budget records
+- Bill reminders
+- Account balances
+- Analytics data
+- Receipt image storage
+- Real-time synchronization
 
 ---
 
 # Glossary
 
-| Term | Meaning |
-|---|---|
-| OCR | Optical Character Recognition |
-| Smart Insights | AI-generated financial recommendations |
-| Budget Limit | Maximum allowed spending amount |
-| Cloud Sync | Real-time synchronization across devices |
-| Analytics | Financial reports and data visualization |
+| Term           | Meaning                                  |
+| -------------- | ---------------------------------------- |
+| OCR            | Optical Character Recognition            |
+| Smart Insights | AI-generated financial recommendations   |
+| Budget Limit   | Maximum allowed spending amount          |
+| Cloud Sync     | Real-time synchronization across devices |
+| Analytics      | Financial reports and data visualization |
 
 ---
 

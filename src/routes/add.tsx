@@ -74,12 +74,13 @@ function AddTransaction() {
   const cat = getCategory(category, custom);
   const CatIcon = cat.icon;
   const noteSuggestions = useMemo(
-    () => suggestNotes(transactions, {
-      category,
-      type,
-      query: note,
-      editingId: editing?.id,
-    }),
+    () =>
+      suggestNotes(transactions, {
+        category,
+        type,
+        query: note,
+        editingId: editing?.id,
+      }),
     [transactions, category, type, note, editing?.id],
   );
   const showNoteSuggestions = noteFocused && type !== "transfer" && noteSuggestions.length > 0;
@@ -197,7 +198,9 @@ function AddTransaction() {
         const duplicate = findDuplicateTransaction(payload, transactions);
         if (duplicate) {
           toast.warning("Possible duplicate", {
-            description: `A similar ${category} transaction already exists on ${new Date(duplicate.date).toLocaleDateString(undefined, {
+            description: `A similar ${category} transaction already exists on ${new Date(
+              duplicate.date,
+            ).toLocaleDateString(undefined, {
               day: "numeric",
               month: "short",
             })}.`,
@@ -309,7 +312,8 @@ function AddTransaction() {
         onSubmit={submit}
         className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 min-[380px]:px-5 mt-4 min-[380px]:mt-5 scroll-pb-36"
         style={{
-          paddingBottom: keyboardInset > 80 ? "0.75rem" : "calc(env(safe-area-inset-bottom) + 7rem)",
+          paddingBottom:
+            keyboardInset > 80 ? "0.75rem" : "calc(env(safe-area-inset-bottom) + 7rem)",
         }}
       >
         {/* Amount */}
@@ -346,11 +350,8 @@ function AddTransaction() {
               onClick={() => setCatOpen(true)}
               className="glass w-full rounded-2xl px-3 h-14 flex items-center gap-3"
             >
-              <div
-                className="size-10 rounded-xl flex items-center justify-center"
-                style={{ background: `color-mix(in oklch, ${cat.color} 22%, transparent)` }}
-              >
-                <CatIcon className="size-5" style={{ color: cat.color }} />
+              <div className="size-10 rounded-full glass border border-white/15 flex items-center justify-center text-foreground shadow-xs">
+                <CatIcon className="size-5 stroke-[2.2]" />
               </div>
               <span className="flex-1 text-left text-sm font-semibold">{category}</span>
               <span className="text-xs text-muted-foreground">Change</span>
@@ -823,9 +824,7 @@ function alertUnusualTransaction({
 function median(values: number[]) {
   const sorted = [...values].sort((a, b) => a - b);
   const middle = Math.floor(sorted.length / 2);
-  return sorted.length % 2 === 0
-    ? (sorted[middle - 1] + sorted[middle]) / 2
-    : sorted[middle];
+  return sorted.length % 2 === 0 ? (sorted[middle - 1] + sorted[middle]) / 2 : sorted[middle];
 }
 
 function dayKey(value: string) {

@@ -81,7 +81,11 @@ export function AccountCard({
               )}
               title={showNumber ? "Hide number" : "Show number"}
             >
-              {showNumber ? <Eye className="size-4 stroke-[2.2]" /> : <EyeOff className="size-4 stroke-[2.2]" />}
+              {showNumber ? (
+                <Eye className="size-4 stroke-[2.2]" />
+              ) : (
+                <EyeOff className="size-4 stroke-[2.2]" />
+              )}
             </span>
           </div>
         </div>
@@ -119,7 +123,10 @@ export function AccountCard({
         {/* Contactless waves radiating outward: ) ) ) */}
         <div className="flex items-center justify-center pt-1">
           <svg
-            className={cn("size-6 min-[380px]:size-7 stroke-[2.4]", isNeon ? "text-black" : "text-white")}
+            className={cn(
+              "size-6 min-[380px]:size-7 stroke-[2.4]",
+              isNeon ? "text-black" : "text-white",
+            )}
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"

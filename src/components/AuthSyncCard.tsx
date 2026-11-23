@@ -1,12 +1,19 @@
 import { useMemo, useState } from "react";
 import { FirebaseError } from "firebase/app";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+  signOut,
+} from "firebase/auth";
 import {
   AlertCircle,
+  ArrowLeft,
   CheckCircle2,
   Cloud,
   Eye,
   EyeOff,
+  KeyRound,
   Loader2,
   LockKeyhole,
   LogIn,
@@ -20,17 +27,20 @@ import { getFirebaseAuth, isFirebaseConfigured } from "@/lib/firebase";
 import { useSyncStatus } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 
-type AuthMode = "login" | "signup";
+type AuthMode = "login" | "signup" | "forgot";
 type AuthAction = AuthMode | "logout" | null;
 
 export function AuthSyncCard() {
   const sync = useSyncStatus((s) => s);
   const configured = isFirebaseConfigured();
   const [mode, setMode] = useState<AuthMode>("login");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("nova:last-email") || "" : "",
+  );
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [activeAction, setActiveAction] = useState<AuthAction>(null);
+  const [resetSent, setResetSent] = useState(false);
   const [notice, setNotice] = useState<{
     title: string;
     description: string;
@@ -39,7 +49,10 @@ export function AuthSyncCard() {
 
   const busy = activeAction !== null;
   const signedIn = Boolean(sync.user);
-  const validation = useMemo(() => validateAuth(email, password), [email, password]);
+  const validation = useMemo(
+    () => (mode === "forgot" ? validateEmailOnly(email) : validateAuth(email, password)),
+    [email, password, mode],
+  );
   const status = statusCopy(sync.mode);
 
   async function submit(e: React.FormEvent) {
@@ -60,16 +73,33 @@ export function AuthSyncCard() {
     setNotice(null);
 
     try {
+      const cleanEmail = email.trim();
+      if (typeof window !== "undefined") {
+        localStorage.setItem("nova:last-email", cleanEmail);
+      }
+
       if (mode === "login") {
-        await signInWithEmailAndPassword(auth, email.trim(), password);
+        await signInWithEmailAndPassword(auth, cleanEmail, password);
         showNotice("Signed in", "Your workspace is syncing across devices.", "success");
         toast.success("Welcome back", { description: "Cloud sync is active." });
-      } else {
-        await createUserWithEmailAndPassword(auth, email.trim(), password);
+        setPassword("");
+      } else if (mode === "signup") {
+        await createUserWithEmailAndPassword(auth, cleanEmail, password);
         showNotice("Account created", "Nova is ready to sync your data.", "success");
         toast.success("Account created", { description: "Cloud sync is ready." });
+        setPassword("");
+      } else if (mode === "forgot") {
+        await sendPasswordResetEmail(auth, cleanEmail);
+        setResetSent(true);
+        showNotice(
+          "Password reset email sent",
+          "Check your inbox (and spam folder) for the password reset link.",
+          "success",
+        );
+        toast.success("Reset email sent", {
+          description: "Follow the link in your email to choose a new password.",
+        });
       }
-      setPassword("");
     } catch (err) {
       const mapped = authErrorMessage(err);
       showNotice(mapped.title, mapped.description, "error");
@@ -112,13 +142,13 @@ export function AuthSyncCard() {
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-base font-semibold">Cloud Sync</p>
+              <p className="text-base font-semibold">Cloud Sync & Auth</p>
               {(sync.mode === "loading" || sync.mode === "syncing") && (
                 <Loader2 className="size-3.5 animate-spin text-primary" />
               )}
             </div>
             <p className="mt-1 truncate text-sm text-muted-foreground">
-              {signedIn ? sync.user?.email : "Sign in to sync across devices"}
+              {signedIn ? sync.user?.email : "Sign in or reset password to sync"}
             </p>
           </div>
           <StatusBadge
@@ -131,7 +161,7 @@ export function AuthSyncCard() {
           <Notice
             tone="error"
             title="Firebase setup required"
-            description="Add VITE_FIREBASE_* values and restart Vite."
+            description="Add VITE_FIREBASE_* values in your .env file to enable cloud sync."
           />
         )}
 
@@ -144,21 +174,23 @@ export function AuthSyncCard() {
 
         {signedIn ? (
           <div className="mt-5 space-y-3">
-            <div className="rounded-2xl bg-primary/10 p-4">
+            <div className="rounded-2xl bg-primary/10 p-4 border border-primary/20">
               <div className="flex items-center gap-2 text-primary">
                 <CheckCircle2 className="size-4" />
                 <p className="text-sm font-semibold">Synced workspace</p>
               </div>
               <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                Last status: {status.description}. Changes save locally first, then sync to
-                Firebase.
+                Account: <span className="font-medium text-foreground">{sync.user?.email}</span>
+                <br />
+                Status: {status.description}. Changes save locally first, then sync automatically to
+                Firebase Firestore.
               </p>
             </div>
             <button
               type="button"
               onClick={logout}
               disabled={busy}
-              className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl glass text-sm font-semibold transition active:scale-[0.98] disabled:opacity-50"
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl glass text-sm font-semibold text-rose-600 dark:text-rose-300 hover:text-rose-700 dark:hover:text-rose-200 hover:bg-rose-500/10 transition active:scale-[0.98] disabled:opacity-50"
             >
               {activeAction === "logout" ? (
                 <Loader2 className="size-4 animate-spin" />
@@ -170,22 +202,55 @@ export function AuthSyncCard() {
           </div>
         ) : (
           <form onSubmit={submit} className="mt-5 space-y-4">
-            <div className="grid grid-cols-2 gap-1 rounded-2xl bg-muted/50 p-1">
-              <ModeButton
-                active={mode === "login"}
-                disabled={busy}
-                icon={LogIn}
-                label="Login"
-                onClick={() => setMode("login")}
-              />
-              <ModeButton
-                active={mode === "signup"}
-                disabled={busy}
-                icon={UserPlus}
-                label="Sign up"
-                onClick={() => setMode("signup")}
-              />
-            </div>
+            {mode !== "forgot" ? (
+              <div className="grid grid-cols-2 gap-1 rounded-2xl bg-muted/50 p-1">
+                <ModeButton
+                  active={mode === "login"}
+                  disabled={busy}
+                  icon={LogIn}
+                  label="Login"
+                  onClick={() => {
+                    setMode("login");
+                    setNotice(null);
+                  }}
+                />
+                <ModeButton
+                  active={mode === "signup"}
+                  disabled={busy}
+                  icon={UserPlus}
+                  label="Sign up"
+                  onClick={() => {
+                    setMode("signup");
+                    setNotice(null);
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="flex items-center justify-between pb-1 border-b border-white/10">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode("login");
+                    setNotice(null);
+                  }}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition"
+                >
+                  <ArrowLeft className="size-3.5" />
+                  <span>Back to Login</span>
+                </button>
+                <span className="text-xs font-bold text-primary flex items-center gap-1">
+                  <KeyRound className="size-3.5" />
+                  Reset Password
+                </span>
+              </div>
+            )}
+
+            {mode === "forgot" && (
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Enter your account email. Firebase will send an official password reset link
+                directly to your inbox.
+              </p>
+            )}
 
             <FieldShell icon={Mail}>
               <input
@@ -202,29 +267,49 @@ export function AuthSyncCard() {
               />
             </FieldShell>
 
-            <FieldShell icon={LockKeyhole}>
-              <input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  setNotice(null);
-                }}
-                placeholder={mode === "login" ? "Password" : "Create password"}
-                autoComplete={mode === "login" ? "current-password" : "new-password"}
-                disabled={busy}
-                className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60 disabled:opacity-60"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((value) => !value)}
-                disabled={busy}
-                className="flex size-9 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition hover:text-foreground disabled:opacity-50"
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-              </button>
-            </FieldShell>
+            {mode !== "forgot" && (
+              <>
+                <FieldShell icon={LockKeyhole}>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setNotice(null);
+                    }}
+                    placeholder={mode === "login" ? "Password" : "Create password (min 6 chars)"}
+                    autoComplete={mode === "login" ? "current-password" : "new-password"}
+                    disabled={busy}
+                    className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60 disabled:opacity-60"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((value) => !value)}
+                    disabled={busy}
+                    className="flex size-9 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition hover:text-foreground disabled:opacity-50"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </button>
+                </FieldShell>
+
+                {mode === "login" && (
+                  <div className="flex justify-end pr-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMode("forgot");
+                        setNotice(null);
+                        setResetSent(false);
+                      }}
+                      className="text-xs font-semibold text-primary hover:underline transition"
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
 
             <button
               type="submit"
@@ -235,16 +320,22 @@ export function AuthSyncCard() {
                 <Loader2 className="size-4 animate-spin" />
               ) : mode === "login" ? (
                 <LogIn className="size-4" />
-              ) : (
+              ) : mode === "signup" ? (
                 <UserPlus className="size-4" />
+              ) : (
+                <KeyRound className="size-4" />
               )}
               {activeAction === mode
                 ? mode === "login"
-                  ? "Logging in"
-                  : "Creating account"
+                  ? "Logging in..."
+                  : mode === "signup"
+                    ? "Creating account..."
+                    : "Sending reset link..."
                 : mode === "login"
                   ? "Login and sync"
-                  : "Create secure account"}
+                  : mode === "signup"
+                    ? "Create secure account"
+                    : "Send Password Reset Link"}
             </button>
           </form>
         )}
@@ -351,13 +442,18 @@ function Notice({
   );
 }
 
-function validateAuth(email: string, password: string) {
+function validateEmailOnly(email: string) {
   const trimmedEmail = email.trim();
-
   if (!trimmedEmail) return { title: "Email required", description: "Enter your email address." };
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
     return { title: "Invalid email", description: "Use a valid email address." };
   }
+  return null;
+}
+
+function validateAuth(email: string, password: string) {
+  const emailVal = validateEmailOnly(email);
+  if (emailVal) return emailVal;
   if (!password) return { title: "Password required", description: "Enter your password." };
   if (password.length < 6) {
     return { title: "Password too short", description: "Use at least 6 characters." };
@@ -376,23 +472,24 @@ function authErrorMessage(error: unknown) {
     "auth/weak-password": { title: "Weak password", description: "Use at least 6 characters." },
     "auth/user-not-found": {
       title: "Account not found",
-      description: "Create an account to enable sync.",
+      description: "No account exists with this email address.",
     },
     "auth/wrong-password": {
       title: "Wrong password",
-      description: "The password does not match this email.",
+      description: "The password does not match this email. Click 'Forgot password?' to reset it.",
     },
     "auth/invalid-credential": {
       title: "Login failed",
-      description: "Email or password is incorrect.",
+      description: "Email or password is incorrect. Click 'Forgot password?' if you forgot it.",
     },
     "auth/network-request-failed": {
       title: "Network error",
-      description: "Check your connection and try again.",
+      description: "Check your internet connection and try again.",
     },
     "auth/too-many-requests": {
       title: "Too many attempts",
-      description: "Wait a moment and try again.",
+      description:
+        "Access temporarily blocked due to repeated attempts. Wait a moment or reset your password.",
     },
   };
 

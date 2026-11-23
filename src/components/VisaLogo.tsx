@@ -1,12 +1,6 @@
 import { cn } from "@/lib/utils";
 
-export function VisaLogo({
-  className,
-  light = false,
-}: {
-  className?: string;
-  light?: boolean;
-}) {
+export function VisaLogo({ className, light = false }: { className?: string; light?: boolean }) {
   const mainColor = light ? "#FFFFFF" : "#002D72";
 
   return (

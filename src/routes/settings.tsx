@@ -92,7 +92,9 @@ function SettingsPage() {
   }
 
   function clearAll() {
-    if (confirm("Delete all app data? Accounts, cards, transactions, bills, and goals will reset.")) {
+    if (
+      confirm("Delete all app data? Accounts, cards, transactions, bills, and goals will reset.")
+    ) {
       store.resetWorkspace();
     }
   }
@@ -151,7 +153,9 @@ function SettingsPage() {
                 />
               ) : (
                 <span className="flex size-18 items-center justify-center rounded-full border border-white/25 bg-white/20 shadow-card">
-                  <span className="text-lg font-bold">{initials || <User className="size-6" />}</span>
+                  <span className="text-lg font-bold">
+                    {initials || <User className="size-6" />}
+                  </span>
                 </span>
               )}
             </button>
@@ -165,7 +169,9 @@ function SettingsPage() {
                 placeholder="Your name"
                 maxLength={40}
               />
-              <p className="mt-1 text-xs font-medium opacity-75">{workspace.records} saved records</p>
+              <p className="mt-1 text-xs font-medium opacity-75">
+                {workspace.records} saved records
+              </p>
             </div>
           </div>
           <input
@@ -196,7 +202,11 @@ function SettingsPage() {
 
       <SectionTitle title="Overview" />
       <div className="grid grid-cols-2 gap-2">
-        <MiniStat icon={Wallet} label="Balance" value={formatMoney(workspace.balance, settings.currency)} />
+        <MiniStat
+          icon={Wallet}
+          label="Balance"
+          value={formatMoney(workspace.balance, settings.currency)}
+        />
         <MiniStat icon={Database} label="Transactions" value={String(transactions.length)} />
         <MiniStat icon={CreditCard} label="Accounts" value={String(accounts.length)} />
         <MiniStat icon={Receipt} label="Bills" value={String(bills.length)} />
@@ -346,7 +356,15 @@ function ActionRow({
   );
 }
 
-function MiniStat({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
+function MiniStat({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+}) {
   return (
     <GlassCard className="p-3">
       <div className="flex items-center gap-2 text-muted-foreground">

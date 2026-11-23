@@ -114,9 +114,7 @@ export function ReceiptScanner({
       if (showToast) {
         toast.error("AI scan unavailable", {
           description:
-            error instanceof Error
-              ? error.message
-              : "Check your server API key and try again.",
+            error instanceof Error ? error.message : "Check your server API key and try again.",
         });
       }
       return null;

@@ -279,7 +279,7 @@ const fallbackAccounts: Account[] = [
     type: "card",
     brand: "VISA",
     number: "•••• •••• •••• 7845",
-    balance: 8182.80,
+    balance: 8182.8,
     gradient: "linear-gradient(135deg, #2D3444 0%, #171A24 100%)",
   },
 ];
