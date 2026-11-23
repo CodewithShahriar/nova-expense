@@ -113,14 +113,14 @@ const KEY = "pocketledger:v2";
 
 const demoAccounts: Account[] = [
   {
-    id: "acc-brac",
+    id: "acc-visa",
     order: 0,
-    name: "BRAC Bank",
+    name: "Sajibur's Visa",
     type: "card",
-    brand: "Visa Platinum",
-    number: "4829 •••• •••• 3421",
-    balance: 184500,
-    gradient: "linear-gradient(135deg, oklch(0.42 0.15 25), oklch(0.28 0.12 15))",
+    brand: "VISA",
+    number: "•••• •••• 5466",
+    balance: 786898.67,
+    gradient: "linear-gradient(135deg, #D6F92B 0%, #C4F32A 60%, #A4E316 100%)",
   },
   {
     id: "acc-bankasia",
@@ -130,7 +130,7 @@ const demoAccounts: Account[] = [
     brand: "Mastercard",
     number: "5218 •••• •••• 7788",
     balance: 92300,
-    gradient: "linear-gradient(135deg, oklch(0.4 0.14 260), oklch(0.26 0.12 275))",
+    gradient: "linear-gradient(135deg, rgba(30,35,46,0.9), rgba(18,22,30,0.95))",
   },
   {
     id: "acc-cash",
@@ -140,7 +140,7 @@ const demoAccounts: Account[] = [
     brand: "Cash",
     number: "— — —",
     balance: 4850,
-    gradient: "linear-gradient(135deg, oklch(0.38 0.12 160), oklch(0.24 0.1 170))",
+    gradient: "linear-gradient(135deg, rgba(25,32,44,0.9), rgba(15,19,26,0.95))",
   },
   {
     id: "acc-bkash",
@@ -150,7 +150,7 @@ const demoAccounts: Account[] = [
     brand: "bKash Personal",
     number: "017•• ••• 842",
     balance: 12760,
-    gradient: "linear-gradient(135deg, oklch(0.5 0.2 10), oklch(0.32 0.17 355))",
+    gradient: "linear-gradient(135deg, rgba(35,28,40,0.9), rgba(20,16,25,0.95))",
   },
 ];
 
@@ -169,7 +169,7 @@ const defaultState: AppState = {
   events: [],
   goals: [],
   customCategories: [],
-  settings: { currency: "BDT", theme: "dark", name: "You" },
+  settings: { currency: "USD", theme: "dark", name: "Sajibur Rahman" },
 };
 
 function read(): AppState {
@@ -188,7 +188,7 @@ function read(): AppState {
       events: normalizeEvents(parsed.events || []),
       goals: parsed.goals || [],
       customCategories: parsed.customCategories || [],
-      settings: { ...defaultState.settings, ...parsed.settings, currency: "BDT" },
+      settings: { ...defaultState.settings, ...parsed.settings },
     };
   } catch {
     return defaultState;
@@ -743,18 +743,16 @@ export const store = {
       toAccountId: toId,
     });
     const demo: Transaction[] = [
-      mk(0, 2, "expense", 320, "Food", "Coffee & snacks", "acc-bkash"),
-      mk(0, 5, "expense", 850, "Transport", "Uber to office", "acc-brac"),
-      mk(1, 3, "expense", 4200, "Shopping", "Running shoes", "acc-brac"),
-      mk(1, 10, "income", 85000, "Salary", "Monthly salary", "acc-brac"),
-      mk(2, 4, "expense", 1240, "Food", "Dinner — Sultan's", "acc-cash"),
-      mk(2, 8, "transfer", 5000, "Transfer", "To bKash", undefined, "acc-brac", "acc-bkash"),
-      mk(3, 2, "expense", 550, "Entertainment", "Movie night", "acc-bkash"),
-      mk(4, 6, "expense", 6200, "Bills", "Electricity", "acc-bankasia"),
-      mk(5, 1, "expense", 380, "Food", "Lunch", "acc-cash"),
-      mk(7, 12, "income", 18000, "Freelance", "Design gig", "acc-bankasia"),
-      mk(8, 5, "expense", 2800, "Shopping", "Groceries", "acc-brac"),
-      mk(10, 3, "expense", 1500, "Health", "Pharmacy", "acc-bkash"),
+      mk(0, 2, "income", 450, "Deposit", "Henry James", "acc-visa"),
+      mk(0, 4, "income", 250, "Deposit", "Chris Michael", "acc-visa"),
+      mk(0, 7, "income", 340, "Deposit", "Dinesh Maisha", "acc-visa"),
+      mk(1, 3, "expense", 120, "Food", "Starbucks Coffee", "acc-visa"),
+      mk(1, 10, "expense", 850, "Shopping", "Tech Gadgets", "acc-visa"),
+      mk(2, 4, "expense", 1240, "Bills", "Cloud Server", "acc-bankasia"),
+      mk(2, 8, "transfer", 500, "Transfer", "To bKash", undefined, "acc-visa", "acc-bkash"),
+      mk(3, 2, "expense", 65, "Entertainment", "Netflix subscription", "acc-visa"),
+      mk(4, 6, "expense", 320, "Transport", "Uber rides", "acc-visa"),
+      mk(7, 12, "income", 2400, "Salary", "Monthly Payout", "acc-visa"),
     ];
     // Apply balances for seeded transactions
     let accounts = mergeDemoAccounts(state.accounts);
