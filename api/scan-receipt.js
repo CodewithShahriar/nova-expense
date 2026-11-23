@@ -43,21 +43,97 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    return res.status(503).json({ error: "AI receipt scan is not configured." });
-  }
-
-  const { imageDataUrl, ocrText } = req.body || {};
+  const { imageDataUrl, ocrText, geminiApiKey, openaiApiKey } = req.body || {};
   if (!isDataImage(imageDataUrl)) {
     return res.status(400).json({ error: "A base64 receipt image is required." });
   }
 
+  const activeGeminiKey = geminiApiKey || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  const activeOpenaiKey = openaiApiKey || process.env.OPENAI_API_KEY;
+
+  if (!activeGeminiKey && !activeOpenaiKey) {
+    return res.status(503).json({
+      error:
+        "AI receipt scan is not configured. Add a free Google Gemini API key in Settings or set GEMINI_API_KEY in Vercel environment variables.",
+    });
+  }
+
+  // Prefer Google Gemini 2.0 / 1.5 Flash Vision (faster, free tier, highly accurate on receipts)
+  if (activeGeminiKey) {
+    try {
+      const base64Data = imageDataUrl.replace(/^data:image\/(?:png|jpeg|jpg|webp);base64,/, "");
+      const mimeType = imageDataUrl.match(/^data:(image\/[a-zA-Z+]+);base64,/)?.[1] || "image/jpeg";
+
+      const prompt = [
+        "You are an expense tracker receipt scanner. Read the receipt image carefully.",
+        "Extract:",
+        "- merchant: Store / restaurant / business name",
+        "- date: Transaction date formatted strictly as YYYY-MM-DD",
+        "- total: Final total amount paid (number in local currency e.g. BDT/Tk)",
+        "- note: Short summary of main items purchased (e.g. 'Brownie')",
+        "- payment_method: Cash, Card, Mobile Banking, or null",
+        "- category: Suggested expense category e.g. Food, Transport, Shopping, Bills, etc.",
+        "- items: Array of objects with: name (string), quantity (number or null), unit_price (number or null), total (number or null)",
+        "- confidence: Object with merchant (0-1), date (0-1), total (0-1), items (0-1)",
+        ocrText ? `Raw OCR text detected from image:\n${String(ocrText).slice(0, 3000)}` : "",
+        "Return pure valid JSON conforming strictly to the requested keys.",
+      ].join("\n");
+
+      const geminiModel = process.env.GEMINI_RECEIPT_MODEL || "gemini-2.0-flash";
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${activeGeminiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  { text: prompt },
+                  {
+                    inline_data: {
+                      mime_type: mimeType,
+                      data: base64Data,
+                    },
+                  },
+                ],
+              },
+            ],
+            generationConfig: {
+              response_mime_type: "application/json",
+              temperature: 0.1,
+            },
+          }),
+        },
+      );
+
+      const geminiData = await response.json();
+      if (!response.ok) {
+        throw new Error(geminiData?.error?.message || "Gemini vision scan failed.");
+      }
+
+      const text = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) {
+        throw new Error("Gemini returned empty response.");
+      }
+
+      return res.status(200).json(validateReceipt(JSON.parse(text)));
+    } catch (err) {
+      if (!activeOpenaiKey) {
+        return res.status(500).json({
+          error: err instanceof Error ? err.message : "Gemini receipt scan failed.",
+        });
+      }
+      // If Gemini fails but OpenAI key exists, fall through to OpenAI
+    }
+  }
+
+  // Fallback to OpenAI GPT-4o-mini
   try {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${activeOpenaiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({

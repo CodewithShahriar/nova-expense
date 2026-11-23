@@ -4,7 +4,9 @@ import {
   ArrowLeft,
   Camera,
   Check,
+  ExternalLink,
   FileImage,
+  Key,
   Loader2,
   ScanLine,
   Sparkles,
@@ -63,6 +65,35 @@ export function ReceiptScanner({
   const [reviewWarning, setReviewWarning] = useState<string | null>(null);
   const [candidateAmounts, setCandidateAmounts] = useState<number[]>([]);
   const [candidateMerchants, setCandidateMerchants] = useState<string[]>([]);
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+  const [apiKeyInput, setApiKeyInput] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("nova_gemini_api_key") || "" : "",
+  );
+  const [hasGeminiKey, setHasGeminiKey] = useState(() =>
+    typeof window !== "undefined" ? Boolean(localStorage.getItem("nova_gemini_api_key")) : false,
+  );
+
+  function saveGeminiKey(key: string) {
+    const trimmed = key.trim();
+    if (trimmed) {
+      localStorage.setItem("nova_gemini_api_key", trimmed);
+      setHasGeminiKey(true);
+      setApiKeyInput(trimmed);
+      setShowApiKeyModal(false);
+      toast.success("Google Gemini AI connected!", {
+        description: "AI Vision is now active for 100% human-grade receipt recognition.",
+      });
+      if (preview) {
+        scanWithAi(preview, rawText, true);
+      }
+    } else {
+      localStorage.removeItem("nova_gemini_api_key");
+      setHasGeminiKey(false);
+      setApiKeyInput("");
+      setShowApiKeyModal(false);
+      toast.info("Gemini API Key removed");
+    }
+  }
 
   useEffect(() => {
     const scrollY = window.scrollY;
@@ -101,7 +132,7 @@ export function ReceiptScanner({
   async function processFile(file?: File) {
     if (!file) return;
     setScanning(true);
-    setScanStatus("Optimizing image and reading text...");
+    setScanStatus("Optimizing image and reading receipt...");
     setDone(false);
     setRawText("");
     setReviewWarning(null);
@@ -112,14 +143,16 @@ export function ReceiptScanner({
       const localResult = await scanReceiptImage(images.scan);
       applyResult(localResult);
 
-      setScanStatus("Improving receipt details with AI...");
-      const aiResult = await scanWithAi(images.preview, localResult.rawText, false);
-      if (aiResult) applyResult(aiResult);
+      if (hasGeminiKey) {
+        setScanStatus("Analyzing with Gemini AI Vision...");
+        const aiResult = await scanWithAi(images.preview, localResult.rawText, false);
+        if (aiResult) applyResult(aiResult);
+      }
 
       setDone(true);
       toast.success("Receipt scanned", {
-        description: (aiResult || localResult).amount
-          ? `Detected ${formatMoney((aiResult || localResult).amount!, currency)}. Review before saving.`
+        description: localResult.amount
+          ? `Detected ${formatMoney(localResult.amount, currency)}. Review before saving.`
           : "Review the extracted details before saving.",
       });
     } catch {
@@ -136,6 +169,8 @@ export function ReceiptScanner({
     if (!imageDataUrl) return null;
 
     try {
+      setScanning(true);
+      setScanStatus("Analyzing receipt with Gemini Vision...");
       const result = await scanReceiptImageWithAi(imageDataUrl, text);
       if (showToast) {
         applyResult(result);
@@ -148,12 +183,15 @@ export function ReceiptScanner({
       return result;
     } catch (error) {
       if (showToast) {
-        toast.error("AI scan unavailable", {
-          description:
-            error instanceof Error ? error.message : "Check your server API key and try again.",
+        setShowApiKeyModal(true);
+        toast.info("Enable Free Gemini AI Vision", {
+          description: "Add a free Google Gemini API key for instant human-grade receipt scanning.",
         });
       }
       return null;
+    } finally {
+      setScanning(false);
+      setScanStatus("");
     }
   }
 
@@ -239,7 +277,21 @@ export function ReceiptScanner({
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => setShowApiKeyModal(true)}
+              title={hasGeminiKey ? "Gemini AI Vision Active" : "Add Free Gemini AI Key"}
+              className={cn(
+                "flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-medium transition active:scale-95",
+                hasGeminiKey
+                  ? "bg-primary/15 text-primary border border-primary/30 shadow-glow"
+                  : "glass text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Sparkles className="size-3 text-primary" />
+              <span>{hasGeminiKey ? "AI Active" : "Free AI"}</span>
+            </button>
             <button
               type="button"
               onClick={onClose}
@@ -505,6 +557,87 @@ export function ReceiptScanner({
           </button>
         </div>
       </div>
+
+      {showApiKeyModal && (
+        <div
+          onClick={() => setShowApiKeyModal(false)}
+          className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="glass-strong w-full max-w-[390px] rounded-3xl p-5 border border-primary/20 shadow-2xl animate-scale-in"
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="flex size-9 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                  <Sparkles className="size-4" />
+                </div>
+                <div>
+                  <h3 className="font-display text-base font-bold">Google Gemini AI</h3>
+                  <p className="text-[11px] text-muted-foreground">Free AI Vision Scanner</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowApiKeyModal(false)}
+                className="flex size-7 items-center justify-center rounded-full glass hover:bg-white/10 text-muted-foreground"
+              >
+                <X className="size-3.5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-muted-foreground leading-relaxed mb-3">
+              যেকোনো ক্যাফে, রেস্তোরাঁ বা দোকানের রসিদ থেকে ১০০% নির্ভুলভাবে টোটাল টাকা, শপের নাম ও
+              আইটেম বের করতে Google Gemini AI ব্যবহার করুন।
+            </p>
+
+            <a
+              href="https://aistudio.google.com/app/apikey"
+              target="_blank"
+              rel="noreferrer"
+              className="mb-4 flex items-center justify-between p-3 rounded-2xl bg-primary/10 border border-primary/25 text-primary text-xs font-semibold hover:bg-primary/15 transition active:scale-98"
+            >
+              <span className="flex items-center gap-2">
+                <Key className="size-3.5" />
+                Get Free Gemini API Key (Instant)
+              </span>
+              <ExternalLink className="size-3.5" />
+            </a>
+
+            <label className="block mb-4">
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold block mb-1">
+                Gemini API Key
+              </span>
+              <input
+                type="password"
+                value={apiKeyInput}
+                onChange={(e) => setApiKeyInput(e.target.value)}
+                placeholder="Paste AIzaSy... key here"
+                className="w-full rounded-xl bg-muted/60 px-3.5 py-2.5 text-xs outline-none ring-1 ring-border focus:ring-2 focus:ring-primary/50 font-mono"
+              />
+            </label>
+
+            <div className="flex gap-2">
+              {hasGeminiKey && (
+                <button
+                  type="button"
+                  onClick={() => saveGeminiKey("")}
+                  className="flex-1 h-10 rounded-xl glass text-xs font-semibold text-destructive hover:bg-destructive/10 transition"
+                >
+                  Remove Key
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => saveGeminiKey(apiKeyInput)}
+                className="flex-1 h-10 rounded-xl gradient-primary text-xs font-semibold text-primary-foreground shadow-glow active:scale-95 transition"
+              >
+                Save & Enable AI
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -67,11 +67,29 @@ export async function scanReceiptImage(imageDataUrl: string): Promise<ReceiptOcr
 export async function scanReceiptImageWithAi(
   imageDataUrl: string,
   rawText?: string,
+  customApiKey?: string,
 ): Promise<ReceiptOcrResult> {
+  const geminiKey =
+    customApiKey ||
+    (typeof window !== "undefined" ? localStorage.getItem("nova_gemini_api_key") : null);
+
+  // If client-side Gemini key is present, we can call Google Generative Language API directly
+  if (geminiKey) {
+    try {
+      return await scanWithDirectGemini(imageDataUrl, geminiKey, rawText);
+    } catch (err) {
+      console.warn("Direct Gemini scan failed, falling back to server endpoint:", err);
+    }
+  }
+
   const response = await fetch("/api/scan-receipt", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ imageDataUrl, ocrText: rawText }),
+    body: JSON.stringify({
+      imageDataUrl,
+      ocrText: rawText,
+      geminiApiKey: geminiKey || undefined,
+    }),
   });
 
   const payload = await response.json().catch(() => null);
@@ -83,6 +101,66 @@ export async function scanReceiptImageWithAi(
   }
 
   return normalizeAiReceipt(payload, rawText);
+}
+
+async function scanWithDirectGemini(
+  imageDataUrl: string,
+  apiKey: string,
+  rawText?: string,
+): Promise<ReceiptOcrResult> {
+  const base64Data = imageDataUrl.replace(/^data:image\/(?:png|jpeg|jpg|webp);base64,/, "");
+  const mimeType = imageDataUrl.match(/^data:(image\/[a-zA-Z+]+);base64,/)?.[1] || "image/jpeg";
+
+  const prompt = [
+    "You are an expense tracker receipt scanner. Read the receipt image carefully.",
+    "Extract:",
+    "- merchant: Business / shop / restaurant name",
+    "- date: Transaction date in YYYY-MM-DD format (if visible)",
+    "- total: Final total amount paid (number in local currency e.g. BDT/Tk)",
+    "- note: Short summary of main items purchased (e.g. 'Brownie')",
+    "- items: List of items with name, quantity, unit_price, total",
+    "- confidence: Object with merchant, date, total, items (numbers 0 to 1)",
+    "Respond in valid JSON only with keys: merchant, date, total, note, items, confidence.",
+    rawText ? `Raw OCR hint:\n${rawText.slice(0, 2000)}` : "",
+  ].join("\n");
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [
+        {
+          parts: [
+            { text: prompt },
+            {
+              inline_data: {
+                mime_type: mimeType,
+                data: base64Data,
+              },
+            },
+          ],
+        },
+      ],
+      generationConfig: {
+        response_mime_type: "application/json",
+        temperature: 0.1,
+      },
+    }),
+  });
+
+  const result = await response.json();
+  if (!response.ok) {
+    throw new Error(result?.error?.message || "Google Gemini AI scan failed.");
+  }
+
+  const rawJson = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!rawJson) {
+    throw new Error("Gemini returned empty structured response.");
+  }
+
+  const parsed = JSON.parse(rawJson);
+  return normalizeAiReceipt(parsed, rawText);
 }
 
 export function parseReceiptText(rawText: string): ReceiptOcrResult {
@@ -182,19 +260,22 @@ function toIsoDateFromAi(value: string) {
 
 function extractAmounts(lines: string[]): { amount?: number; candidateAmounts: number[] } {
   const priorityPatterns = [
-    { regex: /grand\s*total/i, weight: 1 },
-    { regex: /ticket\s*total/i, weight: 1.2 },
-    { regex: /total\s*payment/i, weight: 1.5 },
-    { regex: /net\s*(?:total|payable|amount)|total\s*payable|amount\s*payable/i, weight: 2 },
-    { regex: /gross\s*total/i, weight: 2.1 },
-    { regex: /bill\s*total|total\s*bill|total\s*amount/i, weight: 2.5 },
-    { regex: /(?:total|amount)\s*(?:tk|bdt|৳)/i, weight: 3 },
-    { regex: /(?:tk|bdt|৳)\s*(?:total|amount)/i, weight: 3 },
-    { regex: /\btotal\s*[:=]/i, weight: 4 },
-    { regex: /\btotal\b/i, weight: 5 },
-    { regex: /\bnet\b|\bpayable\b/i, weight: 6 },
-    { regex: /sub\s*total|subtotal/i, weight: 7 },
-    { regex: /\bpaid\b|\bcash\b|\bcard\b/i, weight: 8 },
+    { regex: /ticket\s*tota[l|1]/i, weight: 1 },
+    { regex: /tota[l|1]\s*payment/i, weight: 1.1 },
+    { regex: /grand\s*tota[l|1]/i, weight: 1.2 },
+    {
+      regex: /net\s*(?:tota[l|1]|payable|amount)|tota[l|1]\s*payable|amount\s*payable/i,
+      weight: 1.3,
+    },
+    { regex: /gross\s*tota[l|1]/i, weight: 1.4 },
+    { regex: /bi[l|1][l|1]\s*tota[l|1]|tota[l|1]\s*bi[l|1][l|1]|tota[l|1]\s*amount/i, weight: 1.5 },
+    { regex: /(?:tota[l|1]|amount)\s*(?:tk|bdt|৳)/i, weight: 2 },
+    { regex: /(?:tk|bdt|৳)\s*(?:tota[l|1]|amount)/i, weight: 2 },
+    { regex: /\btota[l|1]\s*[:=]/i, weight: 3 },
+    { regex: /\btota[l|1]\b/i, weight: 4 },
+    { regex: /\bnet\b|\bpayable\b/i, weight: 5 },
+    { regex: /sub\s*tota[l|1]|subtota[l|1]/i, weight: 6 },
+    { regex: /\bpaid\b|\bcash\b|\bcard\b/i, weight: 7 },
   ];
 
   const matched: Array<{ value: number; weight: number; line: string }> = [];
@@ -218,7 +299,7 @@ function extractAmounts(lines: string[]): { amount?: number; candidateAmounts: n
           if (valid.length > 0) {
             matched.push({ value: valid[valid.length - 1], weight, line });
           }
-        } else if (i + 1 < lines.length) {
+        } else if (i + 1 < lines.length && !isIgnoredAmountLine(lines[i + 1])) {
           const nextValues = moneyValuesFromLine(lines[i + 1]).filter((v) =>
             isValidReceiptAmount(v, lines[i + 1]),
           );
@@ -239,11 +320,20 @@ function extractAmounts(lines: string[]): { amount?: number; candidateAmounts: n
     .filter((v) => v >= 1 && v < 1_000_000)
     .sort((a, b) => b - a);
 
-  let bestAmount: number | undefined;
-  if (matched.length > 0) {
-    matched.sort((a, b) => a.weight - b.weight || b.value - a.value);
-    bestAmount = matched[0].value;
-  } else if (candidateAmounts.length > 0) {
+  const maxCandidate = candidateAmounts.length > 0 ? candidateAmounts[0] : 0;
+
+  // Filter matched: a receipt total cannot be small (like 8 from a timestamp) if realistic candidates (like 220) exist
+  const realisticMatches = matched.filter((m) => {
+    if (m.value <= 0) return false;
+    if (maxCandidate >= 50 && m.value < 10) return false;
+    if (maxCandidate >= 50 && m.value < maxCandidate * 0.25) return false;
+    return true;
+  });
+
+  realisticMatches.sort((a, b) => a.weight - b.weight || b.value - a.value);
+
+  let bestAmount: number | undefined = realisticMatches[0]?.value;
+  if (!bestAmount && candidateAmounts.length > 0) {
     bestAmount = candidateAmounts[0];
   }
 
@@ -255,19 +345,31 @@ function extractAmounts(lines: string[]): { amount?: number; candidateAmounts: n
 
 function isValidReceiptAmount(val: number, line: string): boolean {
   if (val <= 0 || val >= 1_000_000) return false;
-  if (val >= 2020 && val <= 2030 && Number.isInteger(val)) return false;
+  if (val >= 2020 && val <= 2035 && Number.isInteger(val)) return false;
+
+  // Standalone single digits (< 10) without currency symbol are almost always noise (guest count, table, hour, etc.)
+  if (
+    val < 10 &&
+    Number.isInteger(val) &&
+    !/(?:tk|bdt|৳|\$)\s*\d|\d\s*(?:tk|bdt|৳|\$)/i.test(line)
+  ) {
+    return false;
+  }
+
   // Ignore street addresses e.g. "26 Shuveccha"
   if (
-    /shuveccha|road|street|sector|house|flat|holding|lane|block|avenue|moholla|sylhet|dhaka/i.test(
+    /shuveccha|ambarkhana|road|street|sector|house|flat|holding|lane|block|avenue|moholla|sylhet|dhaka|chittagong/i.test(
       line,
     )
   ) {
     return false;
   }
+
   // Ignore Mushak / VAT form numbers e.g. "Mushak-6.3"
   if (/mushak|form|chalan|tax|tin|bin/i.test(line) && (val === 6.3 || val === 6 || val === 3)) {
     return false;
   }
+
   // Ignore table numbers or guest counts
   if (/table|guest|pax|token|slip/i.test(line)) {
     return false;
@@ -281,12 +383,24 @@ function isIgnoredAmountLine(line: string): boolean {
       line,
     ) ||
     /01[3-9]\d{8}/.test(line.replace(/[\s-]/g, "")) ||
-    /\b\d{1,2}:\d{2}(?::\d{2})?\b/.test(line)
+    /shuveccha|ambarkhana|road|street|lane|avenue|house|holding|flat|sylhet|dhaka|chittagong/i.test(
+      line,
+    )
   );
 }
 
 function moneyValuesFromLine(line: string): number[] {
-  const cleaned = line.replace(/(\d)[Oo](\d)/g, "$10$2");
+  // Strip timestamps and dates before extracting numbers so e.g. "Time:8:02 PM" or "10/27/2026" never yield money
+  let cleaned = line.replace(
+    /\b(?:time|at)\s*[:=]?\s*\d{1,2}[:.\s]\d{2}(?::\d{2})?(?:\s*[ap]m)?/gi,
+    " ",
+  );
+  cleaned = cleaned.replace(/\b\d{1,2}[:.]\d{2}(?::\d{2})?\s*(?:am|pm)?\b/gi, " ");
+  cleaned = cleaned.replace(/\b\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\b/g, " ");
+  cleaned = cleaned.replace(/\b01[3-9]\d{8}\b/g, " ");
+  cleaned = cleaned.replace(/mushak\s*[-:]?\s*6\.3/gi, " ");
+  cleaned = cleaned.replace(/(\d)[Oo](\d)/g, "$10$2");
+
   const matches = cleaned.match(/\b\d{1,6}(?:,\d{3})*(?:\.\d{1,2})?\b/g) || [];
   const results: number[] = [];
 
@@ -343,12 +457,15 @@ function extractMerchants(lines: string[]): {
 }
 
 function cleanMerchantLine(line: string): string {
-  return line
+  let cleaned = line
     .replace(/[–—*=_#~|:;[\]"]+/g, " ")
     .replace(/\s+/g, " ")
-    .trim()
-    .replace(/^[^\w]+|[^\w]+$/g, "")
     .trim();
+
+  // Strip trailing quotes, stray numbers, or punctuation (e.g. 'CUP STORY "3' -> 'CUP STORY')
+  cleaned = cleaned.replace(/[\s"'“”'`~!@#$%^&*()_+=\-[\]{}|\\:;<>?,./0-9]+$/, "").trim();
+  cleaned = cleaned.replace(/^[^\w]+/, "").trim();
+  return cleaned;
 }
 
 // -------------------------------------------------------------
@@ -420,13 +537,15 @@ function parseDate(raw: string): string | undefined {
 }
 
 function parseNote(lines: string[]): string | undefined {
+  const ignorePattern =
+    /qty|item|name|price|total|ticket|paid|bill|date|table|invoice|applied|bin|mushak|vat|tax|tin|phone|tel|guest|payment|cash|card|change|returned|amount|thank|welcome|powered|otomatic|subveccha|ambarkhana|sylhet|dhaka/i;
+
   for (const line of lines) {
-    const match = line.match(
-      /(?:[-~]?\d+\s+)?([A-Za-z]{3,}(?:\s+[A-Za-z]{3,})*)\s+\d+(?:\.\d{2})?/,
-    );
+    // Look for lines like "-1 Brownie 220.00" or "Brownie 220.00" or "1x Brownie"
+    const match = line.match(/(?:[-~]?\d+\s+)?([A-Za-z\s]{3,30})\s+\d+(?:\.\d{2})?/);
     if (match && match[1]) {
       const candidate = match[1].trim();
-      if (!/qty|item|name|price|total|ticket|paid|bill|date|table|invoice/i.test(candidate)) {
+      if (!ignorePattern.test(candidate) && candidate.length >= 3) {
         return candidate;
       }
     }
