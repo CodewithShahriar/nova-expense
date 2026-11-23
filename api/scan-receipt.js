@@ -7,6 +7,7 @@ const RECEIPT_SCHEMA = {
     total: { type: ["number", "null"] },
     payment_method: { type: ["string", "null"] },
     note: { type: ["string", "null"] },
+    category: { type: ["string", "null"] },
     items: {
       type: "array",
       items: {
@@ -53,50 +54,49 @@ export default async function handler(req, res) {
   }
 
   try {
-    const response = await fetch("https://api.openai.com/v1/responses", {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: process.env.OPENAI_RECEIPT_MODEL || "gpt-4.1-mini",
-        input: [
+        model: process.env.OPENAI_RECEIPT_MODEL || "gpt-4o-mini",
+        messages: [
           {
             role: "system",
             content:
-              "You extract receipt data for an expense tracker. Read only visible receipt facts. Prefer final paid total, cash/card paid amount, and item totals over noisy OCR. If a field is unclear, return null and lower confidence. Output JSON only.",
+              "You are an expense tracker receipt scanner. Read the receipt image carefully. Extract: merchant name, transaction date (YYYY-MM-DD), final total paid amount (number in BDT/local currency), note (brief summary of items purchased), items list, and confidence (0-1). Output JSON format matching the schema.",
           },
           {
             role: "user",
             content: [
               {
-                type: "input_text",
+                type: "text",
                 text: [
-                  "Extract merchant, date, total, payment method, item list, and a short transaction note.",
-                  "Use BDT/Taka amounts as plain numbers.",
-                  "If OCR text conflicts with the image, trust the image.",
-                  ocrText
-                    ? `Browser OCR text for cross-check:\n${String(ocrText).slice(0, 5000)}`
-                    : "",
+                  "Extract merchant name, date, final paid total amount, and items from this receipt image.",
+                  ocrText ? `OCR text detected from image:\n${String(ocrText).slice(0, 3000)}` : "",
                 ].join("\n"),
               },
               {
-                type: "input_image",
-                image_url: imageDataUrl,
-                detail: "high",
+                type: "image_url",
+                image_url: {
+                  url: imageDataUrl,
+                  detail: "high",
+                },
               },
             ],
           },
         ],
-        text: {
-          format: {
-            type: "json_schema",
-            name: "receipt_scan",
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "receipt_extraction",
             strict: true,
             schema: RECEIPT_SCHEMA,
           },
         },
+        temperature: 0.1,
       }),
     });
 
@@ -107,7 +107,7 @@ export default async function handler(req, res) {
       });
     }
 
-    const text = payload.output_text || extractOutputText(payload);
+    const text = payload.choices?.[0]?.message?.content;
     if (!text) {
       return res.status(502).json({ error: "AI receipt scan returned no structured output." });
     }
@@ -122,12 +122,6 @@ export default async function handler(req, res) {
 
 function isDataImage(value) {
   return typeof value === "string" && /^data:image\/(png|jpe?g|webp);base64,/i.test(value);
-}
-
-function extractOutputText(payload) {
-  return payload?.output
-    ?.flatMap((item) => item.content || [])
-    ?.find((content) => content.type === "output_text")?.text;
 }
 
 function validateReceipt(receipt) {

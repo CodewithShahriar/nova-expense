@@ -7,6 +7,8 @@ export interface ReceiptOcrResult {
   source?: "local" | "ai";
   confidence?: Partial<Record<"merchant" | "date" | "amount" | "items", number>>;
   items?: ReceiptItem[];
+  candidateAmounts?: number[];
+  candidateMerchants?: string[];
 }
 
 export interface ReceiptItem {
@@ -53,9 +55,7 @@ export async function scanReceiptImage(imageDataUrl: string): Promise<ReceiptOcr
 
   try {
     await worker.setParameters({
-      tessedit_pageseg_mode: "6",
-      tessedit_char_whitelist:
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789৳TkBDT.,:/#-()&' ",
+      tessedit_pageseg_mode: "4", // Single column with variable text sizes, best for receipts
       preserve_interword_spaces: "1",
     });
     const {
@@ -82,7 +82,7 @@ export async function scanReceiptImageWithAi(
     throw new Error(payload?.error || "AI receipt scan failed.");
   }
   if (!payload || typeof payload !== "object") {
-    throw new Error("AI receipt scan endpoint is not available in this dev server.");
+    throw new Error("AI receipt scan endpoint is not available.");
   }
 
   return normalizeAiReceipt(payload, rawText);
@@ -94,13 +94,20 @@ export function parseReceiptText(rawText: string): ReceiptOcrResult {
     .map((line) => line.trim())
     .filter(Boolean);
 
+  const { amount, candidateAmounts } = extractAmounts(lines);
+  const { merchant, candidateMerchants } = extractMerchants(lines);
+  const date = parseDate(lines);
+  const note = parseNote(lines);
+
   return {
     rawText,
     source: "local",
-    amount: parseAmount(lines),
-    date: parseDate(lines),
-    merchant: parseMerchant(lines),
-    note: parseNote(lines),
+    amount,
+    date,
+    merchant,
+    note,
+    candidateAmounts,
+    candidateMerchants,
   };
 }
 
@@ -141,14 +148,18 @@ function normalizeAiReceipt(
       .slice(0, 3)
       .join(", ");
 
+  const total = numberOrUndefined(payload.total);
+
   return {
     rawText: rawText || "",
     source: "ai",
-    amount: numberOrUndefined(payload.total),
+    amount: total,
     date: payload.date ? toIsoDateFromAi(payload.date) : undefined,
     merchant: payload.merchant?.trim() || undefined,
     note: note || undefined,
     items,
+    candidateAmounts: total ? [total] : [],
+    candidateMerchants: payload.merchant ? [payload.merchant.trim()] : [],
     confidence: {
       merchant: payload.confidence?.merchant,
       date: payload.confidence?.date,
@@ -168,59 +179,176 @@ function toIsoDateFromAi(value: string) {
   return toIsoDate(Number(match[1]), Number(match[2]), Number(match[3]));
 }
 
-function parseAmount(lines: string[]) {
-  const priorityMatchers = [
-    /\btotal\s*payment\b/i,
-    /\bgross\s*total\b/i,
-    /\btotal\b/i,
-    /\bnet\s*total\b/i,
-    /\bamount\b/i,
-  ];
-  const prioritized: Array<{ value: number; priority: number }> = [];
-  const fallback: number[] = [];
+// -------------------------------------------------------------
+// Robust Amount Extraction with Priority & Candidate Lists
+// -------------------------------------------------------------
 
-  lines.forEach((line, index) => {
-    if (isIgnoredAmountLine(line)) return;
+function extractAmounts(lines: string[]): { amount?: number; candidateAmounts: number[] } {
+  const priorityPatterns = [
+    { regex: /grand\s*total/i, weight: 1 },
+    { regex: /net\s*(?:payable|amount|total)|total\s*payable|amount\s*payable/i, weight: 2 },
+    { regex: /bill\s*total|total\s*bill|total\s*amount/i, weight: 3 },
+    { regex: /(?:total|amount)\s*(?:tk|bdt|৳)/i, weight: 4 },
+    { regex: /(?:tk|bdt|৳)\s*(?:total|amount)/i, weight: 4 },
+    { regex: /\btotal\s*[:=]/i, weight: 5 },
+    { regex: /\btotal\b/i, weight: 6 },
+    { regex: /\bnet\b|\bpayable\b/i, weight: 7 },
+    { regex: /sub\s*total|subtotal/i, weight: 8 },
+    { regex: /\bpaid\b|\bcash\b|\bcard\b/i, weight: 9 },
+  ];
+
+  const matched: Array<{ value: number; weight: number }> = [];
+  const candidateSet = new Set<number>();
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (isIgnoredAmountLine(line)) continue;
 
     const values = moneyValuesFromLine(line);
-    if (!values.length) return;
-
-    const priority = priorityMatchers.findIndex((matcher) => matcher.test(line));
-    if (priority >= 0) {
-      prioritized.push({ value: bestTotalCandidate(values), priority });
-      return;
+    for (const v of values) {
+      if (isValidReceiptAmount(v)) {
+        candidateSet.add(v);
+      }
     }
 
-    fallback.push(...values);
-
-    const previousLine = lines[index - 1] || "";
-    const previousPriority = priorityMatchers.findIndex((matcher) => matcher.test(previousLine));
-    if (previousPriority >= 0) {
-      prioritized.push({ value: bestTotalCandidate(values), priority: previousPriority });
+    // Check against priority patterns
+    for (const { regex, weight } of priorityPatterns) {
+      if (regex.test(line)) {
+        if (values.length > 0) {
+          // Choose the rightmost number on a total line (usually total is at end of line)
+          matched.push({ value: values[values.length - 1], weight });
+        } else if (i + 1 < lines.length) {
+          // If total label is alone, check the next line
+          const nextValues = moneyValuesFromLine(lines[i + 1]);
+          if (nextValues.length > 0) {
+            matched.push({ value: nextValues[nextValues.length - 1], weight: weight + 0.5 });
+          }
+        }
+        break;
+      }
     }
-  });
-
-  if (prioritized.length) {
-    const bestPriority = prioritized.sort((a, b) => a.priority - b.priority || b.value - a.value)[0]
-      ?.value;
-    const itemSum = parseItemTotalSum(lines);
-
-    if (itemSum && bestPriority && Math.abs(bestPriority - itemSum) > Math.max(5, itemSum * 0.08)) {
-      return itemSum;
-    }
-
-    return bestPriority;
   }
 
-  return parseItemTotalSum(lines) || fallback.sort((a, b) => b - a)[0];
+  // Candidates list: sort descending, filter realistic ranges
+  const candidateAmounts = Array.from(candidateSet)
+    .filter((v) => v >= 1 && v < 1_000_000)
+    .sort((a, b) => b - a);
+
+  let bestAmount: number | undefined;
+  if (matched.length > 0) {
+    matched.sort((a, b) => a.weight - b.weight || b.value - a.value);
+    bestAmount = matched[0].value;
+  } else if (candidateAmounts.length > 0) {
+    // If no keyword match, pick the largest candidate that is not an outlier
+    bestAmount = candidateAmounts[0];
+  }
+
+  return {
+    amount: bestAmount,
+    candidateAmounts: candidateAmounts.slice(0, 6),
+  };
 }
 
-function parseDate(lines: string[]) {
+function isValidReceiptAmount(val: number): boolean {
+  if (val <= 0 || val >= 1_000_000) return false;
+  // Ignore 4-digit years like 2024, 2025, 2026 if they are standalone
+  if (val >= 2020 && val <= 2030 && Number.isInteger(val)) return false;
+  return true;
+}
+
+function isIgnoredAmountLine(line: string): boolean {
+  // Ignore lines with phone numbers, BIN, VAT reg, invoice IDs, slip numbers, times, card numbers
+  return (
+    /phone|tel|cell|mobile|contact|bin\b|vat\s*reg|invoice\s*no|inv\s*#|order\s*#|slip\s*#|token|auth|seq|table\s*#|batch|terminal|wifi|password|pin/i.test(
+      line,
+    ) ||
+    /01[3-9]\d{8}/.test(line.replace(/[\s-]/g, "")) || // BD phone numbers
+    /\b\d{1,2}:\d{2}(?::\d{2})?\b/.test(line) // Timestamps
+  );
+}
+
+function moneyValuesFromLine(line: string): number[] {
+  // Clean line: replace O with 0 only if surrounded by digits
+  const cleaned = line.replace(/(\d)[Oo](\d)/g, "$10$2");
+  // Find numbers with decimals or integers
+  const matches = cleaned.match(/\b\d{1,6}(?:,\d{3})*(?:\.\d{1,2})?\b/g) || [];
+  const results: number[] = [];
+
+  for (const m of matches) {
+    // Strip commas
+    const normalized = m.replace(/,/g, "");
+    // Check if phone number (11 digits starting with 01)
+    if (/^01[3-9]\d{8}$/.test(normalized)) continue;
+    // Check if large integers without decimal (like 8-digit barcode)
+    if (!normalized.includes(".") && normalized.length > 6) continue;
+
+    const val = parseFloat(normalized);
+    if (!isNaN(val) && val > 0) {
+      results.push(val);
+    }
+  }
+
+  return results;
+}
+
+// -------------------------------------------------------------
+// Robust Merchant Extraction
+// -------------------------------------------------------------
+
+function extractMerchants(lines: string[]): {
+  merchant?: string;
+  candidateMerchants: string[];
+} {
+  const ignoredWords =
+    /^(?:cash\s*memo|tax\s*invoice|retail\s*invoice|sales\s*receipt|sales\s*memo|receipt|bill|invoice|chalan|welcome|customer|copy|token|order|table|counter|guest|duplicate|original|vat|bin|tin|phone|tel|mobile|date|time)$/i;
+
+  const candidates: string[] = [];
+  const headerLines = lines.slice(0, Math.min(6, lines.length));
+
+  for (const line of headerLines) {
+    const cleaned = cleanMerchantLine(line);
+    if (!cleaned) continue;
+
+    // Must have at least 3 chars and contain alphabets
+    if (cleaned.length < 3 || cleaned.length > 45 || !/[a-zA-Z]/.test(cleaned)) continue;
+
+    // Check if whole line is an ignored title
+    if (ignoredWords.test(cleaned)) continue;
+
+    // If it contains phone numbers or addresses only, skip
+    if (/^(?:address|road|dhaka|chittagong|bangladesh|phone|cell|tel|bin)/i.test(cleaned)) continue;
+
+    if (!candidates.includes(cleaned)) {
+      candidates.push(cleaned);
+    }
+  }
+
+  return {
+    merchant: candidates[0],
+    candidateMerchants: candidates.slice(0, 4),
+  };
+}
+
+function cleanMerchantLine(line: string): string {
+  return line
+    .replace(/[–—*=_#~|:;]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^[^\w]+|[^\w]+$/g, "")
+    .trim();
+}
+
+// -------------------------------------------------------------
+// Date & Note Parsing
+// -------------------------------------------------------------
+
+function parseDate(lines: string[]): string | undefined {
   const joined = lines.join(" ");
+
+  // 1. Textual Month: 23 Nov 2024, 23-Nov-2024, Nov 23, 2024
   const monthNameMatch = joined.match(
     /\b(\d{1,2})[\s./~-]*(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*[\s./~-]*(\d{2,4})\b/i,
   );
-
   if (monthNameMatch) {
     return toIsoDate(
       Number(monthNameMatch[3]),
@@ -229,9 +357,10 @@ function parseDate(lines: string[]) {
     );
   }
 
+  // 2. Numeric: DD/MM/YYYY or YYYY-MM-DD
   const numericMatch =
-    joined.match(/\b(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})\b/) ||
-    joined.match(/\b(\d{4})[/-](\d{1,2})[/-](\d{1,2})\b/);
+    joined.match(/\b(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})\b/) ||
+    joined.match(/\b(\d{4})[./-](\d{1,2})[./-](\d{1,2})\b/);
 
   if (!numericMatch) return undefined;
 
@@ -242,99 +371,18 @@ function parseDate(lines: string[]) {
   return toIsoDate(Number(numericMatch[3]), Number(numericMatch[2]), Number(numericMatch[1]));
 }
 
-function parseMerchant(lines: string[]) {
-  const ignored =
-    /phone|mobile|bin|invoice|date|time|paid|bill|receipt|cash memo|vat|total|amount|guest|payment|returned|wifi|password|counter|thank|powered/i;
+function toIsoDate(year: number, month: number | undefined, day: number): string | undefined {
+  if (!month || isNaN(month) || isNaN(day) || isNaN(year)) return undefined;
+  const fullYear = year < 100 ? 2000 + year : year;
+  if (fullYear < 2010 || fullYear > 2035) return undefined;
+  if (month < 1 || month > 12 || day < 1 || day > 31) return undefined;
 
-  const headerLines = lines.slice(0, Math.max(3, firstReceiptBodyIndex(lines)));
-  const candidates = headerLines
-    .flatMap((line) => merchantLineCandidates(line))
-    .map(cleanMerchantLine)
-    .filter(
-      (line) =>
-        line.length >= 3 &&
-        line.length <= 48 &&
-        /[a-z]/i.test(line) &&
-        !ignored.test(line) &&
-        !/\d{5,}/.test(line) &&
-        !hasTooManyTinyWords(line),
-    )
-    .map((line) => ({ line, score: merchantScore(line) }))
-    .sort((a, b) => b.score - a.score);
-
-  return candidates[0]?.line;
+  const date = new Date(Date.UTC(fullYear, month - 1, day));
+  if (isNaN(date.getTime())) return undefined;
+  return date.toISOString();
 }
 
-function parseNote(lines: string[]) {
-  const itemLines = itemSectionLines(lines)
-    .map(cleanItemLine)
-    .filter((line) => line.length >= 3 && /[a-z]{3,}/i.test(line))
-    .slice(0, 3);
-
-  return itemLines.length ? itemLines.join(", ") : undefined;
-}
-
-function isIgnoredAmountLine(line: string) {
-  return /phone|mobile|bin|invoice|guest|returned|account|card|number\s*of|qty|quantity|item\s*name|price\s*t?\.?\s*price/i.test(
-    line,
-  );
-}
-
-function moneyValuesFromLine(line: string) {
-  const hasMoneySignal = /৳|tk|bdt|total|amount|cash|payment|\d+\.\d{1,2}/i.test(line);
-  if (!hasMoneySignal) return [];
-
-  const matches = line.match(/\d+(?:[, ]?\d{3})*(?:\.\d{1,2})?/g) || [];
-  return matches
-    .map((match) => {
-      const normalized = match.replace(/[, ]/g, "");
-      if (!normalized.includes(".") && normalized.length >= 7) return undefined;
-      const value = Number(normalized);
-      return Number.isFinite(value) && value > 0 ? value : undefined;
-    })
-    .filter((value): value is number => typeof value === "number");
-}
-
-function bestTotalCandidate(values: number[]) {
-  const realisticValues = values.filter((value) => value >= 1 && value < 1_000_000);
-  return Math.max(...(realisticValues.length ? realisticValues : values));
-}
-
-function parseItemTotalSum(lines: string[]) {
-  const itemTotals = itemSectionLines(lines)
-    .filter((line) => !isIgnoredAmountLine(line) && !isIgnoredNoteLine(line))
-    .map((line) => moneyValuesFromLine(line))
-    .filter((values) => values.length >= 2)
-    .map((values) => values[values.length - 1])
-    .filter((value) => value > 0 && value < 100_000);
-
-  if (!itemTotals.length) return undefined;
-
-  const sum = itemTotals.reduce((total, value) => total + value, 0);
-  return Number(sum.toFixed(2));
-}
-
-function itemSectionLines(lines: string[]) {
-  const start = lines.findIndex((line) => /item\s*name|qty|quantity/i.test(line));
-  const end = lines.findIndex(
-    (line, index) => index > start && /gross|subtotal|total|payment/i.test(line),
-  );
-
-  if (start >= 0) {
-    return lines.slice(start + 1, end > start ? end : undefined);
-  }
-
-  return lines.filter((line) => /^-?\d+\s+/.test(cleanReceiptLine(line)));
-}
-
-function firstReceiptBodyIndex(lines: string[]) {
-  const index = lines.findIndex((line) =>
-    /date|time|paid|bill|invoice|qty|item\s*name/i.test(line),
-  );
-  return index > 0 ? index : 5;
-}
-
-function monthFromName(month: string) {
+function monthFromName(month: string): number | undefined {
   const key = month.toLowerCase().slice(0, 3);
   const months: Record<string, number> = {
     jan: 1,
@@ -353,105 +401,50 @@ function monthFromName(month: string) {
   return months[key];
 }
 
-function toIsoDate(year: number, month: number | undefined, day: number) {
-  if (!month) return undefined;
-  const fullYear = year < 100 ? 2000 + year : year;
-  const date = new Date(Date.UTC(fullYear, month - 1, day));
-  if (
-    Number.isNaN(date.getTime()) ||
-    date.getUTCFullYear() !== fullYear ||
-    date.getUTCMonth() !== month - 1 ||
-    date.getUTCDate() !== day
-  ) {
-    return undefined;
-  }
-  return date.toISOString();
+function parseNote(lines: string[]): string | undefined {
+  const ignoredPatterns =
+    /phone|mobile|bin|vat|invoice|date|time|paid|bill|receipt|gross|total|payment|cash|card|guest|thank|powered|wifi|subtotal/i;
+
+  const validLines = lines
+    .filter((l) => !ignoredPatterns.test(l) && /[a-zA-Z]{3,}/.test(l) && l.length <= 40)
+    .slice(2, 5);
+
+  return validLines.length ? validLines.join(", ") : undefined;
 }
 
-function cleanMerchantLine(line: string) {
-  return cleanReceiptLine(line)
-    .replace(/[=_*~|]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/^[^\w]+|[^\w]+$/g, "")
-    .replace(/^(?:[a-z]\s+){1,3}(?=[A-Z][a-z])/i, "")
-    .trim();
-}
-
-function cleanReceiptLine(line: string) {
-  return line.replace(/[–—]/g, "-").replace(/[•·]/g, " ").replace(/\s+/g, " ").trim();
-}
-
-function merchantLineCandidates(line: string) {
-  const spacedSegments = line
-    .split(/\s{2,}/)
-    .map((segment) => segment.trim())
-    .filter(Boolean);
-
-  return spacedSegments.length > 1 ? spacedSegments : [line];
-}
-
-function merchantScore(line: string) {
-  const words = line.split(/\s+/).filter(Boolean);
-  const titleWords = words.filter((word) => /^[A-Z][a-z]+$/.test(word)).length;
-  const tinyWords = words.filter((word) => word.length <= 2).length;
-
-  return (
-    titleWords * 12 +
-    (words.length >= 2 && words.length <= 4 ? 18 : 0) +
-    (/[,&:#]/.test(line) ? -8 : 0) +
-    tinyWords * -10 +
-    Math.max(0, 24 - line.length)
-  );
-}
-
-function hasTooManyTinyWords(line: string) {
-  const words = line.split(/\s+/).filter(Boolean);
-  return words.length >= 4 && words.filter((word) => word.length <= 2).length >= 3;
-}
-
-function cleanItemLine(line: string) {
-  const cleaned = cleanReceiptLine(line);
-  if (isIgnoredNoteLine(cleaned) || isIgnoredAmountLine(cleaned)) return "";
-
-  const quantityMatch = cleaned.match(/-?\d+\s+[A-Za-z(][A-Za-z0-9\s()&'/-]*/);
-  if (!quantityMatch) return "";
-
-  return quantityMatch[0]
-    .replace(/^-?\d+\s+/, "")
-    .replace(/\b\d+(?:\.\d{1,2})?\b.*$/g, "")
-    .replace(/\b(?:ea|ee|a|cw)\b$/i, "")
-    .replace(/\bi50ml\b/i, "150ml")
-    .replace(/\s+/g, " ")
-    .replace(/^[^\w(]+|[^\w)]+$/g, "")
-    .trim();
-}
-
-function isIgnoredNoteLine(line: string) {
-  return /phone|mobile|bin|invoice|date|time|paid|bill|receipt|vat|gross|total|payment|cash|returned|guest|thank|powered|wifi|password|counter/i.test(
-    line,
-  );
-}
+// -------------------------------------------------------------
+// Image Enhancement (Smooth contrast, no harsh clipping)
+// -------------------------------------------------------------
 
 function enhanceReceiptCanvas(ctx: CanvasRenderingContext2D, width: number, height: number) {
   const imageData = ctx.getImageData(0, 0, width, height);
   const data = imageData.data;
 
-  for (let index = 0; index < data.length; index += 4) {
-    const gray = data[index] * 0.299 + data[index + 1] * 0.587 + data[index + 2] * 0.114;
-    const contrasted = Math.max(0, Math.min(255, (gray - 128) * 1.45 + 142));
-    const sharpened = contrasted > 184 ? 255 : contrasted < 92 ? 0 : contrasted;
+  // Calculate average brightness
+  let totalBrightness = 0;
+  const pixelCount = data.length / 4;
+  for (let i = 0; i < data.length; i += 4) {
+    totalBrightness += data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+  }
+  const avg = totalBrightness / pixelCount;
 
-    data[index] = sharpened;
-    data[index + 1] = sharpened;
-    data[index + 2] = sharpened;
+  // If image is dark, add gentle brightness offset
+  const boost = avg < 130 ? (130 - avg) * 0.45 : 0;
+
+  for (let i = 0; i < data.length; i += 4) {
+    const gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114 + boost;
+    // Contrast multiplier 1.35 centered around 128 (smooth, never destructive)
+    const contrasted = Math.max(0, Math.min(255, (gray - 128) * 1.35 + 128));
+    data[i] = contrasted;
+    data[i + 1] = contrasted;
+    data[i + 2] = contrasted;
   }
 
   ctx.putImageData(imageData, 0, 0);
 }
 
-function fileToDataUrl(file: File) {
-  return new Promise<string>((resolve, reject) => {
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);
     reader.onerror = reject;
@@ -459,8 +452,8 @@ function fileToDataUrl(file: File) {
   });
 }
 
-function loadImage(src: string) {
-  return new Promise<HTMLImageElement>((resolve, reject) => {
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
     const image = new Image();
     image.onload = () => resolve(image);
     image.onerror = reject;

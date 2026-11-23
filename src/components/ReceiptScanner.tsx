@@ -61,6 +61,8 @@ export function ReceiptScanner({
   const [accountId, setAccountId] = useState(defaultTransactionAccountId(accounts));
   const [note, setNote] = useState("");
   const [reviewWarning, setReviewWarning] = useState<string | null>(null);
+  const [candidateAmounts, setCandidateAmounts] = useState<number[]>([]);
+  const [candidateMerchants, setCandidateMerchants] = useState<string[]>([]);
 
   useEffect(() => {
     const scrollY = window.scrollY;
@@ -166,6 +168,12 @@ export function ReceiptScanner({
     } else if (result.note) {
       setNote(result.note);
     }
+    if (result.candidateAmounts && result.candidateAmounts.length > 0) {
+      setCandidateAmounts(result.candidateAmounts);
+    }
+    if (result.candidateMerchants && result.candidateMerchants.length > 0) {
+      setCandidateMerchants(result.candidateMerchants);
+    }
 
     const missing = [
       !result.amount && "amount",
@@ -174,7 +182,7 @@ export function ReceiptScanner({
     ].filter(Boolean);
     setReviewWarning(missing.length ? "Please review extracted details" : null);
 
-    if (!result.amount) {
+    if (!result.amount && (!result.candidateAmounts || result.candidateAmounts.length === 0)) {
       toast.error("Could not detect amount", {
         description: "Enter the total manually before saving.",
       });
@@ -340,23 +348,76 @@ export function ReceiptScanner({
 
         <div className="mt-4 space-y-3">
           <div className="grid grid-cols-1 min-[360px]:grid-cols-2 gap-2">
-            <Field label="Amount (৳)">
-              <input
-                value={amount}
-                onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
-                inputMode="decimal"
-                placeholder="0"
-                className="w-full bg-transparent text-sm font-semibold outline-none tabular"
-              />
-            </Field>
-            <Field label="Merchant">
-              <input
-                value={merchant}
-                onChange={(e) => setMerchant(e.target.value)}
-                placeholder="Store / Shop name"
-                className="w-full bg-transparent text-sm outline-none"
-              />
-            </Field>
+            <div>
+              <Field label="Amount (৳)">
+                <input
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
+                  inputMode="decimal"
+                  placeholder="0"
+                  className="w-full bg-transparent text-sm font-bold outline-none tabular text-foreground"
+                />
+              </Field>
+              {candidateAmounts.length > 0 && (
+                <div className="mt-1.5 flex flex-wrap items-center gap-1.5 px-1">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Detected:
+                  </span>
+                  {candidateAmounts.map((amt) => {
+                    const isSelected = parseFloat(amount) === amt;
+                    return (
+                      <button
+                        key={amt}
+                        type="button"
+                        onClick={() => setAmount(String(amt))}
+                        className={cn(
+                          "rounded-lg px-2 py-0.5 text-xs font-bold transition active:scale-95",
+                          isSelected
+                            ? "gradient-primary text-primary-foreground shadow-glow"
+                            : "glass hover:bg-white/10 text-foreground",
+                        )}
+                      >
+                        ৳ {amt}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <Field label="Merchant">
+                <input
+                  value={merchant}
+                  onChange={(e) => setMerchant(e.target.value)}
+                  placeholder="Store / Shop name"
+                  className="w-full bg-transparent text-sm outline-none"
+                />
+              </Field>
+              {candidateMerchants.length > 0 && (
+                <div className="mt-1.5 flex flex-wrap items-center gap-1.5 px-1">
+                  {candidateMerchants.map((m) => {
+                    const isSelected = merchant.toLowerCase() === m.toLowerCase();
+                    return (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => setMerchant(m)}
+                        className={cn(
+                          "max-w-[140px] truncate rounded-lg px-2 py-0.5 text-xs font-medium transition active:scale-95",
+                          isSelected
+                            ? "gradient-primary text-primary-foreground"
+                            : "glass hover:bg-white/10 text-muted-foreground hover:text-foreground",
+                        )}
+                        title={m}
+                      >
+                        {m}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
 
           <div>
