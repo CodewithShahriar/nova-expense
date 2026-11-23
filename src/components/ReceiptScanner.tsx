@@ -620,8 +620,8 @@ export function ReceiptScanner({
             </div>
 
             <p className="text-xs text-muted-foreground leading-relaxed mb-3">
-              যেকোনো ক্যাফে, রেস্তোরাঁ বা দোকানের রসিদ থেকে ১০০% নির্ভুলভাবে টোটাল টাকা, শপের নাম ও
-              আইটেম বের করতে Google Gemini AI ব্যবহার করুন।
+              Extract merchant name, exact total, transaction date, and purchased items with 100%
+              precision using Google Gemini AI Vision.
             </p>
 
             <a
