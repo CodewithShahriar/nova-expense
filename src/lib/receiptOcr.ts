@@ -25,27 +25,27 @@ export interface ReceiptImageVariants {
 
 export async function prepareReceiptImages(
   file: File,
-  maxWidth = 1800,
+  maxWidth = 2200,
 ): Promise<ReceiptImageVariants> {
   const preview = await fileToDataUrl(file);
   const image = await loadImage(preview);
   const scale = Math.min(1, maxWidth / image.width);
   const width = Math.round(image.width * scale);
   const height = Math.round(image.height * scale);
+
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext("2d")!;
   ctx.drawImage(image, 0, 0, width, height);
-  enhanceReceiptCanvas(ctx, width, height);
 
   return {
     preview,
-    scan: canvas.toDataURL("image/jpeg", 0.92),
+    scan: canvas.toDataURL("image/jpeg", 0.95),
   };
 }
 
-export async function resizeReceiptImage(file: File, maxWidth = 1800): Promise<string> {
+export async function resizeReceiptImage(file: File, maxWidth = 2200): Promise<string> {
   return prepareReceiptImages(file, maxWidth).then((images) => images.scan);
 }
 
@@ -54,10 +54,7 @@ export async function scanReceiptImage(imageDataUrl: string): Promise<ReceiptOcr
   const worker = await createWorker("eng");
 
   try {
-    await worker.setParameters({
-      tessedit_pageseg_mode: "4", // Single column with variable text sizes, best for receipts
-      preserve_interword_spaces: "1",
-    });
+    // Default page segmentation (PSM 3) handles receipt columns and totals best
     const {
       data: { text },
     } = await worker.recognize(imageDataUrl);
@@ -96,7 +93,7 @@ export function parseReceiptText(rawText: string): ReceiptOcrResult {
 
   const { amount, candidateAmounts } = extractAmounts(lines);
   const { merchant, candidateMerchants } = extractMerchants(lines);
-  const date = parseDate(lines);
+  const date = parseDate(rawText);
   const note = parseNote(lines);
 
   return {
@@ -180,24 +177,27 @@ function toIsoDateFromAi(value: string) {
 }
 
 // -------------------------------------------------------------
-// Robust Amount Extraction with Priority & Candidate Lists
+// Accurate Amount & Total Extraction
 // -------------------------------------------------------------
 
 function extractAmounts(lines: string[]): { amount?: number; candidateAmounts: number[] } {
   const priorityPatterns = [
     { regex: /grand\s*total/i, weight: 1 },
-    { regex: /net\s*(?:payable|amount|total)|total\s*payable|amount\s*payable/i, weight: 2 },
-    { regex: /bill\s*total|total\s*bill|total\s*amount/i, weight: 3 },
-    { regex: /(?:total|amount)\s*(?:tk|bdt|৳)/i, weight: 4 },
-    { regex: /(?:tk|bdt|৳)\s*(?:total|amount)/i, weight: 4 },
-    { regex: /\btotal\s*[:=]/i, weight: 5 },
-    { regex: /\btotal\b/i, weight: 6 },
-    { regex: /\bnet\b|\bpayable\b/i, weight: 7 },
-    { regex: /sub\s*total|subtotal/i, weight: 8 },
-    { regex: /\bpaid\b|\bcash\b|\bcard\b/i, weight: 9 },
+    { regex: /ticket\s*total/i, weight: 1.2 },
+    { regex: /total\s*payment/i, weight: 1.5 },
+    { regex: /net\s*(?:total|payable|amount)|total\s*payable|amount\s*payable/i, weight: 2 },
+    { regex: /gross\s*total/i, weight: 2.1 },
+    { regex: /bill\s*total|total\s*bill|total\s*amount/i, weight: 2.5 },
+    { regex: /(?:total|amount)\s*(?:tk|bdt|৳)/i, weight: 3 },
+    { regex: /(?:tk|bdt|৳)\s*(?:total|amount)/i, weight: 3 },
+    { regex: /\btotal\s*[:=]/i, weight: 4 },
+    { regex: /\btotal\b/i, weight: 5 },
+    { regex: /\bnet\b|\bpayable\b/i, weight: 6 },
+    { regex: /sub\s*total|subtotal/i, weight: 7 },
+    { regex: /\bpaid\b|\bcash\b|\bcard\b/i, weight: 8 },
   ];
 
-  const matched: Array<{ value: number; weight: number }> = [];
+  const matched: Array<{ value: number; weight: number; line: string }> = [];
   const candidateSet = new Set<number>();
 
   for (let i = 0; i < lines.length; i++) {
@@ -206,22 +206,28 @@ function extractAmounts(lines: string[]): { amount?: number; candidateAmounts: n
 
     const values = moneyValuesFromLine(line);
     for (const v of values) {
-      if (isValidReceiptAmount(v)) {
+      if (isValidReceiptAmount(v, line)) {
         candidateSet.add(v);
       }
     }
 
-    // Check against priority patterns
     for (const { regex, weight } of priorityPatterns) {
       if (regex.test(line)) {
         if (values.length > 0) {
-          // Choose the rightmost number on a total line (usually total is at end of line)
-          matched.push({ value: values[values.length - 1], weight });
+          const valid = values.filter((v) => isValidReceiptAmount(v, line));
+          if (valid.length > 0) {
+            matched.push({ value: valid[valid.length - 1], weight, line });
+          }
         } else if (i + 1 < lines.length) {
-          // If total label is alone, check the next line
-          const nextValues = moneyValuesFromLine(lines[i + 1]);
+          const nextValues = moneyValuesFromLine(lines[i + 1]).filter((v) =>
+            isValidReceiptAmount(v, lines[i + 1]),
+          );
           if (nextValues.length > 0) {
-            matched.push({ value: nextValues[nextValues.length - 1], weight: weight + 0.5 });
+            matched.push({
+              value: nextValues[nextValues.length - 1],
+              weight: weight + 0.5,
+              line: lines[i + 1],
+            });
           }
         }
         break;
@@ -229,7 +235,6 @@ function extractAmounts(lines: string[]): { amount?: number; candidateAmounts: n
     }
   }
 
-  // Candidates list: sort descending, filter realistic ranges
   const candidateAmounts = Array.from(candidateSet)
     .filter((v) => v >= 1 && v < 1_000_000)
     .sort((a, b) => b - a);
@@ -239,7 +244,6 @@ function extractAmounts(lines: string[]): { amount?: number; candidateAmounts: n
     matched.sort((a, b) => a.weight - b.weight || b.value - a.value);
     bestAmount = matched[0].value;
   } else if (candidateAmounts.length > 0) {
-    // If no keyword match, pick the largest candidate that is not an outlier
     bestAmount = candidateAmounts[0];
   }
 
@@ -249,37 +253,46 @@ function extractAmounts(lines: string[]): { amount?: number; candidateAmounts: n
   };
 }
 
-function isValidReceiptAmount(val: number): boolean {
+function isValidReceiptAmount(val: number, line: string): boolean {
   if (val <= 0 || val >= 1_000_000) return false;
-  // Ignore 4-digit years like 2024, 2025, 2026 if they are standalone
   if (val >= 2020 && val <= 2030 && Number.isInteger(val)) return false;
+  // Ignore street addresses e.g. "26 Shuveccha"
+  if (
+    /shuveccha|road|street|sector|house|flat|holding|lane|block|avenue|moholla|sylhet|dhaka/i.test(
+      line,
+    )
+  ) {
+    return false;
+  }
+  // Ignore Mushak / VAT form numbers e.g. "Mushak-6.3"
+  if (/mushak|form|chalan|tax|tin|bin/i.test(line) && (val === 6.3 || val === 6 || val === 3)) {
+    return false;
+  }
+  // Ignore table numbers or guest counts
+  if (/table|guest|pax|token|slip/i.test(line)) {
+    return false;
+  }
   return true;
 }
 
 function isIgnoredAmountLine(line: string): boolean {
-  // Ignore lines with phone numbers, BIN, VAT reg, invoice IDs, slip numbers, times, card numbers
   return (
     /phone|tel|cell|mobile|contact|bin\b|vat\s*reg|invoice\s*no|inv\s*#|order\s*#|slip\s*#|token|auth|seq|table\s*#|batch|terminal|wifi|password|pin/i.test(
       line,
     ) ||
-    /01[3-9]\d{8}/.test(line.replace(/[\s-]/g, "")) || // BD phone numbers
-    /\b\d{1,2}:\d{2}(?::\d{2})?\b/.test(line) // Timestamps
+    /01[3-9]\d{8}/.test(line.replace(/[\s-]/g, "")) ||
+    /\b\d{1,2}:\d{2}(?::\d{2})?\b/.test(line)
   );
 }
 
 function moneyValuesFromLine(line: string): number[] {
-  // Clean line: replace O with 0 only if surrounded by digits
   const cleaned = line.replace(/(\d)[Oo](\d)/g, "$10$2");
-  // Find numbers with decimals or integers
   const matches = cleaned.match(/\b\d{1,6}(?:,\d{3})*(?:\.\d{1,2})?\b/g) || [];
   const results: number[] = [];
 
   for (const m of matches) {
-    // Strip commas
     const normalized = m.replace(/,/g, "");
-    // Check if phone number (11 digits starting with 01)
     if (/^01[3-9]\d{8}$/.test(normalized)) continue;
-    // Check if large integers without decimal (like 8-digit barcode)
     if (!normalized.includes(".") && normalized.length > 6) continue;
 
     const val = parseFloat(normalized);
@@ -292,7 +305,7 @@ function moneyValuesFromLine(line: string): number[] {
 }
 
 // -------------------------------------------------------------
-// Robust Merchant Extraction
+// Accurate Merchant & Store Name Extraction
 // -------------------------------------------------------------
 
 function extractMerchants(lines: string[]): {
@@ -308,15 +321,15 @@ function extractMerchants(lines: string[]): {
   for (const line of headerLines) {
     const cleaned = cleanMerchantLine(line);
     if (!cleaned) continue;
-
-    // Must have at least 3 chars and contain alphabets
     if (cleaned.length < 3 || cleaned.length > 45 || !/[a-zA-Z]/.test(cleaned)) continue;
-
-    // Check if whole line is an ignored title
     if (ignoredWords.test(cleaned)) continue;
-
-    // If it contains phone numbers or addresses only, skip
-    if (/^(?:address|road|dhaka|chittagong|bangladesh|phone|cell|tel|bin)/i.test(cleaned)) continue;
+    if (
+      /^(?:address|road|dhaka|chittagong|sylhet|bangladesh|phone|cell|tel|bin|mushak|table)/i.test(
+        cleaned,
+      )
+    ) {
+      continue;
+    }
 
     if (!candidates.includes(cleaned)) {
       candidates.push(cleaned);
@@ -331,7 +344,7 @@ function extractMerchants(lines: string[]): {
 
 function cleanMerchantLine(line: string): string {
   return line
-    .replace(/[–—*=_#~|:;]+/g, " ")
+    .replace(/[–—*=_#~|:;[\]"]+/g, " ")
     .replace(/\s+/g, " ")
     .trim()
     .replace(/^[^\w]+|[^\w]+$/g, "")
@@ -339,108 +352,86 @@ function cleanMerchantLine(line: string): string {
 }
 
 // -------------------------------------------------------------
-// Date & Note Parsing
+// Date & Item Note Extraction
 // -------------------------------------------------------------
 
-function parseDate(lines: string[]): string | undefined {
-  const joined = lines.join(" ");
+function parseDate(raw: string): string | undefined {
+  // Numeric: 10/27/2026, 27/10/2026, 2026-10-27
+  const numericMatch = raw.match(/\b(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})\b/);
+  if (numericMatch) {
+    const n1 = Number(numericMatch[1]);
+    const n2 = Number(numericMatch[2]);
+    const year = Number(numericMatch[3]);
 
-  // 1. Textual Month: 23 Nov 2024, 23-Nov-2024, Nov 23, 2024
-  const monthNameMatch = joined.match(
+    let day = n1;
+    let month = n2;
+
+    if (n1 <= 12 && n2 > 12) {
+      month = n1;
+      day = n2;
+    } else if (n1 > 12 && n2 <= 12) {
+      day = n1;
+      month = n2;
+    }
+
+    const fullYear = year < 100 ? 2000 + year : year;
+    if (
+      fullYear >= 2015 &&
+      fullYear <= 2035 &&
+      month >= 1 &&
+      month <= 12 &&
+      day >= 1 &&
+      day <= 31
+    ) {
+      const d = new Date(Date.UTC(fullYear, month - 1, day));
+      if (!isNaN(d.getTime())) return d.toISOString();
+    }
+  }
+
+  // Textual: 27 Oct 2026, Oct 27, 2026
+  const monthNameMatch = raw.match(
     /\b(\d{1,2})[\s./~-]*(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*[\s./~-]*(\d{2,4})\b/i,
   );
   if (monthNameMatch) {
-    return toIsoDate(
-      Number(monthNameMatch[3]),
-      monthFromName(monthNameMatch[2]),
-      Number(monthNameMatch[1]),
-    );
+    const day = Number(monthNameMatch[1]);
+    const monthStr = monthNameMatch[2].toLowerCase().slice(0, 3);
+    const months: Record<string, number> = {
+      jan: 1,
+      feb: 2,
+      mar: 3,
+      apr: 4,
+      may: 5,
+      jun: 6,
+      jul: 7,
+      aug: 8,
+      sep: 9,
+      oct: 10,
+      nov: 11,
+      dec: 12,
+    };
+    const month = months[monthStr];
+    let year = Number(monthNameMatch[3]);
+    year = year < 100 ? 2000 + year : year;
+    const d = new Date(Date.UTC(year, month - 1, day));
+    if (!isNaN(d.getTime())) return d.toISOString();
   }
 
-  // 2. Numeric: DD/MM/YYYY or YYYY-MM-DD
-  const numericMatch =
-    joined.match(/\b(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})\b/) ||
-    joined.match(/\b(\d{4})[./-](\d{1,2})[./-](\d{1,2})\b/);
-
-  if (!numericMatch) return undefined;
-
-  if (numericMatch[1].length === 4) {
-    return toIsoDate(Number(numericMatch[1]), Number(numericMatch[2]), Number(numericMatch[3]));
-  }
-
-  return toIsoDate(Number(numericMatch[3]), Number(numericMatch[2]), Number(numericMatch[1]));
-}
-
-function toIsoDate(year: number, month: number | undefined, day: number): string | undefined {
-  if (!month || isNaN(month) || isNaN(day) || isNaN(year)) return undefined;
-  const fullYear = year < 100 ? 2000 + year : year;
-  if (fullYear < 2010 || fullYear > 2035) return undefined;
-  if (month < 1 || month > 12 || day < 1 || day > 31) return undefined;
-
-  const date = new Date(Date.UTC(fullYear, month - 1, day));
-  if (isNaN(date.getTime())) return undefined;
-  return date.toISOString();
-}
-
-function monthFromName(month: string): number | undefined {
-  const key = month.toLowerCase().slice(0, 3);
-  const months: Record<string, number> = {
-    jan: 1,
-    feb: 2,
-    mar: 3,
-    apr: 4,
-    may: 5,
-    jun: 6,
-    jul: 7,
-    aug: 8,
-    sep: 9,
-    oct: 10,
-    nov: 11,
-    dec: 12,
-  };
-  return months[key];
+  return undefined;
 }
 
 function parseNote(lines: string[]): string | undefined {
-  const ignoredPatterns =
-    /phone|mobile|bin|vat|invoice|date|time|paid|bill|receipt|gross|total|payment|cash|card|guest|thank|powered|wifi|subtotal/i;
-
-  const validLines = lines
-    .filter((l) => !ignoredPatterns.test(l) && /[a-zA-Z]{3,}/.test(l) && l.length <= 40)
-    .slice(2, 5);
-
-  return validLines.length ? validLines.join(", ") : undefined;
-}
-
-// -------------------------------------------------------------
-// Image Enhancement (Smooth contrast, no harsh clipping)
-// -------------------------------------------------------------
-
-function enhanceReceiptCanvas(ctx: CanvasRenderingContext2D, width: number, height: number) {
-  const imageData = ctx.getImageData(0, 0, width, height);
-  const data = imageData.data;
-
-  // Calculate average brightness
-  let totalBrightness = 0;
-  const pixelCount = data.length / 4;
-  for (let i = 0; i < data.length; i += 4) {
-    totalBrightness += data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+  for (const line of lines) {
+    const match = line.match(
+      /(?:[-~]?\d+\s+)?([A-Za-z]{3,}(?:\s+[A-Za-z]{3,})*)\s+\d+(?:\.\d{2})?/,
+    );
+    if (match && match[1]) {
+      const candidate = match[1].trim();
+      if (!/qty|item|name|price|total|ticket|paid|bill|date|table|invoice/i.test(candidate)) {
+        return candidate;
+      }
+    }
   }
-  const avg = totalBrightness / pixelCount;
-
-  // If image is dark, add gentle brightness offset
-  const boost = avg < 130 ? (130 - avg) * 0.45 : 0;
-
-  for (let i = 0; i < data.length; i += 4) {
-    const gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114 + boost;
-    // Contrast multiplier 1.35 centered around 128 (smooth, never destructive)
-    const contrasted = Math.max(0, Math.min(255, (gray - 128) * 1.35 + 128));
-    data[i] = contrasted;
-    data[i + 1] = contrasted;
-    data[i + 2] = contrasted;
-  }
-
-  ctx.putImageData(imageData, 0, 0);
+  return undefined;
 }
 
 function fileToDataUrl(file: File): Promise<string> {
