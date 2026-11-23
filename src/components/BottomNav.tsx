@@ -34,8 +34,8 @@ export function BottomNav() {
 
   return (
     <>
-      <nav className="fixed bottom-0 inset-x-0 z-40 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 px-3">
-        <div className="glass-strong rounded-[2rem] min-[380px]:rounded-[2.2rem] shadow-elegant mx-auto w-full max-w-md md:max-w-xl h-[4.2rem] flex items-center justify-between px-3 md:px-5 relative border border-white/10">
+      <nav className="fixed bottom-0 inset-x-0 z-40 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 px-3 flex justify-center pointer-events-none">
+        <div className="glass-strong rounded-[2rem] min-[380px]:rounded-[2.2rem] shadow-elegant w-full max-w-[430px] h-[4.2rem] flex items-center justify-between px-3 md:px-4 relative border border-white/10 pointer-events-auto">
           {/* 1. Home */}
           <Link
             to="/"
@@ -149,7 +149,7 @@ export function BottomNav() {
 
             <SheetContent
               side="bottom"
-              className="glass-strong border-t border-white/15 rounded-t-[2.5rem] p-6 max-w-lg mx-auto pb-[calc(env(safe-area-inset-bottom)+1.5rem)] text-foreground shadow-elegant"
+              className="glass-strong border-t border-white/15 rounded-t-[2.5rem] p-6 max-w-[430px] mx-auto pb-[calc(env(safe-area-inset-bottom)+1.5rem)] text-foreground shadow-elegant"
             >
               <SheetHeader className="text-left pb-4 border-b border-white/10">
                 <SheetTitle className="font-display text-lg font-bold text-foreground">

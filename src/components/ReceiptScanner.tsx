@@ -215,7 +215,7 @@ export function ReceiptScanner({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="glass-strong max-h-[92dvh] sm:max-h-[88dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-[2rem] sm:rounded-[2rem] p-4 min-[380px]:p-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] shadow-elegant no-scrollbar"
+        className="glass-strong max-h-[92dvh] sm:max-h-[88dvh] w-full max-w-[430px] overflow-y-auto overscroll-contain rounded-t-[2rem] sm:rounded-[2rem] p-4 min-[380px]:p-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] shadow-elegant no-scrollbar"
       >
         <div className="mb-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">

@@ -239,6 +239,11 @@ function ensureInit() {
   if (!initialized && typeof window !== "undefined") {
     state = read();
     initialized = true;
+    try {
+      localStorage.setItem(KEY, JSON.stringify(state));
+    } catch {
+      // ignore
+    }
   }
 }
 

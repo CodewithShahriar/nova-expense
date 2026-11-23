@@ -61,7 +61,7 @@ export function PwaInstallPrompt() {
   if (!showInstall) return null;
 
   return (
-    <div className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+5.75rem)] z-[65] mx-auto max-w-lg animate-slide-up">
+    <div className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+5.75rem)] z-[65] mx-auto max-w-[430px] animate-slide-up">
       <div className="glass-strong overflow-hidden rounded-3xl p-4 shadow-elegant">
         <div className="flex items-start gap-3">
           <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl gradient-primary shadow-glow">

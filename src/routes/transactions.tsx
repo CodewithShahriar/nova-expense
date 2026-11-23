@@ -355,7 +355,7 @@ function ReceiptPreview({
       }}
     >
       <div
-        className="glass-strong max-h-[92dvh] w-full max-w-2xl overflow-hidden rounded-3xl shadow-elegant"
+        className="glass-strong max-h-[92dvh] w-full max-w-[430px] overflow-hidden rounded-3xl shadow-elegant"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-center justify-between gap-3 p-4">

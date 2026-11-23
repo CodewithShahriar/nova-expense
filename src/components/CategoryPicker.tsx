@@ -119,7 +119,7 @@ export function CategoryPicker({
     >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div
-        className="relative flex w-full max-w-lg flex-col glass-strong rounded-t-[2rem] sm:rounded-[2rem] border-t border-border p-4 min-[380px]:p-5 pb-[calc(env(safe-area-inset-bottom)+1rem)] animate-slide-up max-h-[min(88dvh,calc(100dvh-env(safe-area-inset-top)-0.75rem))] overflow-hidden"
+        className="relative flex w-full max-w-[430px] flex-col glass-strong rounded-t-[2rem] sm:rounded-[2rem] border-t border-border p-4 min-[380px]:p-5 pb-[calc(env(safe-area-inset-bottom)+1rem)] animate-slide-up max-h-[min(88dvh,calc(100dvh-env(safe-area-inset-top)-0.75rem))] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex shrink-0 items-center justify-between">

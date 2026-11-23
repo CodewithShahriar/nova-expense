@@ -282,7 +282,7 @@ function AddTransaction() {
 
   return (
     <div
-      className="flex min-h-[100svh] flex-col overflow-hidden animate-slide-up"
+      className="flex min-h-[100svh] flex-col overflow-hidden animate-slide-up w-full max-w-[430px] mx-auto"
       style={{ height: viewportHeight ? `${viewportHeight}px` : "100dvh" }}
     >
       <div className="shrink-0 flex items-center justify-between px-4 min-[380px]:px-5 pt-[calc(env(safe-area-inset-top)+1rem)] pb-3 min-[380px]:pb-4">
@@ -540,11 +540,11 @@ function AddTransaction() {
         <div aria-hidden className="h-4" />
       </form>
 
-      <div className="shrink-0 px-4 min-[380px]:px-5 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] bg-background/95">
+      <div className="shrink-0 px-4 min-[380px]:px-5 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] bg-background/95 w-full max-w-[430px] mx-auto">
         <button
           type="submit"
           form="transaction-form"
-          className="mx-auto flex min-h-14 w-full max-w-lg items-center justify-center gap-2 rounded-2xl gradient-primary font-semibold text-primary-foreground shadow-glow active:scale-[0.98] transition"
+          className="mx-auto flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl gradient-primary font-semibold text-primary-foreground shadow-glow active:scale-[0.98] transition"
         >
           {saveButtonContent}
         </button>

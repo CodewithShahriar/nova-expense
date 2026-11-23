@@ -220,7 +220,7 @@ export function SmartInsightModal({ open, onClose }: SmartInsightModalProps) {
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-md animate-fade-in"
     >
       <div
-        className="w-full max-w-lg max-h-[90dvh] flex flex-col rounded-t-[2rem] sm:rounded-[2rem] glass-strong border border-white/15 shadow-2xl overflow-hidden animate-slide-up overscroll-contain"
+        className="w-full max-w-[430px] max-h-[90dvh] flex flex-col rounded-t-[2rem] sm:rounded-[2rem] glass-strong border border-white/15 shadow-2xl overflow-hidden animate-slide-up overscroll-contain"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

@@ -28,12 +28,12 @@ export function AppShell() {
   const hideNav = location.pathname === "/add";
 
   return (
-    <div className="min-h-[100dvh] w-full bg-background text-foreground">
-      {/* No color grading / glow at the top - clean solid dark background */}
+    <div className="min-h-[100dvh] w-full bg-[#080a0f] text-foreground flex justify-center">
+      {/* Centered mobile device frame on desktop, full width on mobile */}
       <div
         className={cn(
-          "relative z-10 mx-auto w-full max-w-lg md:max-w-3xl xl:max-w-5xl",
-          !hideNav && "pb-[calc(env(safe-area-inset-bottom)+8rem)]",
+          "relative z-10 w-full max-w-[430px] min-h-[100dvh] bg-background sm:border-x sm:border-white/10 sm:shadow-[0_0_60px_-15px_rgba(0,0,0,0.9)] flex flex-col",
+          !hideNav && "pb-[calc(env(safe-area-inset-bottom)+7.5rem)]",
         )}
       >
         <Outlet />
