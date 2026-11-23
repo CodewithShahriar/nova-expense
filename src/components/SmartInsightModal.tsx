@@ -32,13 +32,53 @@ export function SmartInsightModal({ open, onClose }: SmartInsightModalProps) {
 
   const [isSpeaking, setIsSpeaking] = useState(false);
 
-  // Stop speaking when modal closes
+  // Lock background scroll when modal is open & stop speaking when modal closes
   useEffect(() => {
-    if (!open && typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
+    if (!open) {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+        setIsSpeaking(false);
+      }
+      return;
     }
-  }, [open]);
+
+    const scrollY = window.scrollY;
+    const previousOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    const previousPosition = document.body.style.position;
+    const previousTop = document.body.style.top;
+    const previousWidth = document.body.style.width;
+
+    document.documentElement.dataset.scrollLock = "true";
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = "100%";
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      delete document.documentElement.dataset.scrollLock;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+      document.body.style.overflow = previousOverflow;
+      document.body.style.position = previousPosition;
+      document.body.style.top = previousTop;
+      document.body.style.width = previousWidth;
+      window.scrollTo(0, scrollY);
+
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+        setIsSpeaking(false);
+      }
+    };
+  }, [open, onClose]);
 
   // Comprehensive 360-degree Financial Intelligence Calculations
   const metrics = useMemo(() => {
@@ -175,9 +215,12 @@ export function SmartInsightModal({ open, onClose }: SmartInsightModalProps) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-md animate-fade-in">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-md animate-fade-in"
+    >
       <div
-        className="w-full max-w-lg max-h-[90dvh] flex flex-col rounded-t-[2rem] sm:rounded-[2rem] glass-strong border border-white/15 shadow-2xl overflow-hidden animate-slide-up"
+        className="w-full max-w-lg max-h-[90dvh] flex flex-col rounded-t-[2rem] sm:rounded-[2rem] glass-strong border border-white/15 shadow-2xl overflow-hidden animate-slide-up overscroll-contain"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -229,7 +272,7 @@ export function SmartInsightModal({ open, onClose }: SmartInsightModalProps) {
         </div>
 
         {/* Scrollable Body */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-4 no-scrollbar">
+        <div className="flex-1 overflow-y-auto overscroll-contain p-5 space-y-4 no-scrollbar">
           {/* 1. Health Score & Top Headline Card */}
           <div className="glass rounded-2xl p-4 border border-white/10 relative overflow-hidden">
             <div className="flex items-center justify-between">
