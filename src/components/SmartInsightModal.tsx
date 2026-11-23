@@ -13,7 +13,7 @@ import {
   ShieldCheck,
   Calendar,
   Flame,
-  ArrowRight,
+  Lightbulb,
 } from "lucide-react";
 import { useStore, formatMoney, type Transaction } from "@/lib/storage";
 import { cn } from "@/lib/utils";
@@ -96,8 +96,8 @@ export function SmartInsightModal({ open, onClose }: SmartInsightModalProps) {
 
     // Budgets status
     let totalBudgetLimit = 0;
-    let exceededBudgets: string[] = [];
-    let warningBudgets: string[] = [];
+    const exceededBudgets: string[] = [];
+    const warningBudgets: string[] = [];
 
     for (const b of budgets) {
       totalBudgetLimit += b.limit;
@@ -392,7 +392,7 @@ export function SmartInsightModal({ open, onClose }: SmartInsightModalProps) {
 
             {/* Actionable Strategy Tip */}
             <div className="glass rounded-2xl p-3.5 border border-white/10 flex items-start gap-3">
-              <Sparkles className="size-5 text-primary shrink-0 mt-0.5" />
+              <Lightbulb className="size-5 text-amber-400 shrink-0 mt-0.5" />
               <div>
                 <p className="text-xs font-bold text-foreground">Smart Savings Strategy</p>
                 <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
