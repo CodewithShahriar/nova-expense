@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useStore } from "@/lib/storage";
 import { Toaster } from "@/components/ui/sonner";
 import { PwaInstallPrompt } from "@/components/PwaInstallPrompt";
+import { cn } from "@/lib/utils";
 
 export function AppShell() {
   const location = useLocation();
@@ -29,7 +30,12 @@ export function AppShell() {
   return (
     <div className="min-h-[100dvh] w-full bg-background text-foreground">
       {/* No color grading / glow at the top - clean solid dark background */}
-      <div className="relative z-10 mx-auto w-full max-w-lg md:max-w-3xl xl:max-w-5xl pb-[calc(env(safe-area-inset-bottom)+8rem)]">
+      <div
+        className={cn(
+          "relative z-10 mx-auto w-full max-w-lg md:max-w-3xl xl:max-w-5xl",
+          !hideNav && "pb-[calc(env(safe-area-inset-bottom)+8rem)]",
+        )}
+      >
         <Outlet />
       </div>
       {!hideNav && <BottomNav />}

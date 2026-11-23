@@ -85,18 +85,45 @@ function AddTransaction() {
   );
   const showNoteSuggestions = noteFocused && type !== "transfer" && noteSuggestions.length > 0;
 
+  function resetWindowScroll() {
+    if (typeof window === "undefined") return;
+    if (window.scrollY !== 0 || window.scrollX !== 0) {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
+    if (
+      document.documentElement &&
+      (document.documentElement.scrollTop !== 0 || document.documentElement.scrollLeft !== 0)
+    ) {
+      document.documentElement.scrollTop = 0;
+      document.documentElement.scrollLeft = 0;
+    }
+    if (document.body && (document.body.scrollTop !== 0 || document.body.scrollTop !== 0)) {
+      document.body.scrollTop = 0;
+    }
+  }
+
   useEffect(() => {
-    const viewport = window.visualViewport;
-    if (!viewport) return;
+    resetWindowScroll();
+
+    const onWindowScroll = () => {
+      if (window.scrollY !== 0 || window.scrollX !== 0) {
+        window.scrollTo(0, 0);
+      }
+    };
+    window.addEventListener("scroll", onWindowScroll, { passive: true });
 
     function syncKeyboardInset() {
+      const viewport = window.visualViewport;
+      if (!viewport) return;
       const inset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
       const keyboardOpen = inset > 80;
       setKeyboardInset(keyboardOpen ? Math.round(inset) : 0);
       setViewportHeight(keyboardOpen ? Math.round(viewport.height) : null);
 
       if (!keyboardOpen) {
+        resetWindowScroll();
         requestAnimationFrame(() => {
+          resetWindowScroll();
           const form = formRef.current;
           if (!form) return;
           form.scrollTop = Math.max(0, form.scrollTop);
@@ -105,18 +132,36 @@ function AddTransaction() {
     }
 
     function syncAfterKeyboardClose() {
-      window.setTimeout(syncKeyboardInset, 80);
-      window.setTimeout(syncKeyboardInset, 240);
+      resetWindowScroll();
+      window.setTimeout(() => {
+        resetWindowScroll();
+        syncKeyboardInset();
+      }, 50);
+      window.setTimeout(() => {
+        resetWindowScroll();
+        syncKeyboardInset();
+      }, 150);
+      window.setTimeout(() => {
+        resetWindowScroll();
+        syncKeyboardInset();
+      }, 300);
     }
 
+    const viewport = window.visualViewport;
     syncKeyboardInset();
-    viewport.addEventListener("resize", syncKeyboardInset);
-    viewport.addEventListener("scroll", syncKeyboardInset);
+    if (viewport) {
+      viewport.addEventListener("resize", syncKeyboardInset);
+      viewport.addEventListener("scroll", syncKeyboardInset);
+    }
     window.addEventListener("focusout", syncAfterKeyboardClose);
     return () => {
-      viewport.removeEventListener("resize", syncKeyboardInset);
-      viewport.removeEventListener("scroll", syncKeyboardInset);
+      window.removeEventListener("scroll", onWindowScroll);
+      if (viewport) {
+        viewport.removeEventListener("resize", syncKeyboardInset);
+        viewport.removeEventListener("scroll", syncKeyboardInset);
+      }
       window.removeEventListener("focusout", syncAfterKeyboardClose);
+      resetWindowScroll();
     };
   }, []);
 
@@ -143,6 +188,7 @@ function AddTransaction() {
       const noteRect = note.getBoundingClientRect();
       const offset = noteRect.top - formRect.top - form.clientHeight * 0.36;
       form.scrollTo({ top: form.scrollTop + offset, behavior: "smooth" });
+      resetWindowScroll();
     }, 120);
   }
 
@@ -313,7 +359,7 @@ function AddTransaction() {
         className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 min-[380px]:px-5 mt-4 min-[380px]:mt-5 scroll-pb-36"
         style={{
           paddingBottom:
-            keyboardInset > 80 ? "0.75rem" : "calc(env(safe-area-inset-bottom) + 7rem)",
+            keyboardInset > 80 ? "0.75rem" : "calc(env(safe-area-inset-bottom) + 2rem)",
         }}
       >
         {/* Amount */}
@@ -407,7 +453,13 @@ function AddTransaction() {
               setNoteFocused(true);
               keepNoteVisible();
             }}
-            onBlur={() => window.setTimeout(() => setNoteFocused(false), 120)}
+            onBlur={() => {
+              window.setTimeout(() => {
+                setNoteFocused(false);
+                resetWindowScroll();
+              }, 80);
+              window.setTimeout(resetWindowScroll, 200);
+            }}
             maxLength={120}
             placeholder="What was this for?"
             enterKeyHint="done"

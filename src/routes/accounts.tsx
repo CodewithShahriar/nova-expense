@@ -23,12 +23,15 @@ export const Route = createFileRoute("/accounts")({
 });
 
 const gradients = [
-  "linear-gradient(135deg, oklch(0.42 0.15 25), oklch(0.28 0.12 15))",
-  "linear-gradient(135deg, oklch(0.4 0.14 260), oklch(0.26 0.12 275))",
-  "linear-gradient(135deg, oklch(0.38 0.12 160), oklch(0.24 0.1 170))",
-  "linear-gradient(135deg, oklch(0.5 0.2 10), oklch(0.32 0.17 355))",
-  "linear-gradient(135deg, oklch(0.4 0.14 80), oklch(0.26 0.12 60))",
-  "linear-gradient(135deg, oklch(0.4 0.12 310), oklch(0.26 0.11 330))",
+  "linear-gradient(135deg, #D6F92B 0%, #C4F32A 60%, #A4E316 100%)", // Default Signature Neon Lime
+  "linear-gradient(135deg, #FED7AA 0%, #FDBA74 40%, #F59E0B 100%)", // Amber Gold
+  "linear-gradient(135deg, #2D3444 0%, #171A24 100%)", // Obsidian Slate
+  "linear-gradient(135deg, oklch(0.42 0.15 25), oklch(0.28 0.12 15))", // Burgundy Maroon
+  "linear-gradient(135deg, oklch(0.4 0.14 260), oklch(0.26 0.12 275))", // Royal Blue
+  "linear-gradient(135deg, oklch(0.38 0.12 160), oklch(0.24 0.1 170))", // Emerald Green
+  "linear-gradient(135deg, oklch(0.5 0.2 10), oklch(0.32 0.17 355))", // Crimson Red
+  "linear-gradient(135deg, oklch(0.4 0.14 80), oklch(0.26 0.12 60))", // Bronze
+  "linear-gradient(135deg, oklch(0.4 0.12 310), oklch(0.26 0.11 330))", // Purple Violet
 ];
 
 const types: { id: AccountType; label: string }[] = [
@@ -384,10 +387,13 @@ function AddAccountForm({ onClose }: { onClose: () => void }) {
           {gradients.map((g) => (
             <button
               key={g}
+              type="button"
               onClick={() => setGradient(g)}
               className={cn(
-                "shrink-0 h-10 w-16 rounded-xl border-2",
-                gradient === g ? "border-primary" : "border-transparent",
+                "shrink-0 h-10 w-16 rounded-xl border-2 transition active:scale-95",
+                gradient === g
+                  ? "border-primary shadow-glow ring-2 ring-primary/40"
+                  : "border-transparent opacity-85 hover:opacity-100",
               )}
               style={{ background: g }}
             />
@@ -476,18 +482,32 @@ function EditAccountForm({ id, onClose }: { id: string; onClose: () => void }) {
         placeholder="Current balance"
         className="glass rounded-2xl h-12 px-4 w-full text-sm outline-none tabular"
       />
-      <div className="flex gap-2 overflow-x-auto no-scrollbar">
-        {gradients.map((g) => (
-          <button
-            key={g}
-            onClick={() => setGradient(g)}
-            className={cn(
-              "shrink-0 h-10 w-16 rounded-xl border-2",
-              gradient === g ? "border-primary" : "border-transparent",
-            )}
-            style={{ background: g }}
-          />
-        ))}
+      <div>
+        <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Card color</p>
+        <div className="flex gap-2 overflow-x-auto no-scrollbar">
+          {gradients.map((g) => {
+            const isSelected =
+              gradient === g ||
+              ((g.includes("#C4F32A") || g.includes("#D6F92B") || g.includes("#C6F432")) &&
+                (gradient?.includes("#C4F32A") ||
+                  gradient?.includes("#D6F92B") ||
+                  gradient?.includes("#C6F432")));
+            return (
+              <button
+                key={g}
+                type="button"
+                onClick={() => setGradient(g)}
+                className={cn(
+                  "shrink-0 h-10 w-16 rounded-xl border-2 transition active:scale-95",
+                  isSelected
+                    ? "border-primary shadow-glow ring-2 ring-primary/40"
+                    : "border-transparent opacity-85 hover:opacity-100",
+                )}
+                style={{ background: g }}
+              />
+            );
+          })}
+        </div>
       </div>
       <button
         onClick={save}
