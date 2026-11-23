@@ -65,6 +65,7 @@ export function ReceiptScanner({
   const [reviewWarning, setReviewWarning] = useState<string | null>(null);
   const [candidateAmounts, setCandidateAmounts] = useState<number[]>([]);
   const [candidateMerchants, setCandidateMerchants] = useState<string[]>([]);
+  const [candidateNotes, setCandidateNotes] = useState<string[]>([]);
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState(() =>
     typeof window !== "undefined" ? localStorage.getItem("nova_gemini_api_key") || "" : "",
@@ -202,15 +203,20 @@ export function ReceiptScanner({
     if (result.date) setDate(result.date);
     if (result.merchant) {
       setMerchant(result.merchant);
-      setNote(result.note || result.merchant);
-    } else if (result.note) {
+    }
+    if (result.note) {
       setNote(result.note);
+    } else if (result.candidateNotes && result.candidateNotes.length > 0) {
+      setNote(result.candidateNotes[0]);
     }
     if (result.candidateAmounts && result.candidateAmounts.length > 0) {
       setCandidateAmounts(result.candidateAmounts);
     }
     if (result.candidateMerchants && result.candidateMerchants.length > 0) {
       setCandidateMerchants(result.candidateMerchants);
+    }
+    if (result.candidateNotes && result.candidateNotes.length > 0) {
+      setCandidateNotes(result.candidateNotes);
     }
 
     const missing = [
@@ -507,14 +513,41 @@ export function ReceiptScanner({
             </div>
           </div>
 
-          <Field label="Note">
-            <input
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="Optional note"
-              className="w-full bg-transparent text-sm outline-none"
-            />
-          </Field>
+          <div>
+            <Field label="Note">
+              <input
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Purchased item(s) e.g. Brownie"
+                className="w-full bg-transparent text-sm outline-none"
+              />
+            </Field>
+            {candidateNotes.length > 0 && (
+              <div className="mt-1.5 flex flex-wrap items-center gap-1.5 px-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mr-0.5">
+                  Items:
+                </span>
+                {candidateNotes.map((item) => {
+                  const isSelected = note.toLowerCase() === item.toLowerCase();
+                  return (
+                    <button
+                      key={item}
+                      type="button"
+                      onClick={() => setNote(item)}
+                      className={cn(
+                        "rounded-lg px-2 py-0.5 text-xs font-medium transition active:scale-95",
+                        isSelected
+                          ? "gradient-primary text-primary-foreground shadow-glow"
+                          : "glass hover:bg-white/10 text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      {item}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
           {rawText && (
             <details className="rounded-2xl bg-muted/35 p-3 text-xs text-muted-foreground">

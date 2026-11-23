@@ -9,6 +9,7 @@ export interface ReceiptOcrResult {
   items?: ReceiptItem[];
   candidateAmounts?: number[];
   candidateMerchants?: string[];
+  candidateNotes?: string[];
 }
 
 export interface ReceiptItem {
@@ -114,11 +115,11 @@ async function scanWithDirectGemini(
   const prompt = [
     "You are an expense tracker receipt scanner. Read the receipt image carefully.",
     "Extract:",
-    "- merchant: Business / shop / restaurant name",
+    "- merchant: Business / shop / restaurant name (e.g. 'CUP STORY')",
     "- date: Transaction date in YYYY-MM-DD format (if visible)",
     "- total: Final total amount paid (number in local currency e.g. BDT/Tk)",
-    "- note: Short summary of main items purchased (e.g. 'Brownie')",
-    "- items: List of items with name, quantity, unit_price, total",
+    "- items: List of items purchased with name, quantity, unit_price, total. For name, provide the clean item/dish name (e.g. 'Brownie'), removing quantity symbols or hyphens.",
+    "- note: Short summary of main items purchased (e.g. 'Brownie'). CRITICAL: Never use receipt footer greetings like 'THANK YOU, COME AGAIN' or POS notes.",
     "- confidence: Object with merchant, date, total, items (numbers 0 to 1)",
     "Respond in valid JSON only with keys: merchant, date, total, note, items, confidence.",
     rawText ? `Raw OCR hint:\n${rawText.slice(0, 2000)}` : "",
@@ -172,7 +173,7 @@ export function parseReceiptText(rawText: string): ReceiptOcrResult {
   const { amount, candidateAmounts } = extractAmounts(lines);
   const { merchant, candidateMerchants } = extractMerchants(lines);
   const date = parseDate(rawText);
-  const note = parseNote(lines);
+  const { note, candidateNotes } = extractItemsAndNote(lines);
 
   return {
     rawText,
@@ -183,6 +184,7 @@ export function parseReceiptText(rawText: string): ReceiptOcrResult {
     note,
     candidateAmounts,
     candidateMerchants,
+    candidateNotes,
   };
 }
 
@@ -210,18 +212,28 @@ function normalizeAiReceipt(
   const items = (payload.items || [])
     .filter((item) => item.name?.trim())
     .map((item) => ({
-      name: item.name!.trim(),
+      name: cleanItemName(item.name!),
       quantity: numberOrUndefined(item.quantity),
       unitPrice: numberOrUndefined(item.unit_price),
       total: numberOrUndefined(item.total),
-    }));
+    }))
+    .filter((item) => !isInvalidExpenseNote(item.name));
 
-  const note =
-    payload.note?.trim() ||
-    items
-      .map((item) => item.name)
-      .slice(0, 3)
-      .join(", ");
+  const candidateNotes: string[] = [];
+  for (const it of items) {
+    if (it.name && !candidateNotes.includes(it.name)) {
+      candidateNotes.push(it.name);
+    }
+  }
+
+  // Determine note:
+  // 1. Items purchased is always the preferred note for an expense
+  let bestNote: string | undefined;
+  if (candidateNotes.length > 0) {
+    bestNote = candidateNotes.slice(0, 3).join(", ");
+  } else if (payload.note && !isInvalidExpenseNote(payload.note)) {
+    bestNote = cleanItemName(payload.note);
+  }
 
   const total = numberOrUndefined(payload.total);
 
@@ -231,10 +243,11 @@ function normalizeAiReceipt(
     amount: total,
     date: payload.date ? toIsoDateFromAi(payload.date) : undefined,
     merchant: payload.merchant?.trim() || undefined,
-    note: note || undefined,
+    note: bestNote,
     items,
     candidateAmounts: total ? [total] : [],
     candidateMerchants: payload.merchant ? [payload.merchant.trim()] : [],
+    candidateNotes,
     confidence: {
       merchant: payload.confidence?.merchant,
       date: payload.confidence?.date,
@@ -536,21 +549,80 @@ function parseDate(raw: string): string | undefined {
   return undefined;
 }
 
-function parseNote(lines: string[]): string | undefined {
-  const ignorePattern =
-    /qty|item|name|price|total|ticket|paid|bill|date|table|invoice|applied|bin|mushak|vat|tax|tin|phone|tel|guest|payment|cash|card|change|returned|amount|thank|welcome|powered|otomatic|subveccha|ambarkhana|sylhet|dhaka/i;
+export function cleanItemName(name: string): string {
+  if (!name) return "";
+  let cleaned = name.trim();
+  // Strip leading symbols and quantities like -1, ~1, 1x, 1-
+  cleaned = cleaned.replace(/^[-~*#\s]*\d+[\s*xX-]*\s*/, "");
+  // Strip trailing numbers, prices, or symbols
+  cleaned = cleaned.replace(/[\s\d.,\-+=/]+$/, "");
+  return cleaned.trim();
+}
 
-  for (const line of lines) {
-    // Look for lines like "-1 Brownie 220.00" or "Brownie 220.00" or "1x Brownie"
-    const match = line.match(/(?:[-~]?\d+\s+)?([A-Za-z\s]{3,30})\s+\d+(?:\.\d{2})?/);
+export function isInvalidExpenseNote(text?: string | null): boolean {
+  if (!text || typeof text !== "string") return true;
+  const t = text.trim();
+  if (t.length < 2) return true;
+  const invalid =
+    /^(?:thank\s*you|come\s*again|thank\s*you[,\s]*come\s*again|visit\s*again|welcome|have\s*a\s*nice\s*day|paid\s*bill|cash\s*memo|receipt|bill|invoice|chalan|applied|bin|mushak|vat|tax|tin|table.*|guest.*|customer.*|copy|notes?|powered\s*by.*|automatic|otomatic|subveccha|ambarkhana|sylhet|dhaka)$/i;
+  return invalid.test(t);
+}
+
+function extractItemsAndNote(lines: string[]): {
+  note?: string;
+  candidateNotes: string[];
+} {
+  const candidates: string[] = [];
+  const invalidKeywords =
+    /qty|item|name|price|total|ticket|paid|bill|date|time|table|invoice|applied|bin|mushak|vat|tax|tin|phone|tel|guest|payment|cash|card|change|returned|amount|thank|welcome|powered|otomatic|subveccha|ambarkhana|sylhet|dhaka|notes?/i;
+
+  let inItemSection = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Detect item table start e.g. "Qty Item Name Price"
+    if (/qty|item\s*name|description|particulars/i.test(line)) {
+      inItemSection = true;
+      continue;
+    }
+
+    // Detect total section (end of items)
+    if (/ticket\s*total|net\s*total|gross\s*total|total|subtotal|payment/i.test(line)) {
+      inItemSection = false;
+    }
+
+    // Match item line with name and price
+    // e.g. "-1 Brownie 220.00 220.00-" or "1 Brownie 220" or "Brownie 220.00"
+    const match = line.match(
+      /(?:[-~#*]?\d+\s*(?:x\s*)?)?([A-Za-z\s]{3,30}?)(?:\s+\d{1,6}(?:\.\d{1,2})?)+/,
+    );
     if (match && match[1]) {
-      const candidate = match[1].trim();
-      if (!ignorePattern.test(candidate) && candidate.length >= 3) {
-        return candidate;
+      const candidate = cleanItemName(match[1]);
+      if (
+        candidate.length >= 2 &&
+        !invalidKeywords.test(candidate) &&
+        !isInvalidExpenseNote(candidate)
+      ) {
+        if (!candidates.includes(candidate)) candidates.push(candidate);
+      }
+    } else if (inItemSection) {
+      // In item section even without price on same line
+      const candidate = cleanItemName(line);
+      if (
+        candidate.length >= 2 &&
+        !invalidKeywords.test(candidate) &&
+        !isInvalidExpenseNote(candidate)
+      ) {
+        if (!candidates.includes(candidate)) candidates.push(candidate);
       }
     }
   }
-  return undefined;
+
+  return {
+    note: candidates[0] || undefined,
+    candidateNotes: candidates,
+  };
 }
 
 function fileToDataUrl(file: File): Promise<string> {

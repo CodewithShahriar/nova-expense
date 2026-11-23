@@ -67,13 +67,13 @@ export default async function handler(req, res) {
       const prompt = [
         "You are an expense tracker receipt scanner. Read the receipt image carefully.",
         "Extract:",
-        "- merchant: Store / restaurant / business name",
+        "- merchant: Store / restaurant / business name (e.g. 'CUP STORY')",
         "- date: Transaction date formatted strictly as YYYY-MM-DD",
         "- total: Final total amount paid (number in local currency e.g. BDT/Tk)",
-        "- note: Short summary of main items purchased (e.g. 'Brownie')",
+        "- items: Array of objects with: name (clean food/item name e.g. 'Brownie'), quantity (number or null), unit_price (number or null), total (number or null)",
+        "- note: Short summary of main items purchased (e.g. 'Brownie'). CRITICAL: Never use receipt footer greetings like 'THANK YOU, COME AGAIN' or POS notes.",
         "- payment_method: Cash, Card, Mobile Banking, or null",
         "- category: Suggested expense category e.g. Food, Transport, Shopping, Bills, etc.",
-        "- items: Array of objects with: name (string), quantity (number or null), unit_price (number or null), total (number or null)",
         "- confidence: Object with merchant (0-1), date (0-1), total (0-1), items (0-1)",
         ocrText ? `Raw OCR text detected from image:\n${String(ocrText).slice(0, 3000)}` : "",
         "Return pure valid JSON conforming strictly to the requested keys.",
@@ -200,8 +200,32 @@ function isDataImage(value) {
   return typeof value === "string" && /^data:image\/(png|jpe?g|webp);base64,/i.test(value);
 }
 
+function cleanItemName(name) {
+  if (!name) return "";
+  let cleaned = String(name).trim();
+  cleaned = cleaned.replace(/^[-~*#\s]*\d+[\s*xX-]*\s*/, "");
+  cleaned = cleaned.replace(/[\s\d.,\-+=/]+$/, "");
+  return cleaned.trim();
+}
+
+function isInvalidExpenseNote(text) {
+  if (!text || typeof text !== "string") return true;
+  const t = text.trim();
+  if (t.length < 2) return true;
+  const invalid =
+    /^(?:thank\s*you|come\s*again|thank\s*you[,\s]*come\s*again|visit\s*again|welcome|have\s*a\s*nice\s*day|paid\s*bill|cash\s*memo|receipt|bill|invoice|chalan|applied|bin|mushak|vat|tax|tin|table.*|guest.*|customer.*|copy|notes?|powered\s*by.*|automatic|otomatic)$/i;
+  return invalid.test(t);
+}
+
 function validateReceipt(receipt) {
-  const items = Array.isArray(receipt.items) ? receipt.items : [];
+  const rawItems = Array.isArray(receipt.items) ? receipt.items : [];
+  const items = rawItems
+    .map((item) => ({
+      ...item,
+      name: cleanItemName(item.name),
+    }))
+    .filter((item) => item.name && !isInvalidExpenseNote(item.name));
+
   const itemSum = items.reduce(
     (sum, item) => sum + (typeof item.total === "number" ? item.total : 0),
     0,
@@ -212,16 +236,20 @@ function validateReceipt(receipt) {
       ? Number(itemSum.toFixed(2))
       : total;
 
+  let bestNote = null;
+  if (items.length > 0) {
+    bestNote = items
+      .map((item) => item.name)
+      .slice(0, 3)
+      .join(", ");
+  } else if (receipt.note && !isInvalidExpenseNote(receipt.note)) {
+    bestNote = cleanItemName(receipt.note);
+  }
+
   return {
     ...receipt,
+    items,
     total: validatedTotal,
-    note:
-      receipt.note ||
-      items
-        .map((item) => item.name)
-        .filter(Boolean)
-        .slice(0, 3)
-        .join(", ") ||
-      null,
+    note: bestNote,
   };
 }
