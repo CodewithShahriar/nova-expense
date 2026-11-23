@@ -620,8 +620,7 @@ export function ReceiptScanner({
             </div>
 
             <p className="text-xs text-muted-foreground leading-relaxed mb-3">
-              Extract merchant name, exact total, transaction date, and purchased items with 100%
-              precision using Google Gemini AI Vision.
+              Extract merchant name, exact total, transaction date, and purchased items with 100% precision using Google Gemini AI Vision.
             </p>
 
             <a
