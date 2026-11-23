@@ -1,38 +1,93 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useRef } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useMemo } from "react";
 import {
-  ArrowDownLeft,
-  ArrowUpRight,
+  ArrowUp,
+  ArrowDown,
   ArrowLeftRight,
+  CreditCard,
   Bell,
-  Coins,
   Plus,
-  Receipt,
-  Sparkles,
-  TrendingDown,
-  TrendingUp,
   User,
+  Coffee,
+  Car,
+  ShoppingBag,
+  Briefcase,
+  UtensilsCrossed,
+  Clapperboard,
+  Receipt,
+  HeartPulse,
+  Laptop,
+  Sparkles,
+  type LucideIcon,
 } from "lucide-react";
-import { useStore, store, formatMoney } from "@/lib/storage";
+import { useStore, store, formatMoney, type Transaction, type CustomCategory } from "@/lib/storage";
+import { StackedCardDeck } from "@/components/StackedCardDeck";
 import { GlassCard } from "@/components/GlassCard";
-import { AccountCard } from "@/components/AccountCard";
 import { getCategory } from "@/lib/categories";
 import { cn } from "@/lib/utils";
-import { billRuntimeStatus, billTimingLabel, daysUntil, formatDueDate } from "@/lib/bills";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
   component: Dashboard,
 });
 
+function getTransactionIcon(t: Transaction, custom: CustomCategory[]): LucideIcon {
+  const note = (t.note || "").toLowerCase();
+  const catName = (t.category || "").toLowerCase();
+  const merchant = (t.merchant || "").toLowerCase();
+
+  // Smart matching for suitable, realistic icons
+  if (note.includes("coffee") || note.includes("cafe") || note.includes("starbucks") || note.includes("tea")) {
+    return Coffee;
+  }
+  if (note.includes("uber") || note.includes("ride") || note.includes("taxi") || catName === "transport") {
+    return Car;
+  }
+  if (note.includes("shoe") || note.includes("cloth") || note.includes("grocer") || catName === "shopping") {
+    return ShoppingBag;
+  }
+  if (note.includes("salary") || catName === "salary") {
+    return Briefcase;
+  }
+  if (note.includes("dinner") || note.includes("lunch") || note.includes("food") || note.includes("snack") || catName === "food") {
+    return UtensilsCrossed;
+  }
+  if (note.includes("netflix") || note.includes("movie") || catName === "entertainment") {
+    return Clapperboard;
+  }
+  if (note.includes("bill") || note.includes("electric") || note.includes("server") || catName === "bills") {
+    return Receipt;
+  }
+  if (note.includes("pharmacy") || note.includes("doctor") || catName === "health") {
+    return HeartPulse;
+  }
+  if (note.includes("gig") || note.includes("freelance") || note.includes("tech") || catName === "freelance") {
+    return Laptop;
+  }
+  if (t.type === "transfer" || catName === "transfer") {
+    return ArrowLeftRight;
+  }
+  if (
+    note.includes("james") ||
+    note.includes("michael") ||
+    note.includes("maisha") ||
+    merchant.includes("james")
+  ) {
+    return User;
+  }
+
+  // Fallback to registered category icon
+  const cat = getCategory(t.category, custom);
+  return cat?.icon || (t.type === "income" ? ArrowUp : ArrowDown);
+}
+
 function Dashboard() {
+  const navigate = useNavigate();
   const transactions = useStore((s) => s.transactions);
   const accounts = useStore((s) => s.accounts);
-  const bills = useStore((s) => s.bills);
   const settings = useStore((s) => s.settings);
   const custom = useStore((s) => s.customCategories);
   const currency = settings.currency;
-  const scroller = useRef<HTMLDivElement>(null);
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
@@ -41,61 +96,14 @@ function Dashboard() {
     return "Good Evening";
   }, []);
 
-  const stats = useMemo(() => {
-    const now = new Date();
-    const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() - 6);
-    weekStart.setHours(0, 0, 0, 0);
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-
-    let weekSpent = 0,
-      monthIncome = 0,
-      monthExpense = 0;
-    for (const t of transactions) {
-      const d = new Date(t.date);
-      if (t.type === "expense" && d >= weekStart) weekSpent += t.amount;
-      if (d >= monthStart) {
-        if (t.type === "income") monthIncome += t.amount;
-        else if (t.type === "expense") monthExpense += t.amount;
-      }
-    }
-    return { weekSpent, monthIncome, monthExpense };
+  const recent = useMemo(() => {
+    return [...transactions]
+      .sort((a, b) => {
+        const dateDiff = +new Date(b.date) - +new Date(a.date);
+        return dateDiff || +new Date(b.createdAt || b.date) - +new Date(a.createdAt || a.date);
+      })
+      .slice(0, 6);
   }, [transactions]);
-
-  const recent = useMemo(
-    () =>
-      [...transactions]
-        .sort((a, b) => {
-          const dateDiff = +new Date(b.date) - +new Date(a.date);
-          return dateDiff || +new Date(b.createdAt || b.date) - +new Date(a.createdAt || a.date);
-        })
-        .slice(0, 5),
-    [transactions],
-  );
-
-  const reminderBills = useMemo(
-    () =>
-      bills
-        .filter((bill) => {
-          const status = billRuntimeStatus(bill);
-          if (status === "paid") return false;
-          return status === "overdue" || daysUntil(bill.nextDueDate || bill.dueDate) <= 3;
-        })
-        .sort(
-          (a, b) => +new Date(a.nextDueDate || a.dueDate) - +new Date(b.nextDueDate || b.dueDate),
-        )
-        .slice(0, 2),
-    [bills],
-  );
-
-  const insight = useMemo(() => {
-    if (transactions.length === 0) return "Add your first transaction to unlock insights.";
-    if (stats.monthExpense === 0) return "No expenses this month yet. You're off to a clean start.";
-    const ratio = stats.monthIncome > 0 ? stats.monthExpense / stats.monthIncome : 1;
-    if (ratio < 0.5) return "You're spending under 50% of income — excellent control this month.";
-    if (ratio < 0.8) return "Spending is healthy. Keep an eye on discretionary categories.";
-    return "Spending is outpacing income this month. Review your top category.";
-  }, [stats, transactions.length]);
 
   const initials = (settings.name || "Sajibur Rahman")
     .split(" ")
@@ -112,24 +120,23 @@ function Dashboard() {
       });
       return;
     }
-
     toast.info("Sample data is already loaded");
   }
 
   return (
     <div className="pt-[calc(env(safe-area-inset-top)+1rem)] animate-fade-in">
-      {/* Top bar with avatar & notification bell */}
-      <div className="flex items-center justify-between mb-5 px-4 min-[380px]:px-5">
+      {/* 1. Top Bar: Avatar + Greeting & Name on Left, Notification Bell on Right */}
+      <div className="flex items-center justify-between mb-4 px-4 min-[380px]:px-5">
         <Link to="/settings" className="flex items-center gap-3 active:scale-[0.98] transition">
           {settings.avatar ? (
             <img
               src={settings.avatar}
               alt=""
-              className="size-11 rounded-full object-cover ring-2 ring-primary/40 shadow-glow"
+              className="size-11 rounded-full object-cover ring-2 ring-white/10 shadow-card"
             />
           ) : (
-            <div className="size-11 rounded-full glass border border-white/15 flex items-center justify-center ring-2 ring-primary/30">
-              <span className="text-primary font-display text-sm font-bold">
+            <div className="size-11 rounded-full glass border border-white/15 flex items-center justify-center text-white shadow-card">
+              <span className="font-display text-sm font-bold">
                 {initials || <User className="size-5" />}
               </span>
             </div>
@@ -146,295 +153,167 @@ function Dashboard() {
 
         <Link
           to="/settings"
-          aria-label="Notifications & Settings"
-          className="size-11 rounded-full glass flex items-center justify-center text-foreground hover:text-primary active:scale-95 transition relative shadow-card"
+          aria-label="Notifications"
+          className="size-11 rounded-full glass flex items-center justify-center text-white hover:text-primary active:scale-95 transition relative shadow-card border border-white/10"
         >
-          <Bell className="size-5" />
+          <Bell className="size-5 stroke-[2.2]" />
           <span className="size-2 rounded-full bg-primary absolute top-2.5 right-2.5 shadow-glow" />
         </Link>
       </div>
 
-      {/* "My Cards" Header */}
-      <div className="flex items-center justify-between mb-3 px-4 min-[380px]:px-5">
+      {/* 2. "My Cards" Section Header */}
+      <div className="flex items-center justify-between mb-1 px-4 min-[380px]:px-5">
         <h2 className="font-display text-base min-[380px]:text-lg font-bold text-foreground">
           My Cards
         </h2>
         <Link
           to="/accounts"
-          className="glass rounded-full px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1 active:scale-95 transition"
+          className="glass rounded-full px-3.5 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1 active:scale-95 transition border border-white/10 shadow-xs"
         >
           <span>Add Card</span>
-          <Plus className="size-3.5" />
+          <Plus className="size-3.5 stroke-[2.5]" />
         </Link>
       </div>
 
-      {/* Account carousel */}
-      <div className="relative">
-        <div
-          ref={scroller}
-          className="flex gap-3 overflow-x-auto snap-x snap-mandatory no-scrollbar px-4 min-[380px]:px-5 pb-1"
-        >
-          {accounts.map((a) => (
-            <div
-              key={a.id}
-              className="snap-center shrink-0 w-[92%] min-[380px]:w-[88%] md:w-[23rem]"
-            >
-              <Link to="/accounts/$id" params={{ id: a.id }}>
-                <AccountCard account={a} currency={currency} />
-              </Link>
-            </div>
-          ))}
-          {accounts.length === 0 && (
-            <div className="w-full">
-              <div className="snap-center shrink-0 w-full md:w-[23rem] mb-3">
-                <AccountCard
-                  account={{
-                    id: "preview-card",
-                    name: "Sajibur's Visa",
-                    type: "card",
-                    brand: "VISA",
-                    number: "•••• •••• 5466",
-                    balance: 786898.67,
-                    gradient: "linear-gradient(135deg, #D6F92B 0%, #C4F32A 60%, #A4E316 100%)",
-                  }}
-                  currency={currency}
-                />
-              </div>
-              <GlassCard className="text-center py-6">
-                <p className="text-sm text-muted-foreground">Custom accounts can be added</p>
-                <button
-                  type="button"
-                  onClick={loadSampleData}
-                  className="mt-3 inline-flex rounded-full bg-primary px-5 py-2 text-xs font-bold text-primary-foreground shadow-glow active:scale-95 transition"
-                >
-                  Load Sample Data
-                </button>
-              </GlassCard>
-            </div>
-          )}
-        </div>
-      </div>
+      {/* 3. Stacked Cards Deck (One behind another, clicking on back card brings it to front) */}
+      <StackedCardDeck
+        accounts={accounts}
+        currency={currency}
+        onCardClick={(acc) => navigate({ to: "/accounts/$id", params: { id: acc.id } })}
+      />
 
-      {/* Quick Action Buttons Row */}
+      {/* 4. 4 Quick Action Buttons: Deposit, Withdrawal, Transfer, Cards */}
       <div className="grid grid-cols-4 gap-2.5 min-[380px]:gap-3 mt-4 px-4 min-[380px]:px-5">
+        {/* Deposit */}
         <Link
           to="/add"
           search={{ type: "income", scan: undefined, edit: undefined }}
-          className="glass rounded-2xl p-3 flex flex-col items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition shadow-card group"
+          className="glass rounded-2xl p-3 flex flex-col items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition shadow-card border border-white/10 group"
         >
-          <div className="size-10 rounded-full glass flex items-center justify-center text-foreground group-hover:text-primary transition">
-            <ArrowDownLeft className="size-4.5 stroke-[2.2]" />
+          <div className="size-11 rounded-full glass flex items-center justify-center text-white border border-white/10 transition group-hover:scale-105">
+            <ArrowUp className="size-5 stroke-[2.4]" />
           </div>
-          <span className="text-[11px] font-semibold text-muted-foreground group-hover:text-foreground tracking-tight">
+          <span className="text-[11px] font-semibold text-zinc-300 group-hover:text-white tracking-tight">
             Deposit
           </span>
         </Link>
 
+        {/* Withdrawal */}
         <Link
           to="/add"
           search={{ type: "expense", scan: undefined, edit: undefined }}
-          className="glass rounded-2xl p-3 flex flex-col items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition shadow-card group"
+          className="glass rounded-2xl p-3 flex flex-col items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition shadow-card border border-white/10 group"
         >
-          <div className="size-10 rounded-full glass flex items-center justify-center text-foreground group-hover:text-primary transition">
-            <ArrowUpRight className="size-4.5 stroke-[2.2]" />
+          <div className="size-11 rounded-full glass flex items-center justify-center text-white border border-white/10 transition group-hover:scale-105">
+            <ArrowDown className="size-5 stroke-[2.4]" />
           </div>
-          <span className="text-[11px] font-semibold text-muted-foreground group-hover:text-foreground tracking-tight">
+          <span className="text-[11px] font-semibold text-zinc-300 group-hover:text-white tracking-tight">
             Withdrawal
           </span>
         </Link>
 
+        {/* Transfer (loan er poriborte transfer) */}
         <Link
           to="/add"
           search={{ type: "transfer", scan: undefined, edit: undefined }}
-          className="glass rounded-2xl p-3 flex flex-col items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition shadow-card group"
+          className="glass rounded-2xl p-3 flex flex-col items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition shadow-card border border-white/10 group"
         >
-          <div className="size-10 rounded-full glass flex items-center justify-center text-foreground group-hover:text-primary transition">
-            <Coins className="size-4.5 stroke-[2.2]" />
+          <div className="size-11 rounded-full glass flex items-center justify-center text-white border border-white/10 transition group-hover:scale-105">
+            <ArrowLeftRight className="size-5 stroke-[2.4]" />
           </div>
-          <span className="text-[11px] font-semibold text-muted-foreground group-hover:text-foreground tracking-tight">
-            Loan
+          <span className="text-[11px] font-semibold text-zinc-300 group-hover:text-white tracking-tight">
+            Transfer
           </span>
         </Link>
 
+        {/* Cards (rent er poriborte cards) */}
         <Link
-          to="/bills"
-          className="glass rounded-2xl p-3 flex flex-col items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition shadow-card group"
+          to="/accounts"
+          className="glass rounded-2xl p-3 flex flex-col items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition shadow-card border border-white/10 group"
         >
-          <div className="size-10 rounded-full glass flex items-center justify-center text-foreground group-hover:text-primary transition">
-            <Receipt className="size-4.5 stroke-[2.2]" />
+          <div className="size-11 rounded-full glass flex items-center justify-center text-white border border-white/10 transition group-hover:scale-105">
+            <CreditCard className="size-5 stroke-[2.4]" />
           </div>
-          <span className="text-[11px] font-semibold text-muted-foreground group-hover:text-foreground tracking-tight">
-            Remit
+          <span className="text-[11px] font-semibold text-zinc-300 group-hover:text-white tracking-tight">
+            Cards
           </span>
         </Link>
       </div>
 
-      <div className="px-4 min-[380px]:px-5">
-        {/* Spending metrics cards */}
-        <div className="grid grid-cols-2 gap-2.5 min-[380px]:gap-3 mt-4">
-          <GlassCard className="p-4 min-[380px]:p-5 shadow-card border-white/10">
-            <div className="flex items-center gap-2.5">
-              <div className="flex size-8 shrink-0 items-center justify-center rounded-full glass text-muted-foreground">
-                <ArrowUpRight className="size-4" />
-              </div>
-              <span className="text-[10px] min-[380px]:text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
-                Total Withdrawal
-              </span>
-            </div>
-            <p className="mt-2.5 truncate font-display text-lg min-[380px]:text-xl font-bold tabular text-foreground">
-              {formatMoney(stats.weekSpent, currency)}
-            </p>
-            <span className="text-[10px] text-muted-foreground">Past 7 days</span>
-          </GlassCard>
-
-          <GlassCard className="p-4 min-[380px]:p-5 shadow-card border-white/10">
-            <div className="flex items-center gap-2.5">
-              <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary">
-                <ArrowDownLeft className="size-4" />
-              </div>
-              <span className="text-[10px] min-[380px]:text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
-                Total Deposit
-              </span>
-            </div>
-            <p className="mt-2.5 truncate font-display text-lg min-[380px]:text-xl font-bold tabular text-foreground">
-              {formatMoney(stats.monthIncome || stats.monthExpense, currency)}
-            </p>
-            <span className="text-[10px] text-muted-foreground">This month</span>
-          </GlassCard>
-        </div>
-
-        {/* Smart Insight */}
-        <GlassCard className="mt-3.5 p-4 flex gap-3 items-start border-white/10">
-          <div className="size-9 rounded-2xl bg-primary/20 flex items-center justify-center shrink-0 text-primary">
-            <Sparkles className="size-4.5" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-foreground">Smart insight</p>
-            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{insight}</p>
-            {transactions.length === 0 && (
-              <button
-                type="button"
-                onClick={loadSampleData}
-                className="mt-2 text-xs font-semibold text-primary hover:underline block"
-              >
-                Load sample data →
-              </button>
-            )}
-          </div>
-        </GlassCard>
-
-        {reminderBills.length > 0 && (
-          <GlassCard className="mt-3.5 p-4 border-white/10">
-            <div className="mb-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="flex size-8 items-center justify-center rounded-xl bg-primary/15 text-primary">
-                  <Bell className="size-4" />
-                </div>
-                <p className="text-sm font-semibold">Bill reminders</p>
-              </div>
-              <Link to="/bills" className="text-xs font-medium text-primary">
-                View all
-              </Link>
-            </div>
-            <div className="space-y-2">
-              {reminderBills.map((bill) => (
-                <div key={bill.id} className="flex items-center gap-3 rounded-2xl glass p-3 border-white/5">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{bill.name}</p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {billTimingLabel(bill)} · {formatDueDate(bill.nextDueDate || bill.dueDate)}
-                    </p>
-                  </div>
-                  <p
-                    className={cn(
-                      "shrink-0 font-display text-sm font-semibold tabular",
-                      billRuntimeStatus(bill) === "overdue" ? "text-destructive" : "text-primary",
-                    )}
-                  >
-                    {formatMoney(bill.amount, currency, true)}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </GlassCard>
-        )}
-
-        {/* Transactions List */}
-        <div className="flex items-center justify-between mt-6 mb-3">
+      {/* 5. Transactions Section (Directly below action buttons with suitable descriptive icons) */}
+      <div className="px-4 min-[380px]:px-5 mt-6">
+        <div className="flex items-center justify-between mb-3">
           <h2 className="font-display text-base min-[380px]:text-lg font-bold text-foreground">
             Transactions
           </h2>
-          <Link to="/transactions" className="text-xs text-muted-foreground hover:text-primary font-medium transition">
+          <Link
+            to="/transactions"
+            className="text-xs text-muted-foreground hover:text-primary font-medium transition"
+          >
             View All
           </Link>
         </div>
 
         <div className="space-y-2.5">
-          {recent.length === 0 && (
-            <GlassCard className="text-center py-8">
+          {recent.length === 0 ? (
+            <GlassCard className="text-center py-8 border-white/10">
               <p className="text-sm text-muted-foreground">No transactions yet</p>
-              <Link
-                to="/add"
-                search={{ type: undefined, scan: undefined, edit: undefined }}
-                className="mt-3 inline-flex rounded-full bg-primary px-5 py-2 text-xs font-bold text-primary-foreground shadow-glow"
+              <button
+                type="button"
+                onClick={loadSampleData}
+                className="mt-3 inline-flex rounded-full bg-primary px-5 py-2 text-xs font-bold text-primary-foreground shadow-glow active:scale-95 transition"
               >
-                Add transaction
-              </Link>
+                Load Sample Data
+              </button>
             </GlassCard>
-          )}
+          ) : (
+            recent.map((t) => {
+              const isIncome = t.type === "income";
+              const isTransfer = t.type === "transfer";
+              const Icon = getTransactionIcon(t, custom);
 
-          {recent.map((t) => {
-            const cat = getCategory(t.category, custom);
-            const isTransfer = t.type === "transfer";
-            const Icon = isTransfer ? ArrowLeftRight : cat.icon;
-            const isIncome = t.type === "income";
-            const account = accounts.find((a) => a.id === t.accountId);
-
-            return (
-              <div
-                key={t.id}
-                className="glass rounded-2xl p-3.5 flex items-center gap-3.5 border-white/8 transition hover:bg-white/[0.04]"
-              >
+              return (
                 <div
-                  className="size-11 rounded-full flex items-center justify-center shrink-0 border border-white/10"
-                  style={{ background: `color-mix(in srgb, ${cat.color} 20%, rgba(22,26,34,0.85))` }}
+                  key={t.id}
+                  className="glass rounded-2xl p-3.5 flex items-center gap-3.5 border border-white/10 transition hover:bg-white/[0.04]"
                 >
-                  <Icon className="size-5" style={{ color: cat.color }} />
+                  {/* Meaningful suitable icon in frosted glass circle */}
+                  <div className="size-11 rounded-full glass border border-white/15 flex items-center justify-center shrink-0 text-white shadow-xs">
+                    <Icon className="size-5 stroke-[2.2] text-zinc-200" />
+                  </div>
+
+                  {/* Merchant / Description & Timestamp */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold truncate text-foreground">
+                      {t.note || t.merchant || t.category}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      {new Date(t.date).toLocaleTimeString(undefined, {
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+
+                  {/* Amount & Type Tag */}
+                  <div className="text-right shrink-0">
+                    <p
+                      className={cn(
+                        "font-display text-sm min-[380px]:text-base font-bold tabular",
+                        isIncome ? "text-white" : "text-zinc-200",
+                      )}
+                    >
+                      {isIncome ? "+" : "−"}
+                      {formatMoney(t.amount, currency).replace("-", "")}
+                    </p>
+                    <span className="text-[10px] text-muted-foreground tracking-wider uppercase font-medium">
+                      {isIncome ? "Deposit" : isTransfer ? "Transfer" : "Withdrawal"}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate text-foreground">
-                    {t.note || t.merchant || t.category}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
-                    {new Date(t.date).toLocaleTimeString(undefined, {
-                      hour: "numeric",
-                      minute: "2-digit",
-                    })}
-                    {" · "}
-                    {new Date(t.date).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                    })}
-                    {account?.name ? ` · ${account.name}` : ""}
-                  </p>
-                </div>
-                <div className="text-right shrink-0">
-                  <p
-                    className={cn(
-                      "font-display text-sm min-[380px]:text-base font-bold tabular",
-                      isIncome ? "text-primary" : "text-foreground",
-                    )}
-                  >
-                    {isIncome ? "+" : "−"}
-                    {formatMoney(t.amount, currency).replace("-", "")}
-                  </p>
-                  <span className="text-[10px] text-muted-foreground tracking-wider uppercase font-medium">
-                    {isIncome ? "Deposit" : isTransfer ? "Transfer" : "Withdrawal"}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
       </div>
     </div>

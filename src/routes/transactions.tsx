@@ -258,13 +258,8 @@ function TransactionsPage() {
                         className="flex cursor-pointer items-center gap-3 p-3"
                         onClick={() => t.receiptImage && setPreviewTx(t)}
                       >
-                        <div
-                          className="size-11 rounded-2xl flex items-center justify-center shrink-0"
-                          style={{
-                            background: `color-mix(in oklch, ${cat.color} 18%, transparent)`,
-                          }}
-                        >
-                          <Icon className="size-5" style={{ color: cat.color }} />
+                        <div className="size-11 rounded-full glass border border-white/10 flex items-center justify-center shrink-0 text-white shadow-xs">
+                          <Icon className="size-5 stroke-[2.2] text-zinc-200" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">

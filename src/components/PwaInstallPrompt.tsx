@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CheckCircle2, Download, Smartphone, Wifi, WifiOff, X } from "lucide-react";
-import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { Download, Smartphone, X } from "lucide-react";
 
 type InstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -16,10 +14,6 @@ export function PwaInstallPrompt() {
     typeof window === "undefined" ? true : localStorage.getItem(DISMISS_KEY) === "1",
   );
   const [installed, setInstalled] = useState(false);
-  const [online, setOnline] = useState(() =>
-    typeof navigator === "undefined" ? true : navigator.onLine,
-  );
-  const [showConnectionBadge, setShowConnectionBadge] = useState(true);
 
   const standalone = useMemo(
     () =>
@@ -41,45 +35,12 @@ export function PwaInstallPrompt() {
       setInstallEvent(null);
     }
 
-    const openingTimer = window.setTimeout(() => setShowConnectionBadge(false), 2600);
-
-    function showConnection(status: boolean) {
-      setOnline(status);
-      setShowConnectionBadge(true);
-
-      if (status) {
-        toast.success("Back online", {
-          description: "Nova will sync saved changes when possible.",
-        });
-      } else {
-        toast.warning("Offline mode", {
-          description: "Changes are saved locally and will sync after reconnecting.",
-        });
-      }
-
-      window.setTimeout(
-        () => {
-          if (status) setShowConnectionBadge(false);
-        },
-        status ? 2600 : 0,
-      );
-    }
-
-    function updateOnline() {
-      showConnection(navigator.onLine);
-    }
-
     window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
     window.addEventListener("appinstalled", onInstalled);
-    window.addEventListener("online", updateOnline);
-    window.addEventListener("offline", updateOnline);
 
     return () => {
       window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
       window.removeEventListener("appinstalled", onInstalled);
-      window.removeEventListener("online", updateOnline);
-      window.removeEventListener("offline", updateOnline);
-      window.clearTimeout(openingTimer);
     };
   }, []);
 
@@ -97,68 +58,42 @@ export function PwaInstallPrompt() {
 
   const showInstall = installEvent && !dismissed && !standalone && !installed;
 
-  return (
-    <>
-      {showConnectionBadge && (
-        <div
-          className={cn(
-            "fixed left-1/2 top-[calc(env(safe-area-inset-top)+0.75rem)] z-[70] flex -translate-x-1/2 items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold shadow-card backdrop-blur-xl transition animate-fade-in",
-            online
-              ? "border-primary/20 bg-primary/15 text-primary"
-              : "border-warning/25 bg-warning/15 text-warning",
-          )}
-          style={!online ? { color: "var(--color-warning)" } : undefined}
-        >
-          {online ? <Wifi className="size-3.5" /> : <WifiOff className="size-3.5" />}
-          {online ? "Online" : "Offline mode"}
-        </div>
-      )}
+  if (!showInstall) return null;
 
-      {showInstall && (
-        <div className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+5.75rem)] z-[65] mx-auto max-w-lg animate-slide-up">
-          <div className="glass-strong overflow-hidden rounded-3xl p-4 shadow-elegant">
-            <div className="flex items-start gap-3">
-              <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl gradient-primary shadow-glow">
-                <Smartphone className="size-5 text-primary-foreground" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold">Install Nova Expense</p>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                  Add Nova to your home screen for faster launch, offline access, and Quick Add
-                  shortcuts.
-                </p>
-                <div className="mt-3 flex gap-2">
-                  <button
-                    type="button"
-                    onClick={install}
-                    className="flex h-10 flex-1 items-center justify-center gap-2 rounded-xl gradient-primary text-xs font-semibold text-primary-foreground"
-                  >
-                    <Download className="size-4" />
-                    Install
-                  </button>
-                  <button
-                    type="button"
-                    onClick={dismiss}
-                    className="flex h-10 w-11 items-center justify-center rounded-xl glass text-muted-foreground"
-                    aria-label="Dismiss install prompt"
-                  >
-                    <X className="size-4" />
-                  </button>
-                </div>
-              </div>
+  return (
+    <div className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+5.75rem)] z-[65] mx-auto max-w-lg animate-slide-up">
+      <div className="glass-strong overflow-hidden rounded-3xl p-4 shadow-elegant">
+        <div className="flex items-start gap-3">
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl gradient-primary shadow-glow">
+            <Smartphone className="size-5 text-primary-foreground" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold">Install Nova Expense</p>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              Add Nova to your home screen for faster launch, offline access, and Quick Add
+              shortcuts.
+            </p>
+            <div className="mt-3 flex gap-2">
+              <button
+                type="button"
+                onClick={install}
+                className="flex h-10 flex-1 items-center justify-center gap-2 rounded-xl gradient-primary text-xs font-semibold text-primary-foreground"
+              >
+                <Download className="size-4" />
+                Install
+              </button>
+              <button
+                type="button"
+                onClick={dismiss}
+                className="flex h-10 w-11 items-center justify-center rounded-xl glass text-muted-foreground"
+                aria-label="Dismiss install prompt"
+              >
+                <X className="size-4" />
+              </button>
             </div>
           </div>
         </div>
-      )}
-
-      {installed && (
-        <div className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+5.75rem)] z-[65] mx-auto max-w-lg animate-slide-up">
-          <div className="glass-strong flex items-center gap-3 rounded-3xl p-4 shadow-elegant">
-            <CheckCircle2 className="size-5 text-primary" />
-            <p className="text-sm font-semibold">Nova Expense installed</p>
-          </div>
-        </div>
-      )}
-    </>
+      </div>
+    </div>
   );
 }

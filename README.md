@@ -1,25 +1,26 @@
-﻿# Nova Expense
+# Nova Expense
 
-Nova Expense is a premium mobile-first expense tracking web app built with React, TypeScript, Vite, TanStack Router, and Tailwind CSS. It brings accounts, transactions, budgets, bills, reports, and receipt scanning into a polished app-style interface.
+Nova Expense is a premium mobile-first fintech expense tracking web app built with React, TypeScript, Vite, TanStack Router, and Tailwind CSS. It brings accounts, transactions, budgets, bills, reports, and receipt scanning into a sleek dark obsidian glassmorphism interface.
 
-## Features
+## Screenshots
 
-- Mobile-first dashboard with account cards, weekly spending, savings rate, smart insight, bill reminders, and recent activity
-- Account management with editable account name, account type, brand, number, balance, and card color
-- Transaction flow for expenses, income, and transfers
-- Smart transaction assistance with category/merchant-based note suggestions, duplicate warnings, recurring expense detection, unusual spend alerts, and saving opportunity insights
-- Receipt scanner with camera/upload support and OCR-assisted detail extraction
-- AI receipt scan fallback through a server-side `/api/scan-receipt` endpoint when `OPENAI_API_KEY` is configured
-- Category picker with built-in and custom categories, draggable category ordering, and expanded icon choices
-- Budget tracking with category progress views
-- Bills section with due-date reminders and status handling
-- Events section for separate event income/cost ledgers
-- Reports with category breakdowns and income/expense charts
-- Settings for appearance, currency, avatar, and app preferences
-- Bottom navigation designed for fast mobile use
-- PWA-ready setup with app manifest and quick shortcuts
-- Toast notifications, dialogs, sheets, tabs, forms, and accessible controls
-- SPA routing fallback support for production hosting
+<p align="center">
+  <img src="./docs/screenshots/home-dashboard.jpg" width="340" alt="Home Dashboard & Stacked Card Deck" />
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="./docs/screenshots/statistics-screen.png" width="340" alt="Statistics & Financial Reports" />
+</p>
+
+## Highlights & Features
+
+- **Interactive Stacked Card Deck:** Iconic Neon Lime (`#C6F432`) Visa card with deep black typography, official vector Visa branding, metallic golden EMV chip, and contactless waves `) ) )`. Back cards smoothly cycle to the front on click.
+- **Glass Action Dock:** Quick-access monochrome action buttons on dark glass: **Deposit**, **Withdrawal**, **Transfer**, and **Cards**.
+- **Contextual Transactions Feed:** Clean monochrome transaction items with smart contextual icons (Coffee, Car, ShoppingBag, Briefcase, etc.), clear amount signs, and timestamp details.
+- **Dedicated "Statics" & Analytics:** Comprehensive analytics screen featuring Daily/Weekly/Monthly period tabs, glowing lime pill bar chart with Y-axis metrics, and a 2x2 financial summary grid.
+- **5-Item Bottom Navigation Dock:** Dock with Home, Statistic, floating glowing lime Quick Add `+` action button, Target, and Menu drawer.
+- **Mobile-first & PWA-ready:** App manifest, standalone support, safe-area insets, and smooth desktop wheel scrolling without scroll traps.
+- **Account Management:** Multi-card and multi-wallet management with balance tracking, custom gradients, and masking.
+- **Receipt Scanner & OCR:** Built-in camera/upload support with OCR-assisted detail extraction.
+- **Budget Tracking & Smart Insights:** Real-time budget progress views, duplicate alerts, and spending breakdown.
 
 ## Tech Stack
 

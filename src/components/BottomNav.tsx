@@ -167,67 +167,67 @@ export function BottomNav() {
                 <Link
                   to="/transactions"
                   onClick={() => setMenuOpen(false)}
-                  className="glass rounded-2xl p-3.5 flex flex-col items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition text-center"
+                  className="glass rounded-2xl p-3.5 flex flex-col items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition text-center border border-white/10"
                 >
-                  <div className="size-10 rounded-full glass flex items-center justify-center text-primary">
+                  <div className="size-10 rounded-full glass border border-white/10 flex items-center justify-center text-white">
                     <List className="size-5" />
                   </div>
-                  <span className="text-xs font-semibold">Activity</span>
+                  <span className="text-xs font-semibold text-zinc-200">Activity</span>
                 </Link>
 
                 <Link
                   to="/accounts"
                   onClick={() => setMenuOpen(false)}
-                  className="glass rounded-2xl p-3.5 flex flex-col items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition text-center"
+                  className="glass rounded-2xl p-3.5 flex flex-col items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition text-center border border-white/10"
                 >
-                  <div className="size-10 rounded-full glass flex items-center justify-center text-primary">
+                  <div className="size-10 rounded-full glass border border-white/10 flex items-center justify-center text-white">
                     <CreditCard className="size-5" />
                   </div>
-                  <span className="text-xs font-semibold">Accounts</span>
+                  <span className="text-xs font-semibold text-zinc-200">Accounts</span>
                 </Link>
 
                 <Link
                   to="/bills"
                   onClick={() => setMenuOpen(false)}
-                  className="glass rounded-2xl p-3.5 flex flex-col items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition text-center"
+                  className="glass rounded-2xl p-3.5 flex flex-col items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition text-center border border-white/10"
                 >
-                  <div className="size-10 rounded-full glass flex items-center justify-center text-primary">
+                  <div className="size-10 rounded-full glass border border-white/10 flex items-center justify-center text-white">
                     <Receipt className="size-5" />
                   </div>
-                  <span className="text-xs font-semibold">Bills</span>
+                  <span className="text-xs font-semibold text-zinc-200">Bills</span>
                 </Link>
 
                 <Link
                   to="/events"
                   onClick={() => setMenuOpen(false)}
-                  className="glass rounded-2xl p-3.5 flex flex-col items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition text-center"
+                  className="glass rounded-2xl p-3.5 flex flex-col items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition text-center border border-white/10"
                 >
-                  <div className="size-10 rounded-full glass flex items-center justify-center text-primary">
+                  <div className="size-10 rounded-full glass border border-white/10 flex items-center justify-center text-white">
                     <CalendarDays className="size-5" />
                   </div>
-                  <span className="text-xs font-semibold">Events</span>
+                  <span className="text-xs font-semibold text-zinc-200">Events</span>
                 </Link>
 
                 <Link
                   to="/review"
                   onClick={() => setMenuOpen(false)}
-                  className="glass rounded-2xl p-3.5 flex flex-col items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition text-center"
+                  className="glass rounded-2xl p-3.5 flex flex-col items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition text-center border border-white/10"
                 >
-                  <div className="size-10 rounded-full glass flex items-center justify-center text-primary">
+                  <div className="size-10 rounded-full glass border border-white/10 flex items-center justify-center text-white">
                     <Sparkles className="size-5" />
                   </div>
-                  <span className="text-xs font-semibold">Review</span>
+                  <span className="text-xs font-semibold text-zinc-200">Review</span>
                 </Link>
 
                 <Link
                   to="/settings"
                   onClick={() => setMenuOpen(false)}
-                  className="glass rounded-2xl p-3.5 flex flex-col items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition text-center"
+                  className="glass rounded-2xl p-3.5 flex flex-col items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition text-center border border-white/10"
                 >
-                  <div className="size-10 rounded-full glass flex items-center justify-center text-primary">
+                  <div className="size-10 rounded-full glass border border-white/10 flex items-center justify-center text-white">
                     <SettingsIcon className="size-5" />
                   </div>
-                  <span className="text-xs font-semibold">Settings</span>
+                  <span className="text-xs font-semibold text-zinc-200">Settings</span>
                 </Link>
               </div>
             </SheetContent>
